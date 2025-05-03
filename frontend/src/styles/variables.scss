@@ -1,0 +1,37 @@
+:root {
+  // Light theme colors
+  --primary-color: #4a6cf7;
+  --secondary-color: #6c757d;
+  --accent-color: #ff5722;
+  --bg-color: #f8f9fa;
+  --card-bg-color: #ffffff;
+  --border-color: #dee2e6;
+  --text-color: #333333;
+  --text-secondary: #6c757d;
+  --success-color: #28a745;
+  --error-color: #dc3545;
+  --warning-color: #ffc107;
+}
+
+.dark-theme {
+  // Dark theme colors
+  --primary-color: #3c5ae0;
+  --secondary-color: #6c757d;
+  --accent-color: #ff7043;
+  --bg-color: #121212;
+  --card-bg-color: #1e1e1e;
+  --border-color: #2c2c2c;
+  --text-color: #e1e1e1;
+  --text-secondary: #a0a0a0;
+  --success-color: #48bb78;
+  --error-color: #f56565;
+  --warning-color: #ecc94b;
+}
+
+// Breakpoints
+:root {
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+}

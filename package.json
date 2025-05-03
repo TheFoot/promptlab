@@ -1,0 +1,24 @@
+{
+  "name": "prompt-library",
+  "version": "1.0.0",
+  "description": "LLM Prompt Library with tag support",
+  "main": "backend/src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/src/index.js",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "cd frontend && npm run build:quiet",
+    "build:with-warnings": "cd frontend && npm run build",
+    "lint": "concurrently \"cd backend && npm run lint\" \"cd frontend && npm run lint\"",
+    "format": "concurrently \"cd backend && npm run format\" \"cd frontend && npm run format\""
+  },
+  "keywords": ["prompt", "llm", "library", "markdown"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
