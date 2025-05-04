@@ -1,9 +1,16 @@
 <template>
   <div class="markdown-preview">
-    <div v-if="!content" class="empty-preview">
+    <div
+      v-if="!content"
+      class="empty-preview"
+    >
       No content to preview.
     </div>
-    <div v-else class="markdown-content" v-html="renderedMarkdown"></div>
+    <div
+      v-else
+      class="markdown-content"
+      v-html="renderedMarkdown"
+    />
   </div>
 </template>
 

@@ -10,7 +10,10 @@
         </div>
       </div>
 
-      <form @submit.prevent="savePrompt" class="prompt-form">
+      <form
+        class="prompt-form"
+        @submit.prevent="savePrompt"
+      >
         <div class="form-group mb-3">
           <label for="title">Title</label>
           <input
@@ -19,7 +22,7 @@
             type="text"
             placeholder="Prompt title"
             required
-          />
+          >
         </div>
 
         <div class="form-group mb-3">
@@ -29,25 +32,36 @@
 
         <div class="prompt-content">
           <div class="editor-container">
-            <div class="editor-header">Content</div>
+            <div class="editor-header">
+              Content
+            </div>
             <textarea
               v-model="prompt.content"
               class="content-editor"
               placeholder="Write your prompt here using markdown..."
               required
-            ></textarea>
+            />
           </div>
           <div class="preview-container">
-            <div class="preview-header">Preview</div>
+            <div class="preview-header">
+              Preview
+            </div>
             <MarkdownPreview :content="prompt.content" />
           </div>
         </div>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="saving">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            :disabled="saving"
+          >
             {{ saving ? 'Creating...' : 'Create Prompt' }}
           </button>
-          <router-link to="/" class="btn btn-secondary">
+          <router-link
+            to="/"
+            class="btn btn-secondary"
+          >
             Cancel
           </router-link>
         </div>

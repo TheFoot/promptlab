@@ -14,11 +14,17 @@
           <li>Search and filter by tags to quickly find what you need</li>
         </ul>
         <div class="welcome-actions">
-          <router-link to="/prompts/new" class="btn btn-primary">
+          <router-link
+            to="/prompts/new"
+            class="btn btn-primary"
+          >
             {{ hasPrompts ? 'Create New Prompt' : 'Create Your First Prompt' }}
           </router-link>
           
-          <div v-if="hasPrompts" class="existing-prompts-message mt-2">
+          <div
+            v-if="hasPrompts"
+            class="existing-prompts-message mt-2"
+          >
             You have {{ promptStore.prompts.length }} prompt{{ promptStore.prompts.length !== 1 ? 's' : '' }} available.
             <br>Select one from the sidebar to view or edit.
           </div>

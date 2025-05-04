@@ -2,45 +2,69 @@
   <div class="prompt-sidebar">
     <div class="search-container mb-3">
       <input
-        type="text"
         v-model="searchQuery"
+        type="text"
         placeholder="Search prompts..."
-        @input="handleSearch"
         class="search-input"
-      />
+        @input="handleSearch"
+      >
       <select 
         v-model="selectedTag" 
-        @change="handleTagChange" 
-        class="tag-filter mt-2"
+        class="tag-filter mt-2" 
+        @change="handleTagChange"
       >
-        <option value="">All Tags</option>
-        <option v-for="tag in tags" :key="tag" :value="tag">
+        <option value="">
+          All Tags
+        </option>
+        <option
+          v-for="tag in tags"
+          :key="tag"
+          :value="tag"
+        >
           {{ tag }}
         </option>
       </select>
     </div>
 
     <div class="create-prompt-container mb-3">
-      <router-link to="/prompts/new" class="btn btn-primary">
+      <router-link
+        to="/prompts/new"
+        class="btn btn-primary"
+      >
         + New Prompt
       </router-link>
     </div>
 
     <div class="prompt-list">
-      <div v-if="loading" class="loading">Loading...</div>
-      <div v-else-if="error" class="error">{{ error }}</div>
-      <div v-else-if="prompts.length === 0" class="no-prompts">
+      <div
+        v-if="loading"
+        class="loading"
+      >
+        Loading...
+      </div>
+      <div
+        v-else-if="error"
+        class="error"
+      >
+        {{ error }}
+      </div>
+      <div
+        v-else-if="prompts.length === 0"
+        class="no-prompts"
+      >
         No prompts found. Create a new one to get started.
       </div>
       <router-link
-        v-else
         v-for="prompt in prompts"
+        v-else
         :key="prompt._id"
         :to="`/prompts/${prompt._id}`"
         class="prompt-item"
         :class="{ active: isActivePrompt(prompt._id) }"
       >
-        <h3 class="prompt-title">{{ prompt.title }}</h3>
+        <h3 class="prompt-title">
+          {{ prompt.title }}
+        </h3>
         <div class="prompt-tags">
           <span
             v-for="tag in prompt.tags"

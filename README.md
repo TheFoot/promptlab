@@ -10,6 +10,11 @@ A full-stack application for managing, editing, and filtering LLM prompts with t
 - Search prompts with free-text search
 - Split-view interface with markdown editor and preview
 - Dark/light mode theming
+- Integrated chat sidebar for testing prompts with:
+  - OpenAI API integration
+  - Streaming responses via WebSockets
+  - Configurable models and temperature
+  - Syntax highlighting for code blocks
 
 ## Tech Stack
 
@@ -31,7 +36,8 @@ A full-stack application for managing, editing, and filtering LLM prompts with t
 ### Prerequisites
 
 - Node.js v22+
-- Docker and Docker Compose (for containerized setup)
+- MongoDB (or Docker for containerized setup)
+- OpenAI API key for testing prompts
 
 ### Development Setup
 
@@ -42,7 +48,12 @@ A full-stack application for managing, editing, and filtering LLM prompts with t
    cd backend && npm install
    cd frontend && npm install
    ```
-3. Start the development servers:
+3. Create a `.env` file in the root directory (copy from `.env.example`):
+   ```
+   cp .env.example .env
+   ```
+4. Add your OpenAI API key to the `.env` file
+5. Start the development servers:
    ```
    npm run dev
    ```

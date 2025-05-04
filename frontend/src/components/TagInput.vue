@@ -1,28 +1,32 @@
 <template>
   <div class="tag-input-container">
     <div class="tag-list">
-      <div v-for="(tag, index) in modelValue" :key="index" class="tag-item">
+      <div
+        v-for="(tag, index) in modelValue"
+        :key="index"
+        class="tag-item"
+      >
         <span class="tag-text">{{ tag }}</span>
         <button
-          @click.prevent="removeTag(index)"
           class="tag-remove"
           type="button"
           aria-label="Remove tag"
+          @click.prevent="removeTag(index)"
         >
           &times;
         </button>
       </div>
       <input
         v-model="tagInputValue"
+        placeholder="Add tags..."
+        class="tag-input"
+        :class="{ 'has-tags': modelValue.length > 0 }"
         @keydown.enter.prevent="addTag"
         @keydown.backspace="handleBackspace"
         @keydown.tab.prevent="addTag"
         @keydown.comma.prevent="addTag"
         @blur="addTag"
-        placeholder="Add tags..."
-        class="tag-input"
-        :class="{ 'has-tags': modelValue.length > 0 }"
-      />
+      >
     </div>
     <div class="tag-help-text">
       Press Enter or comma to add a tag
