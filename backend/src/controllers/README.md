@@ -1,6 +1,6 @@
 # Controllers
 
-This directory contains controller modules that handle HTTP requests for the Prompt Library API. Controllers are responsible for processing incoming requests, interacting with services to perform business logic, and returning appropriate responses.
+This directory contains controller modules that handle HTTP requests for the PromptLab API. Controllers are responsible for processing incoming requests, interacting with services to perform business logic, and returning appropriate responses.
 
 ## Files
 

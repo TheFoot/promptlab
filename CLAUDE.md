@@ -1,4 +1,4 @@
-# CLAUDE.md - Prompt Library Development Guide
+# CLAUDE.md - PromptLab Development Guide
 
 ## Build & Run Commands
 - `npm run dev` - Start both frontend and backend development servers

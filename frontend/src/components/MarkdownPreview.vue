@@ -15,8 +15,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { marked } from 'marked';
+import highlightjs from 'highlight.js';
+import 'highlight.js/styles/github.css';
+import '../styles/code-blocks.scss';
+import alertService from '../services/alertService';
 
 const props = defineProps({
   content: {
@@ -25,16 +29,111 @@ const props = defineProps({
   },
 });
 
-// Configure marked options
+// Configure marked options with code highlighting
 marked.setOptions({
+  highlight: function(code, lang) {
+    if (lang && highlightjs.getLanguage(lang)) {
+      return highlightjs.highlight(code, { language: lang }).value;
+    }
+    return highlightjs.highlightAuto(code).value;
+  },
   breaks: true,
   gfm: true,
 });
 
-// Render markdown content
-const renderedMarkdown = computed(() => {
+// Custom renderer for better code blocks
+const getRenderedMarkdown = () => {
   if (!props.content) return '';
+  
+  const renderer = new marked.Renderer();
+  
+  // Override the code renderer to add headers and download buttons
+  renderer.code = (code, language) => {
+    // Default highlightjs code rendering
+    const highlightedCode = language && highlightjs.getLanguage(language)
+      ? highlightjs.highlight(code, { language }).value
+      : highlightjs.highlightAuto(code).value;
+      
+    // Create a timestamp-based filename with proper extension
+    const timestamp = new Date().getTime();
+    const extension = language || 'txt';
+    const filename = `code-${timestamp}.${extension}`;
+    
+    // Return code block with download button
+    return `
+      <div class="code-block-wrapper">
+        <div class="code-header">
+          <span class="code-language">${language || 'plain text'}</span>
+          <button class="code-download-btn" title="Download code" data-code="${encodeURIComponent(code)}" data-filename="${filename}" onclick="window.downloadCodeBlock(this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </button>
+        </div>
+        <pre><code class="hljs ${language}">${highlightedCode}</code></pre>
+      </div>
+    `;
+  };
+  
+  // Override the paragraph renderer to handle code blocks specially
+  const originalParagraph = renderer.paragraph;
+  renderer.paragraph = function(text) {
+    // If paragraph contains only a code block, don't wrap in <p> tags
+    if (text.trim().startsWith('<div class="code-block-wrapper">') && 
+        text.trim().endsWith('</div>')) {
+      return text;
+    }
+    
+    // Otherwise use the original paragraph renderer
+    return originalParagraph.call(this, text);
+  };
+  
+  // Set the custom renderer
+  marked.setOptions({ renderer });
+  
   return marked(props.content);
+};
+
+// Render markdown content
+const renderedMarkdown = computed(() => getRenderedMarkdown());
+
+// Function to download code blocks
+const downloadCodeBlock = (button) => {
+  try {
+    const code = decodeURIComponent(button.getAttribute('data-code'));
+    const filename = button.getAttribute('data-filename');
+    
+    // Create blob with code content
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create temporary link element to trigger download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alertService.showAlert(`Downloading ${filename}`, 'success', 3000);
+  } catch (error) {
+    console.error('Error downloading code:', error);
+    alertService.showAlert('Failed to download code', 'error', 3000);
+  }
+};
+
+onMounted(() => {
+  // Add download function to window object for code download buttons
+  window.downloadCodeBlock = window.downloadCodeBlock || downloadCodeBlock;
+});
+
+onUnmounted(() => {
+  // Do not remove the window function if it might be used by other components
 });
 </script>
 
@@ -97,26 +196,8 @@ const renderedMarkdown = computed(() => {
     margin-bottom: 0.5rem;
   }
 
-  :deep(code) {
-    background-color: rgba(0, 0, 0, 0.05);
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    font-family: monospace;
-    font-size: 0.9em;
-  }
-
-  :deep(pre) {
-    background-color: rgba(0, 0, 0, 0.05);
-    padding: 1rem;
-    border-radius: 4px;
-    overflow-x: auto;
-    margin-bottom: 1rem;
-
-    code {
-      background-color: transparent;
-      padding: 0;
-    }
-  }
+  // Code block styling is imported from the centralized style file
+  // We import it in script section: '../styles/code-blocks.scss'
 
   :deep(blockquote) {
     padding-left: 1rem;

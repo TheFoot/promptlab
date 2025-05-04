@@ -1,6 +1,6 @@
 # Backend - Express.js API
 
-This directory contains the Express.js backend API for the Prompt Library application. It provides the REST endpoints for managing prompts, tags, and chat functionality.
+This directory contains the Express.js backend API for the PromptLab application. It provides the REST endpoints for managing prompts, tags, and chat functionality.
 
 ## Directory Structure
 

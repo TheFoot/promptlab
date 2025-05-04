@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains additional documentation for the Prompt Library project, including technical specifications, architecture details, and implementation guides.
+This directory contains additional documentation for the PromptLab project, including technical specifications, architecture details, and implementation guides.
 
 ## Directories
 

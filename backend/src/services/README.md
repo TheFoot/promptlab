@@ -1,6 +1,6 @@
 # Services
 
-This directory contains service modules that implement the business logic for the Prompt Library application. Services handle the core functionality and interact with models, external APIs, and other resources.
+This directory contains service modules that implement the business logic for the PromptLab application. Services handle the core functionality and interact with models, external APIs, and other resources.
 
 ## Files
 

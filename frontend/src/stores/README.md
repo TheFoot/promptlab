@@ -1,6 +1,6 @@
 # Stores
 
-This directory contains Pinia stores that manage the application state for the Prompt Library. Pinia is the official state management library for Vue 3.
+This directory contains Pinia stores that manage the application state for the PromptLab. Pinia is the official state management library for Vue 3.
 
 ## Store Files
 

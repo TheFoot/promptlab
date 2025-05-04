@@ -1,8 +1,8 @@
-# Prompt Library - Claude Code Build Specification
+# PromptLab - Claude Code Build Specification
 
 ## Project Overview
 
-Create a prompt library application that allows users to manage, edit, and filter LLM prompts with tag support. The application will feature a left sidebar for navigation and a split-view main area for editing and previewing markdown prompts.
+Create a PromptLab application that allows users to manage, edit, and filter LLM prompts with tag support. The application will feature a left sidebar for navigation and a split-view main area for editing and previewing markdown prompts.
 
 ## Technology Stack
 
@@ -93,7 +93,7 @@ init-frontend-vue prompt-library/frontend --vite --vue3 --scss --pinia --router
 Create an `.env` file with the following variables:
 ```
 PORT=3131
-MONGODB_URI=mongodb://mongodb:27717/prompt-library
+MONGODB_URI=mongodb://mongodb:27717/promptlab
 NODE_ENV=development
 ```
 

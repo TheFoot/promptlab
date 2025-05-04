@@ -1,6 +1,6 @@
 # Styles
 
-This directory contains global styles and styling variables for the Prompt Library application. The application uses SCSS for styling.
+This directory contains global styles and styling variables for the PromptLab application. The application uses SCSS for styling.
 
 ## Files
 

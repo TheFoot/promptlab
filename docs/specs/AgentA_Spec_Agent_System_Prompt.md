@@ -13,9 +13,9 @@ Transform a user’s high-level product requirement into:
 - **List each feature** as a bullet point under a **“Feature List”** heading.
 - **Define acceptance criteria** for each feature as bullet points under an **“Acceptance Criteria”** subsection.
 - **Write criteria in concise, plain English**, ensuring they are:
-  - Specific and measurable.
-  - Independent and testable.
-  - Free of implementation details.
+    - Specific and measurable.
+    - Independent and testable.
+    - Free of implementation details.
 - **Output format** must be valid Markdown, starting with:
   ```markdown
   ## Feature List
@@ -31,6 +31,7 @@ Transform a user’s high-level product requirement into:
   ```
 - Do **not** include code samples or implementation suggestions; focus solely on behaviour and intent.
 - Assume a Code Unit is self-contained; references to external systems should note dependencies but not detail their implementation.
+- Do not output a code block wrapper
 
 **Next Steps:**  
 After your output, Agent B (BDD-Agent) will convert these criteria into Given/When/Then scenarios.

@@ -1,0 +1,148 @@
+// Code block styling for the entire application
+// Used by both MarkdownPreview and ChatSidebar components
+
+// Code block wrapper
+.code-block-wrapper {
+  margin: 10px 0;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  display: block;
+  line-height: 0; /* Eliminate any extra space */
+  
+  /* Restore line height for children */
+  & > * {
+    line-height: normal;
+  }
+  
+  // First code block shouldn't have top margin
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+// Code block header
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #343541;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  height: 30px;
+  line-height: 22px;
+  box-sizing: border-box;
+  
+  // Dark mode adjustments
+  .dark-theme & {
+    background-color: #1e1e2f;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+}
+
+// Language indicator in code header
+.code-language {
+  font-family: monospace;
+  font-size: 0.75rem;
+  opacity: 0.8;
+  display: inline-block;
+  line-height: 1;
+  position: relative;
+  top: -1px; /* Fine-tune vertical alignment */
+}
+
+// Download button for code blocks
+.code-download-btn {
+  background-color: transparent;
+  border: none;
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all 0.2s;
+  line-height: 1;
+  
+  svg {
+    transition: all 0.2s;
+    width: 14px;
+    height: 14px;
+  }
+  
+  &:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+    
+    svg {
+      stroke: #fff;
+    }
+  }
+  
+  &:active {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+// Pre tag for code blocks
+pre {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 10px 0;
+  font-family: monospace;
+  max-height: 400px;
+  
+  // Dark mode adjustments
+  .dark-theme & {
+    background-color: #2a2a2a;
+    color: #e6e6e6;
+  }
+}
+
+// Pre inside code block wrapper
+.code-block-wrapper pre {
+  margin: 0;
+  border-radius: 0 0 4px 4px;
+  background-color: rgba(0, 0, 0, 0.03);
+  
+  // Dark mode adjustments
+  .dark-theme & {
+    background-color: #2a2a2a;
+    color: #e6e6e6;
+  }
+  
+  code {
+    background-color: transparent;
+    padding: 0;
+    font-family: monospace;
+    
+    // Dark mode adjustments
+    .dark-theme & {
+      color: #e6e6e6;
+    }
+  }
+}
+
+// Styling for inline code blocks
+code:not(pre code) {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+  
+  // Dark mode adjustments
+  .dark-theme & {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #e6e6e6;
+  }
+}

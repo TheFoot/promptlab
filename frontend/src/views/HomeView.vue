@@ -5,8 +5,8 @@
     </div>
     <div class="welcome-container">
       <div class="welcome-card card">
-        <h2>Welcome to Prompt Library!</h2>
-        <p>This application helps you manage your LLM prompts and templates.</p>
+        <h2>Welcome to PromptLab!</h2>
+        <p>This application helps you manage and test your LLM prompts.</p>
         <ul class="feature-list">
           <li>Create and organize prompts for different AI models</li>
           <li>Add tags to categorize your prompts</li>
@@ -20,7 +20,7 @@
           >
             {{ hasPrompts ? 'Create New Prompt' : 'Create Your First Prompt' }}
           </router-link>
-          
+
           <div
             v-if="hasPrompts"
             class="existing-prompts-message mt-2"
@@ -57,7 +57,7 @@ const hasPrompts = computed(() => promptStore.prompts.length > 0);
 
 .home-view {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 350px 1fr;
   gap: 1.5rem;
   height: 100%;
   max-width: 100%;
@@ -117,7 +117,7 @@ const hasPrompts = computed(() => promptStore.prompts.length > 0);
 
   .welcome-actions {
     margin-top: 1.5rem;
-    
+
     .existing-prompts-message {
       color: var(--text-secondary);
       font-size: 0.9rem;

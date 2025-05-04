@@ -16,7 +16,7 @@
             to="/"
             class="app-title"
           >
-            Prompt Library
+            PromptLab <span class="version">v{{ appVersion }}</span>
           </router-link>
         </h1>
         <div class="header-controls">
@@ -65,6 +65,9 @@ import { useUiStore } from './stores/uiStore';
 import ChatSidebar from './components/ChatSidebar.vue';
 import AlertSystem from './components/AlertSystem.vue';
 import alertService from './services/alertService';
+
+// Get app version from Vite define
+const appVersion = __APP_VERSION__;
 
 // Get UI store
 const uiStore = useUiStore();
@@ -203,10 +206,9 @@ watch(() => uiStore.isEditingPrompt, (isEditing) => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1800px;
+    width: 100%;
     margin: 0 auto;
     padding: 0 1.5rem;
-    width: 100%;
   }
 
   h1 {
@@ -221,6 +223,14 @@ watch(() => uiStore.isEditingPrompt, (isEditing) => {
     &:hover {
       text-decoration: none;
       opacity: 0.9;
+    }
+    
+    .version {
+      font-size: 0.6rem;
+      font-weight: normal;
+      opacity: 0.7;
+      vertical-align: middle;
+      margin-left: 5px;
     }
   }
 }
@@ -284,11 +294,10 @@ watch(() => uiStore.isEditingPrompt, (isEditing) => {
 
 .app-content {
   flex: 1;
-  max-width: 1800px;
-  margin: 0 auto;
+  width: 100%;
   padding: 1rem 1.5rem;
   box-sizing: border-box;
-  transition: margin-right 0.3s ease, max-width 0.3s ease;
+  transition: margin-right 0.3s ease, width 0.3s ease;
   margin-right: 0; /* Initial state */
   overflow-y: auto; /* Allow content area to scroll */
   height: 100%; /* Take full height of parent */
@@ -302,7 +311,7 @@ watch(() => uiStore.isEditingPrompt, (isEditing) => {
 /* Push content when chat is expanded */
 .chat-expanded .app-content {
   margin-right: v-bind('sidebarWidth + "px"'); /* Dynamic margin based on sidebar width */
-  max-width: calc(1800px - v-bind('sidebarWidth + "px"')); /* Adjust max-width dynamically */
+  width: calc(100% - v-bind('sidebarWidth + "px"')); /* Adjust width dynamically */
 }
 
 </style>

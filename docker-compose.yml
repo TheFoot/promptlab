@@ -11,7 +11,7 @@ services:
       - mongodb
     environment:
       - PORT=3131
-      - MONGODB_URI=mongodb://mongodb:27717/promptLibrary
+      - MONGODB_URI=mongodb://mongodb:27717/promptLab
       - NODE_ENV=production
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}

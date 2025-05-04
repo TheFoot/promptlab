@@ -1,4 +1,4 @@
-# Prompt Library
+# PromptLab
 
 A full-stack application for managing, editing, and filtering LLM prompts with tag support.
 
@@ -95,7 +95,7 @@ This project uses a comprehensive documentation system with README files in each
 ## Project Structure
 
 ```
-prompt-library/
+promptlab/
 ├── .env                     # Environment variables
 ├── docker-compose.yml       # Docker configuration
 ├── package.json             # Root package.json for project management

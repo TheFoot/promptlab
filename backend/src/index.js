@@ -63,14 +63,14 @@ const __dirname = path.dirname(__filename);
       });
       global.logger.info('MongoDB connected successfully');
     } catch (dbError) {
-      global.logger.error('Failed to connect to MongoDB', { 
+      global.logger.error('Failed to connect to MongoDB', {
         error: dbError.message,
-        stack: dbError.stack 
+        stack: dbError.stack
       });
-      
+
       // Fallback to localhost if Docker connection fails
       if (config.mongodbUri.includes('mongodb:')) {
-        const fallbackUri = 'mongodb://localhost:27017/prompt-library';
+        const fallbackUri = 'mongodb://localhost:27017/promptLab';
         global.logger.info('Trying fallback connection', { uri: fallbackUri });
         await mongoose.connect(fallbackUri);
         global.logger.info('MongoDB connected via fallback');
@@ -86,7 +86,7 @@ const __dirname = path.dirname(__filename);
 
     // API routes
     app.use('/api', apiRoutes);
-    
+
     // Add error handling middleware
     app.use((err, req, res, next) => {
       global.logger.error('Express error handler caught an error', {
@@ -95,7 +95,7 @@ const __dirname = path.dirname(__filename);
         path: req.path,
         method: req.method,
       });
-      
+
       res.status(err.status || 500).json({
         error: 'Internal Server Error',
         message: config.isDev ? err.message : 'Something went wrong',
@@ -103,25 +103,25 @@ const __dirname = path.dirname(__filename);
     });
 
     // Set up WebSocket server for chat
-    const wss = new WebSocketServer({ 
+    const wss = new WebSocketServer({
       server,
       path: '/api/chat/ws'
     });
 
     wss.on('connection', (ws, req) => {
       const clientIp = req.socket.remoteAddress;
-      global.logger.info('WebSocket client connected', { 
+      global.logger.info('WebSocket client connected', {
         ip: clientIp,
-        headers: req.headers['user-agent'] 
+        headers: req.headers['user-agent']
       });
-      
+
       chatController.handleWebSocket(ws, req);
-      
+
       ws.on('close', (code, reason) => {
-        global.logger.info('WebSocket client disconnected', { 
+        global.logger.info('WebSocket client disconnected', {
           ip: clientIp,
           code,
-          reason: reason.toString() 
+          reason: reason.toString()
         });
       });
     });
@@ -138,18 +138,18 @@ const __dirname = path.dirname(__filename);
 
     // Start the server
     server.listen(config.port, () => {
-      global.logger.info('Server started', { 
-        mode: config.nodeEnv, 
-        port: config.port 
+      global.logger.info('Server started', {
+        mode: config.nodeEnv,
+        port: config.port
       });
-      global.logger.info('WebSocket server available', { 
-        url: `ws://localhost:${config.port}/api/chat/ws` 
+      global.logger.info('WebSocket server available', {
+        url: `ws://localhost:${config.port}/api/chat/ws`
       });
     });
   } catch (error) {
-    global.logger.error('Server initialization failed', { 
+    global.logger.error('Server initialization failed', {
       error: error.message,
-      stack: error.stack 
+      stack: error.stack
     });
     process.exit(1);
   }

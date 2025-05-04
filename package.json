@@ -1,7 +1,7 @@
 {
-  "name": "prompt-library",
-  "version": "1.0.0",
-  "description": "LLM Prompt Library with tag support",
+  "name": "promptlab",
+  "version": "0.9.0-beta",
+  "description": "LLM PromptLab with tag support",
   "main": "backend/src/index.js",
   "type": "module",
   "scripts": {

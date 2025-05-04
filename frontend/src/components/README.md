@@ -1,6 +1,6 @@
 # Components
 
-This directory contains reusable Vue components used throughout the Prompt Library application. These components are designed to be composable, reusable, and follow the Vue 3 Composition API with `<script setup>` syntax.
+This directory contains reusable Vue components used throughout the PromptLab application. These components are designed to be composable, reusable, and follow the Vue 3 Composition API with `<script setup>` syntax.
 
 ## Component Files
 

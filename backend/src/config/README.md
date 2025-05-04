@@ -1,6 +1,6 @@
 # Configuration Module
 
-This directory contains configuration management code for the Prompt Library backend, including centralized provider and model settings.
+This directory contains configuration management code for the PromptLab backend, including centralized provider and model settings.
 
 ## Files
 
@@ -29,13 +29,13 @@ const anthropicModels = config.anthropic.models.available;
 
 ## Core Configuration
 
-| Name | Description | Default |
-|------|-------------|--------|
-| `port` | Server port | 3131 |
-| `mongoUri` | MongoDB connection string | localhost:27017/prompt-library |
-| `nodeEnv` | Application environment | development |
+| Name | Description | Default                        |
+|------|-------------|--------------------------------|
+| `port` | Server port | 3131                           |
+| `mongoUri` | MongoDB connection string | localhost:27017/promptLab      |
+| `nodeEnv` | Application environment | development                    |
 | `isDev` | Development mode flag | true if nodeEnv is development |
-| `isProd` | Production mode flag | true if nodeEnv is production |
+| `isProd` | Production mode flag | true if nodeEnv is production  |
 
 ## Provider Configuration
 

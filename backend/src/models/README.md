@@ -1,6 +1,6 @@
 # Database Models
 
-This directory contains Mongoose schema definitions for the MongoDB database used in the Prompt Library application.
+This directory contains Mongoose schema definitions for the MongoDB database used in the PromptLab application.
 
 ## Models
 

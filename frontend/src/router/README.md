@@ -1,6 +1,6 @@
 # Router
 
-This directory contains the Vue Router configuration for the Prompt Library application. Vue Router is the official router for Vue.js applications.
+This directory contains the Vue Router configuration for the PromptLab application. Vue Router is the official router for Vue.js applications.
 
 ## Files
 

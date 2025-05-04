@@ -1,16 +1,16 @@
 # Technical Specifications
 
-This directory contains detailed technical specifications for the Prompt Library application. These specifications define the requirements, architecture, and implementation details for various features and components.
+This directory contains detailed technical specifications for the PromptLab application. These specifications define the requirements, architecture, and implementation details for various features and components.
 
 ## Specification Files
 
-- `prompt-library-spec.md` - Overall application specification
+- `promptlab-spec.md` - Overall application specification
 - `AgentA_Spec_Agent_System_Prompt.md` - Specification for Agent A system
 - `AgentB_BDD_Agent_System_Prompt.md` - Specification for Agent B system with BDD approach
 
-## Prompt Library Specification
+## PromptLab Specification
 
-The `prompt-library-spec.md` file contains the high-level specification for the Prompt Library application, including:
+The `promptlab-spec.md` file contains the high-level specification for the PromptLab application, including:
 
 - Project overview and goals
 - Feature requirements

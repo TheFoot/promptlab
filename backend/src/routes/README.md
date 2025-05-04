@@ -1,6 +1,6 @@
 # API Routes
 
-This directory contains route definitions for the Prompt Library API. Routes map HTTP endpoints to controller functions.
+This directory contains route definitions for the PromptLab API. Routes map HTTP endpoints to controller functions.
 
 ## Files
 

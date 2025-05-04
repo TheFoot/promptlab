@@ -1,5 +1,6 @@
 @use 'sass:color';
 @use 'variables' as *;
+@import 'code-blocks'; // Import centralized code block styling
 
 /* Base Styles */
 * {

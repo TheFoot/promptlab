@@ -170,7 +170,7 @@ watch(
   flex-direction: column;
   height: 100%;
   width: 100%;
-  max-width: 280px;
+  max-width: 350px;
   overflow: hidden; /* Prevent sidebar from scrolling itself */
 
   .search-input,

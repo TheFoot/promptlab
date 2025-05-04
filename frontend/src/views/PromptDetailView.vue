@@ -287,7 +287,7 @@ onMounted(async () => {
 
 .prompt-detail-view {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 350px 1fr;
   gap: 1.5rem;
   height: 100%;
   max-width: 100%;

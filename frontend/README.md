@@ -1,6 +1,6 @@
 # Frontend - Vue 3 Application
 
-This directory contains the Vue 3 frontend application for the Prompt Library. It's built with the Composition API, Vue Router for navigation, and Pinia for state management.
+This directory contains the Vue 3 frontend application for the PromptLab. It's built with the Composition API, Vue Router for navigation, and Pinia for state management.
 
 ## Directory Structure
 

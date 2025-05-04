@@ -7,7 +7,7 @@ const openaiConfig = {
     baseUrl: process.env.OPENAI_API_BASE_URL || 'https://api.openai.com/v1',
     organization: process.env.OPENAI_ORGANIZATION || ''
   },
-  
+
   // Available models
   models: {
     available: [
@@ -16,8 +16,8 @@ const openaiConfig = {
       'gpt-4-turbo',
       'gpt-4o'
     ],
-    default: 'gpt-3.5-turbo',
-    
+    default: 'gpt-4o',
+
     // UI display names for models
     displayNames: {
       'gpt-3.5-turbo': 'GPT-3.5 Turbo',
@@ -26,7 +26,7 @@ const openaiConfig = {
       'gpt-4o': 'GPT-4o'
     }
   },
-  
+
   // Default configuration options
   defaults: {
     temperature: 0.7,
