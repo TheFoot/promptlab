@@ -20,7 +20,7 @@
           <button 
             class="reset-button" 
             title="Reset conversation" 
-            @click="resetChat"
+            @click="() => resetChat('manual_reset')"
           >
             Reset
           </button>
@@ -306,17 +306,50 @@ const handleProviderChange = () => {
   } else if (modelConfig.value.provider === 'anthropic') {
     modelConfig.value.model = 'claude-3-7-sonnet-latest';
   }
+  
+  // Reset chat history when provider changes
+  resetChat('model_change');
 };
 
 // Reset chat conversation
-const resetChat = () => {
+const resetChat = (reason = 'manual_reset') => {
   messages.value = [];
-  if (currentPrompt.value) {
-    messages.value.push({
-      role: 'system',
-      content: 'Chat reset. Ready to test system prompt: ' + currentPrompt.value.title
-    });
+  
+  // Add appropriate system message based on reset reason
+  let resetMessage = '';
+  
+  switch (reason) {
+    case 'model_change':
+      // Model or provider change message
+      resetMessage = `Chat reset due to model change. Now using: ${modelConfig.value.provider} / ${modelConfig.value.model}`;
+      break;
+    case 'prompt_change':
+      // Prompt change message
+      resetMessage = `Chat reset due to prompt change. Now testing: ${currentPrompt.value?.title || 'Unknown prompt'}`;
+      break;
+    case 'manual_reset':
+      // Manual reset by user
+      resetMessage = 'Chat manually reset.';
+      break;
+    case 'init':
+      // Initial setup
+      resetMessage = 'Chat initialized.';
+      break;
+    default:
+      // Default message
+      resetMessage = 'Chat reset.';
   }
+  
+  // Add the prompt information if available
+  if (currentPrompt.value && reason !== 'prompt_change') {
+    resetMessage += ` Testing system prompt: ${currentPrompt.value.title}`;
+  }
+  
+  // Add the system message
+  messages.value.push({
+    role: 'system',
+    content: resetMessage
+  });
 };
 
 // Format message with markdown and syntax highlighting
@@ -500,7 +533,7 @@ const setupWebSocket = () => {
 onMounted(() => {
   setupWebSocket();
   // Initialize with a clean slate
-  resetChat();
+  resetChat('init');
   
   // Apply initial width from state
   if (isExpanded.value && document.querySelector('.chat-sidebar')) {
@@ -527,7 +560,15 @@ onUnmounted(() => {
 watch(() => currentPrompt.value, (newPrompt) => {
   if (newPrompt) {
     // Reset the chat history when the prompt changes
-    resetChat();
+    resetChat('prompt_change');
+  }
+});
+
+// Watch for changes in the model selection
+watch(() => modelConfig.value.model, (newModel, oldModel) => {
+  if (oldModel && newModel !== oldModel) {
+    // Reset chat history when model changes
+    resetChat('model_change');
   }
 });
 </script>
