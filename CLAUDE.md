@@ -9,6 +9,9 @@
 - `npm run lint` - Run linting for both frontend and backend
 - `npm run format` - Format code with Prettier for both frontend and backend
 - `npm test` - Run all tests
+- `npm run test:frontend` - Run only frontend tests
+- `npm run test:backend` - Run only backend tests
+- `npm run test:coverage` - Generate test coverage reports for both frontend and backend
 
 ## Code Style Guidelines
 - **Modules:** Use ES Modules (ESM) not CommonJS
@@ -25,6 +28,11 @@
 - **Frontend:** Vue 3 SPA with Vite, Vue Router and Pinia
 - **Backend:** Express REST API with MongoDB using Mongoose
 - **Documentation:** Comprehensive README system (see below)
+
+## Testing
+- **Frontend:** Vitest with Vue Test Utils and JSDOM
+- **Backend:** Node.js built-in test runner
+- **Coverage:** V8 coverage for frontend, Node.js experimental coverage for backend
 
 ## Documentation System
 This project uses a comprehensive README documentation system:

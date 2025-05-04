@@ -110,25 +110,54 @@ promptlab/
 │   │   ├── modules/         # Utility modules
 │   │   ├── routes/          # API routes
 │   │   └── services/        # Business logic
+│   ├── test/                # Backend tests
 │   └── package.json         # Backend dependencies
 ├── docs/                    # Additional documentation
 │   └── specs/               # Technical specifications
 └── frontend/                # Frontend application
     ├── index.html           # HTML entry
     ├── vite.config.js       # Vite configuration
+    ├── vitest.config.js     # Vitest configuration
     ├── package.json         # Frontend dependencies
     ├── public/              # Static assets
-    └── src/
-        ├── main.js          # Entry point
-        ├── App.vue          # Root component
-        ├── assets/          # Assets (images, fonts)
-        ├── components/      # Vue components
-        ├── router/          # Vue Router configuration
-        ├── stores/          # Pinia stores
-        ├── styles/          # Global styles
-        └── views/           # Page components
+    ├── src/
+    │   ├── main.js          # Entry point
+    │   ├── App.vue          # Root component
+    │   ├── assets/          # Assets (images, fonts)
+    │   ├── components/      # Vue components
+    │   ├── router/          # Vue Router configuration
+    │   ├── stores/          # Pinia stores
+    │   ├── styles/          # Global styles
+    │   └── views/           # Page components
+    └── tests/               # Frontend tests
+        └── unit/            # Unit tests for components
 ```
 
 ## Development Commands
 
 See [CLAUDE.md](./CLAUDE.md) for detailed development commands and workflow guidelines.
+
+## Testing
+
+This project uses:
+- **Frontend**: Vitest with Vue Test Utils for component testing
+- **Backend**: Node.js built-in test runner
+
+### Running Tests
+```
+# Run all tests
+npm test
+
+# Run only frontend tests
+npm run test:frontend
+
+# Run only backend tests  
+npm run test:backend
+
+# Generate test coverage reports
+npm run test:coverage
+```
+
+Coverage reports are generated in:
+- Frontend: `frontend/coverage/`
+- Backend: Coverage summary printed to console

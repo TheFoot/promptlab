@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix",
     "format": "prettier --write .",
-    "sass-migrate": "sass-migrator --load-path=./src/styles module **/*.scss"
+    "sass-migrate": "sass-migrator --load-path=./src/styles module **/*.scss",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "axios": "^1.5.1",
@@ -22,11 +25,15 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.4.0",
+    "@vitest/coverage-v8": "^1.4.0",
+    "@vue/test-utils": "^2.4.5",
     "eslint": "^8.51.0",
     "eslint-plugin-vue": "^9.17.0",
+    "jsdom": "^24.0.0",
     "prettier": "^3.0.3",
     "sass": "^1.71.0",
     "sass-migrator": "^1.7.3",
-    "vite": "^5.1.4"
+    "vite": "^5.1.4",
+    "vitest": "^1.4.0"
   }
 }
