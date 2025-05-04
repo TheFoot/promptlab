@@ -15,15 +15,43 @@ PromptLab is a comprehensive tool for developing, testing, and managing LLM prom
 
 ## How to Run PromptLab
 
-### Using the Docker Image
+### Option 1: With Existing MongoDB Instance
+
+If you already have MongoDB running locally or in another container:
 
 ```bash
 # Pull the image
 docker pull thefootonline/promptlab:latest
 
-# Run with MongoDB
+# Run the application container
+docker run -d --name promptlab \
+  -p 3131:3131 \
+  -e MONGODB_URI=mongodb://host.docker.internal:27017/promptLab \
+  -e OPENAI_API_KEY=your_openai_key \
+  -e ANTHROPIC_API_KEY=your_anthropic_key \
+  thefootonline/promptlab:latest
+```
+
+Note: `host.docker.internal` is used to connect to services on your host machine. If your MongoDB uses authentication, adjust the URI accordingly.
+
+### Option 2: Complete Setup with New MongoDB
+
+If you need to set up both PromptLab and MongoDB:
+
+```bash
+# Pull the image
+docker pull thefootonline/promptlab:latest
+
+# Create a network for the containers
 docker network create promptlab-network
-docker run -d --name mongodb --network promptlab-network mongo:latest
+
+# Start MongoDB container
+docker run -d --name mongodb \
+  --network promptlab-network \
+  -p 27017:27017 \
+  mongo:latest
+
+# Start PromptLab container
 docker run -d --name promptlab \
   --network promptlab-network \
   -p 3131:3131 \
@@ -46,12 +74,13 @@ The application will be available at http://localhost:3131
 
 ## Data Persistence
 
-PromptLab stores its data in MongoDB. To persist your data, mount a volume for the MongoDB container:
+PromptLab stores its data in MongoDB. To persist your data when using a new MongoDB container, mount a volume:
 
 ```bash
 docker run -d --name mongodb \
   --network promptlab-network \
   -v /path/on/host:/data/db \
+  -p 27017:27017 \
   mongo:latest
 ```
 
