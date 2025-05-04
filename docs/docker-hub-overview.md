@@ -19,7 +19,7 @@ PromptLab is a comprehensive tool for developing, testing, and managing LLM prom
 
 ```bash
 # Pull the image
-docker pull yourusername/promptlab:latest
+docker pull thefootonline/promptlab:latest
 
 # Run with MongoDB
 docker network create promptlab-network
@@ -30,7 +30,7 @@ docker run -d --name promptlab \
   -e MONGODB_URI=mongodb://mongodb:27017/promptLab \
   -e OPENAI_API_KEY=your_openai_key \
   -e ANTHROPIC_API_KEY=your_anthropic_key \
-  yourusername/promptlab:latest
+  thefootonline/promptlab:latest
 ```
 
 The application will be available at http://localhost:3131
