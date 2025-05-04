@@ -6,13 +6,15 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3131:3131"
     depends_on:
       - mongodb
     environment:
-      - PORT=3000
-      - MONGODB_URI=mongodb://mongodb:27017/prompt-library
+      - PORT=3131
+      - MONGODB_URI=mongodb://mongodb:27717/promptLibrary
       - NODE_ENV=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
     volumes:
       - ./:/app
       - /app/node_modules
@@ -22,7 +24,7 @@ services:
   mongodb:
     image: mongo:latest
     ports:
-      - "27017:27017"
+      - "27717:27017"
     volumes:
       - mongodb_data:/data/db
 

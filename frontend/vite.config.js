@@ -12,9 +12,13 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3131',
         changeOrigin: true,
       },
+      '/api/chat/ws': {
+        target: 'ws://localhost:3131',
+        ws: true,
+      }
     },
   },
   css: {

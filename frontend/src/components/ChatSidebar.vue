@@ -8,7 +8,7 @@
       v-if="isExpanded"
       class="resize-handle"
       @mousedown="startResize"
-    ></div>
+    />
     
     <div
       v-if="isExpanded"
@@ -18,9 +18,9 @@
         <div class="header-content">
           <h3>Test Prompt</h3>
           <button 
-            @click="resetChat" 
             class="reset-button" 
-            title="Reset conversation"
+            title="Reset conversation" 
+            @click="resetChat"
           >
             Reset
           </button>
@@ -30,16 +30,61 @@
       <div class="chat-controls">
         <div class="chat-settings">
           <div class="settings-row">
+            <label for="provider-select">Provider:</label>
+            <select
+              id="provider-select"
+              v-model="modelConfig.provider"
+              class="chat-select"
+              @change="handleProviderChange"
+            >
+              <option value="openai">
+                OpenAI
+              </option>
+              <option value="anthropic">
+                Anthropic
+              </option>
+            </select>
+            
             <label for="model-select">Model:</label>
             <select
               id="model-select"
               v-model="modelConfig.model"
               class="chat-select"
             >
-              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-              <option value="gpt-4">GPT-4</option>
-              <option value="gpt-4-turbo">GPT-4 Turbo</option>
-              <option value="gpt-4o">GPT-4o</option>
+              <template v-if="modelConfig.provider === 'openai'">
+                <option value="gpt-3.5-turbo">
+                  GPT-3.5 Turbo
+                </option>
+                <option value="gpt-4">
+                  GPT-4
+                </option>
+                <option value="gpt-4-turbo">
+                  GPT-4 Turbo
+                </option>
+                <option value="gpt-4o">
+                  GPT-4o
+                </option>
+              </template>
+              <template v-else-if="modelConfig.provider === 'anthropic'">
+                <option value="claude-3-7-sonnet-latest">
+                  Claude 3.7 Sonnet (Newest)
+                </option>
+                <option value="claude-3-5-sonnet-latest">
+                  Claude 3.5 Sonnet
+                </option>
+                <option value="claude-3-5-haiku-latest">
+                  Claude 3.5 Haiku
+                </option>
+                <option value="claude-3-opus-20240229">
+                  Claude 3 Opus
+                </option>
+                <option value="claude-3-sonnet-20240229">
+                  Claude 3 Sonnet
+                </option>
+                <option value="claude-3-haiku-20240307">
+                  Claude 3 Haiku
+                </option>
+              </template>
             </select>
           </div>
           
@@ -96,10 +141,10 @@
           v-model="newMessage" 
           placeholder="Type your message here..." 
           :disabled="isLoading"
+          rows="1"
           @keydown.enter.exact.prevent="sendMessage"
           @keydown.shift.enter="handleShiftEnter"
           @input="adjustTextareaHeight"
-          rows="1"
         />
         <button
           class="btn btn-primary"
@@ -183,6 +228,7 @@ const messageInput = ref(null); // Reference to the textarea
 const socket = ref(null);
 const promptStore = usePromptStore();
 const modelConfig = ref({
+  provider: 'openai',
   model: 'gpt-3.5-turbo',
   temperature: 0.7
 });
@@ -194,33 +240,7 @@ const currentPrompt = computed(() => promptStore.currentPrompt);
 // Define emits
 const emit = defineEmits(['toggle', 'resize']);
 
-// Toggle sidebar expansion
-const toggleExpand = () => {
-  isExpanded.value = !isExpanded.value;
-  // Emit the toggle event so parent components can react
-  emit('toggle', isExpanded.value);
-  
-  // When expanded
-  if (isExpanded.value) {
-    nextTick(() => {
-      // Apply stored width from state
-      if (document.querySelector('.chat-sidebar')) {
-        document.querySelector('.chat-sidebar').style.width = `${sidebarWidth.value}px`;
-      }
-      scrollToBottom();
-      if (messageInput.value) {
-        adjustTextareaHeight();
-      }
-    });
-  } 
-  // When collapsed
-  else {
-    // Reset inline style to let CSS handle width
-    if (document.querySelector('.chat-sidebar')) {
-      document.querySelector('.chat-sidebar').style.width = '';
-    }
-  }
-};
+// Note: Toggle function is now handled by parent component via the expanded prop
 
 // Resize sidebar
 const startResize = (e) => {
@@ -258,7 +278,7 @@ const startResize = (e) => {
 };
 
 // Handle Shift+Enter key press to insert a newline
-const handleShiftEnter = (e) => {
+const handleShiftEnter = () => {
   // No need to prevent default - let the browser insert the newline
   // Adjust height after inserting newline
   nextTick(() => {
@@ -276,6 +296,16 @@ const adjustTextareaHeight = () => {
   // Set new height based on content - min 40px, max 120px
   const newHeight = Math.min(Math.max(messageInput.value.scrollHeight, 40), 120);
   messageInput.value.style.height = `${newHeight}px`;
+};
+
+// Handle provider change
+const handleProviderChange = () => {
+  // Set default model based on selected provider
+  if (modelConfig.value.provider === 'openai') {
+    modelConfig.value.model = 'gpt-3.5-turbo';
+  } else if (modelConfig.value.provider === 'anthropic') {
+    modelConfig.value.model = 'claude-3-7-sonnet-latest';
+  }
 };
 
 // Reset chat conversation
@@ -305,8 +335,7 @@ const sendMessage = async () => {
     content: newMessage.value.trim()
   });
   
-  // Store message for potential future use
-  const messageText = newMessage.value.trim();
+  // Clear input after storing message
   newMessage.value = ''; // Clear input
   
   // Reset textarea height
@@ -330,6 +359,7 @@ const sendMessage = async () => {
         // Add all user and assistant messages
         ...messages.value.filter(m => m.role !== 'system')
       ],
+      provider: modelConfig.value.provider,
       model: modelConfig.value.model,
       temperature: modelConfig.value.temperature,
       stream: true
@@ -344,13 +374,8 @@ const sendMessage = async () => {
       console.log('WebSocket not connected, using REST API fallback');
       // Fallback to REST API if WebSocket not connected
       
-      // Determine the API endpoint (same logic as for WebSocket)
-      let apiUrl = '/api/chat';
-      if (window.location.host.includes('localhost') || window.location.host.includes('127.0.0.1')) {
-        // In development, connect to the backend server directly
-        const port = 3000; // Backend port from config
-        apiUrl = `${window.location.protocol}//${window.location.hostname}:${port}/api/chat`;
-      }
+      // Use the API endpoint through Vite's proxy
+      const apiUrl = '/api/chat';
       
       console.log('Using API endpoint:', apiUrl);
       
@@ -393,19 +418,10 @@ const scrollToBottom = () => {
 
 // WebSocket setup
 const setupWebSocket = () => {
-  // Create WebSocket connection
-  // Use the correct WebSocket URL for development environment
-  let wsUrl;
-  if (window.location.host.includes('localhost') || window.location.host.includes('127.0.0.1')) {
-    // In development, connect to the backend server directly
-    const port = 3000; // Backend port from config
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    wsUrl = `${wsProtocol}//${window.location.hostname}:${port}/api/chat/ws`;
-  } else {
-    // In production
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    wsUrl = `${wsProtocol}//${window.location.host}/api/chat/ws`;
-  }
+  // Create WebSocket connection using the browser's current protocol and host
+  // This leverages Vite's WebSocket proxy configuration
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${wsProtocol}//${window.location.host}/api/chat/ws`;
   
   console.log('Setting up WebSocket connection to:', wsUrl);
   

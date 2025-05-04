@@ -12,6 +12,33 @@ import apiRoutes from './routes/index.js';
 import chatController from './controllers/chatController.js';
 import { serverLogger } from './modules/logger.js';
 
+// Set up global uncaught exception handler
+process.on('uncaughtException', (error) => {
+  console.error('UNCAUGHT EXCEPTION:', error.message);
+  console.error(error.stack);
+  // Log to the global logger if it's been initialized
+  if (global.logger) {
+    global.logger.fatal('Uncaught exception', {
+      error: error.message,
+      stack: error.stack,
+    });
+  }
+  // DON'T exit the process - keep the server running despite errors
+});
+
+// Set up unhandled rejection handler (for promises)
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION:', reason);
+  // Log to the global logger if it's been initialized
+  if (global.logger) {
+    global.logger.error('Unhandled promise rejection', {
+      reason: reason instanceof Error ? reason.message : String(reason),
+      stack: reason instanceof Error ? reason.stack : 'No stack trace available',
+    });
+  }
+  // DON'T exit the process - keep the server running despite errors
+});
+
 // Initialize the global logger
 global.logger = serverLogger({
   level: config.isDev ? 'debug' : 'info',
@@ -59,6 +86,21 @@ const __dirname = path.dirname(__filename);
 
     // API routes
     app.use('/api', apiRoutes);
+    
+    // Add error handling middleware
+    app.use((err, req, res, next) => {
+      global.logger.error('Express error handler caught an error', {
+        error: err.message,
+        stack: err.stack,
+        path: req.path,
+        method: req.method,
+      });
+      
+      res.status(err.status || 500).json({
+        error: 'Internal Server Error',
+        message: config.isDev ? err.message : 'Something went wrong',
+      });
+    });
 
     // Set up WebSocket server for chat
     const wss = new WebSocketServer({ 
