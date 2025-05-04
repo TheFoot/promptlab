@@ -156,10 +156,13 @@ watch(isDarkTheme, (newValue) => {
 @use './styles/variables.scss' as *;
 
 .app {
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   background-color: var(--bg-color);
   color: var(--text-color);
   transition: background-color 0.3s, color 0.3s;
+  overflow: hidden; /* Prevent app container from scrolling */
 }
 
 .app-header {
@@ -252,6 +255,8 @@ watch(isDarkTheme, (newValue) => {
   width: 100%;
   position: relative;
   transition: margin-right 0.3s ease;
+  flex: 1; /* Take up remaining space */
+  overflow: hidden; /* Prevent wrapper from scrolling */
 }
 
 .app-content {
@@ -262,6 +267,8 @@ watch(isDarkTheme, (newValue) => {
   box-sizing: border-box;
   transition: margin-right 0.3s ease, max-width 0.3s ease;
   margin-right: 0; /* Initial state */
+  overflow-y: auto; /* Allow content area to scroll */
+  height: 100%; /* Take full height of parent */
 }
 
 /* Disable transition during resize */

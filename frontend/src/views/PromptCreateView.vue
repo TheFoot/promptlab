@@ -129,16 +129,23 @@ const savePrompt = async () => {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 1.5rem;
-  min-height: calc(100vh - 150px);
+  height: 100%;
   max-width: 100%;
   padding: 0;
   margin: 0;
+  overflow: hidden; /* Prevent outer container from scrolling */
+}
+
+.sidebar {
+  height: 100%;
+  overflow: hidden; /* Sidebar container should not scroll itself */
 }
 
 .prompt-create-container {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow-y: auto; /* Allow this container to scroll */
 }
 
 .prompt-header {

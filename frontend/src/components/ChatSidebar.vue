@@ -693,9 +693,9 @@ watch(() => modelConfig.value.model, (newModel, oldModel) => {
 @use '../styles/variables' as *;
 
 .chat-sidebar {
-  position: fixed;
+  position: absolute;
   right: 0;
-  top: 60px; /* Start below the app header */
+  top: 0; /* Align with content-wrapper */
   bottom: 0;
   width: 0; /* Invisible when collapsed */
   background-color: var(--card-bg-color);
@@ -705,6 +705,7 @@ watch(() => modelConfig.value.model, (newModel, oldModel) => {
   flex-direction: column;
   overflow: hidden;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  height: 100%; /* Take full height of parent */
   
   &.chat-sidebar-expanded {
     width: 400px;

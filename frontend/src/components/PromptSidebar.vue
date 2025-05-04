@@ -171,6 +171,7 @@ watch(
   height: 100%;
   width: 100%;
   max-width: 280px;
+  overflow: hidden; /* Prevent sidebar from scrolling itself */
 
   .search-input,
   .tag-filter {

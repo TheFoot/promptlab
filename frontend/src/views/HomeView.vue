@@ -59,10 +59,16 @@ const hasPrompts = computed(() => promptStore.prompts.length > 0);
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 1.5rem;
-  min-height: calc(100vh - 150px);
+  height: 100%;
   max-width: 100%;
   padding: 0;
   margin: 0;
+  overflow: hidden; /* Prevent outer container from scrolling */
+}
+
+.sidebar {
+  height: 100%;
+  overflow: hidden; /* Sidebar container should not scroll itself */
 }
 
 .welcome-container {
@@ -70,6 +76,8 @@ const hasPrompts = computed(() => promptStore.prompts.length > 0);
   justify-content: center;
   align-items: center;
   padding: 2rem;
+  overflow-y: auto; /* Allow this container to scroll if needed */
+  height: 100%;
 }
 
 .welcome-card {
