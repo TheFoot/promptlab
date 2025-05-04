@@ -129,6 +129,30 @@ const __dirname = path.dirname(__filename);
     // Serve static assets in production
     if (config.isProd) {
       const frontendBuildPath = path.resolve(__dirname, '../../frontend/dist');
+      
+      // Log the path for debugging
+      global.logger.info('Serving static files from', { path: frontendBuildPath });
+      
+      // Check if the path exists
+      try {
+        const fs = await import('fs');
+        if (!fs.existsSync(frontendBuildPath)) {
+          global.logger.error('Frontend build path does not exist', { path: frontendBuildPath });
+        } else {
+          global.logger.info('Frontend build path exists', { path: frontendBuildPath });
+          
+          // Check if index.html exists
+          const indexPath = path.join(frontendBuildPath, 'index.html');
+          if (!fs.existsSync(indexPath)) {
+            global.logger.error('index.html not found in build directory', { path: indexPath });
+          } else {
+            global.logger.info('index.html found', { path: indexPath });
+          }
+        }
+      } catch (error) {
+        global.logger.error('Error checking frontend build path', { error: error.message });
+      }
+      
       app.use(express.static(frontendBuildPath));
 
       app.get('*', (req, res) => {

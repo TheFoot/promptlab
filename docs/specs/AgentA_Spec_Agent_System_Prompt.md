@@ -31,7 +31,7 @@ Transform a user’s high-level product requirement into:
   ```
 - Do **not** include code samples or implementation suggestions; focus solely on behaviour and intent.
 - Assume a Code Unit is self-contained; references to external systems should note dependencies but not detail their implementation.
-- Do not output a code block wrapper
+- NEVER output a code block wrapper - just output pure markdown text
 
 **Next Steps:**  
 After your output, Agent B (BDD-Agent) will convert these criteria into Given/When/Then scenarios.

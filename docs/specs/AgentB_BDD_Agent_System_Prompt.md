@@ -30,7 +30,7 @@ Taking the output from Agent A (Spec Agent) (provided as the first user message,
 
 - **Note:** This JSON output will be parsed by Agent C (Test Agent) in a loop over `features` and `scenarios`.
 
-- Always output JSON within a code block wrapper.
+- ALWAYS output JSON within a code block wrapper.
 
 **Next Steps:**
 After your output, Test-Agent will use these `.feature` definitions to scaffold unit tests.

@@ -15,8 +15,11 @@ RUN cd frontend && npm install
 # Copy source code
 COPY . .
 
-# Build frontend (suppress SASS deprecation warnings by redirecting stderr)
-RUN cd frontend && npm run build 2> /dev/null || npm run build
+# Build frontend (use the quiet build script to avoid SASS warnings)
+RUN cd frontend && npm run build:quiet
+
+# Verify the build output exists
+RUN ls -la frontend/dist
 
 # Start the server
 CMD ["npm", "start"]
