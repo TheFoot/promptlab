@@ -1,66 +1,128 @@
 <template>
-  <div v-if="loading" class="loading-container">
-    <div class="loading">Loading prompt...</div>
+  <div
+    v-if="loading"
+    class="loading-container"
+  >
+    <div class="loading">
+      Loading prompt...
+    </div>
   </div>
-  <div v-else-if="error" class="error-container">
-    <div class="error">{{ error }}</div>
+  <div
+    v-else-if="error"
+    class="error-container"
+  >
+    <div class="error">
+      {{ error }}
+    </div>
   </div>
-  <div v-else-if="!prompt" class="loading-container">
-    <div class="loading">Prompt not found. Redirecting...</div>
+  <div
+    v-else-if="!prompt"
+    class="loading-container"
+  >
+    <div class="loading">
+      Prompt not found. Redirecting...
+    </div>
   </div>
-  <div v-else class="prompt-detail-view">
+  <div
+    v-else
+    class="prompt-detail-view"
+    :class="{ 'editing': editMode }"
+  >
     <div class="sidebar">
       <PromptSidebar />
     </div>
     <div class="prompt-detail-container">
       <div class="prompt-header">
         <div class="header-content">
-          <h2 v-if="!editMode">{{ prompt.title }}</h2>
+          <h2 v-if="!editMode">
+            {{ prompt.title }}
+          </h2>
           <input
             v-else
-            type="text"
             v-model="editedPrompt.title"
+            type="text"
             placeholder="Prompt title"
             class="title-input"
-          />
-          <div v-if="!editMode" class="prompt-tags">
-            <span v-for="tag in prompt.tags" :key="tag" class="prompt-tag">{{ tag }}</span>
+          >
+          <div
+            v-if="!editMode"
+            class="prompt-tags"
+          >
+            <span
+              v-for="tag in prompt.tags"
+              :key="tag"
+              class="prompt-tag"
+            >{{ tag }}</span>
           </div>
-          <TagInput v-else v-model="editedPrompt.tags" />
+          <TagInput
+            v-else
+            v-model="editedPrompt.tags"
+          />
         </div>
         <div class="header-actions">
-          <button v-if="!editMode" @click="enableEditMode" class="btn btn-secondary">
+          <button
+            v-if="!editMode"
+            class="btn btn-secondary"
+            @click="enableEditMode"
+          >
             Edit
           </button>
           <template v-else>
-            <button @click="savePrompt" class="btn btn-primary mr-2" :disabled="saving">
+            <button
+              class="btn btn-primary mr-2"
+              :disabled="saving"
+              @click="savePrompt"
+            >
               {{ saving ? 'Saving...' : 'Save' }}
             </button>
-            <button @click="cancelEdit" class="btn btn-secondary">
+            <button
+              class="btn btn-secondary"
+              @click="cancelEdit"
+            >
               Cancel
             </button>
           </template>
         </div>
       </div>
 
-      <div class="prompt-content" :class="{ 'edit-mode': editMode }">
-        <div class="editor-container" :class="{ 'full-width': !editMode }">
+      <div
+        class="prompt-content"
+        :class="{ 'edit-mode': editMode }"
+      >
+        <div
+          class="editor-container"
+          :class="{ 'full-width': !editMode }"
+        >
           <textarea
             v-if="editMode"
             v-model="editedPrompt.content"
             class="content-editor"
             placeholder="Write your prompt here using markdown..."
-          ></textarea>
-          <MarkdownPreview v-else :content="prompt.content" />
+          />
+          <MarkdownPreview
+            v-else
+            :content="prompt.content"
+          />
         </div>
-        <div v-if="editMode" class="preview-container">
-          <div class="preview-header">Preview</div>
+        <div
+          v-if="editMode"
+          class="preview-container"
+        >
+          <div class="preview-header">
+            Preview
+          </div>
           <MarkdownPreview :content="editedPrompt.content" />
         </div>
       </div>
 
-      <div class="prompt-footer" v-if="editMode">
-        <button @click="confirmDelete" class="btn btn-danger">
+      <div
+        v-if="editMode"
+        class="prompt-footer"
+      >
+        <button
+          class="btn btn-danger"
+          @click="confirmDelete"
+        >
           Delete Prompt
         </button>
       </div>
@@ -72,6 +134,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePromptStore } from '../stores/promptStore';
+import { useUiStore } from '../stores/uiStore';
 import PromptSidebar from '../components/PromptSidebar.vue';
 import MarkdownPreview from '../components/MarkdownPreview.vue';
 import TagInput from '../components/TagInput.vue';
@@ -79,6 +142,7 @@ import TagInput from '../components/TagInput.vue';
 const route = useRoute();
 const router = useRouter();
 const promptStore = usePromptStore();
+const uiStore = useUiStore();
 
 // Component state
 const editMode = ref(false);
@@ -165,6 +229,11 @@ watch(
   }
 );
 
+// Update global UI state when edit mode changes
+watch(editMode, (isEditMode) => {
+  uiStore.setEditMode(isEditMode);
+});
+
 // Watch for prompt to be null after loading completes
 watch(
   () => promptStore.loading,
@@ -202,12 +271,21 @@ onMounted(async () => {
   max-width: 100%;
   padding: 0;
   margin: 0;
+  
+  &.editing {
+    /* Ensure content spans full width when in edit mode */
+    width: 100%;
+    position: relative;
+    z-index: 60; /* Higher than chat sidebar */
+  }
 }
 
 .prompt-detail-container {
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+  width: 100%;
 }
 
 .prompt-header {
@@ -219,6 +297,8 @@ onMounted(async () => {
   border-radius: 8px 8px 0 0;
   border: 1px solid var(--border-color);
   border-bottom: none;
+  position: relative; /* For z-index to work */
+  z-index: 50; /* Higher than sidebar but lower than app header */
 
   h2 {
     margin: 0;

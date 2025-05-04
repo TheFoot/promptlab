@@ -15,6 +15,12 @@ const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   isDev: process.env.NODE_ENV === 'development',
   isProd: process.env.NODE_ENV === 'production',
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY || '',
+  },
 };
+
+// We can't use global.logger here because it's initialized after this file is imported
+// The warning will be re-logged by the chat service when it tries to use the API key
 
 export default config;
