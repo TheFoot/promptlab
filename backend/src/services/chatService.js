@@ -1,10 +1,11 @@
 import {OpenAI} from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
+import config from '../config/index.js';
 
 // Base class for all chat models
 class ChatModelBase {
-  constructor(config = {}) {
-    this.config = config;
+  constructor(providerConfig = {}) {
+    this.providerConfig = providerConfig;
   }
 
   async chat(messages, options = {}) {
@@ -18,36 +19,46 @@ class ChatModelBase {
 
 // OpenAI model implementation
 class OpenAIModel extends ChatModelBase {
-  constructor(config = {}) {
-    super(config);
+  constructor(providerConfig = {}) {
+    super(providerConfig);
+    
+    const openaiConfig = config.openai;
     
     // Check for API key
-    if (!process.env.OPENAI_API_KEY) {
+    if (!openaiConfig.api.key) {
       global.logger.warn('OPENAI_API_KEY environment variable is not set', {
         note: 'Chat features will not work without a valid API key',
       });
     }
     
     this.client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      ...config,
+      apiKey: openaiConfig.api.key,
+      baseURL: openaiConfig.api.baseUrl,
+      organization: openaiConfig.api.organization || undefined,
+      ...providerConfig,
     });
+    
+    this.defaultModel = openaiConfig.models.default;
+    this.defaults = openaiConfig.defaults;
   }
 
   async chat(messages, options = {}) {
-    const model = options.model || 'gpt-3.5-turbo';
+    const model = options.model || this.defaultModel;
+    const temperature = options.temperature !== undefined 
+      ? options.temperature 
+      : this.defaults.temperature;
     
     try {
       global.logger.debug('Sending request to OpenAI API', {
         model,
-        temperature: options.temperature,
+        temperature,
         messageCount: messages.length,
       });
       
       const response = await this.client.chat.completions.create({
         model,
         messages,
-        temperature: options.temperature !== undefined ? options.temperature : 0.7,
+        temperature,
       });
       
       global.logger.debug('Received response from OpenAI API', {
@@ -64,7 +75,7 @@ class OpenAIModel extends ChatModelBase {
       global.logger.error('OpenAI API request failed', {
         error: error.message,
         stack: error.stack,
-        model: options.model || 'gpt-3.5-turbo',
+        model,
         status: error.status,
         type: error.type,
       });
@@ -73,19 +84,22 @@ class OpenAIModel extends ChatModelBase {
   }
 
   async streamChat(messages, onChunk, options = {}) {
-    const model = options.model || 'gpt-3.5-turbo';
+    const model = options.model || this.defaultModel;
+    const temperature = options.temperature !== undefined 
+      ? options.temperature 
+      : this.defaults.temperature;
     
     try {
       global.logger.debug('Starting streaming request to OpenAI API', {
         model,
-        temperature: options.temperature,
+        temperature,
         messageCount: messages.length,
       });
       
       const stream = await this.client.chat.completions.create({
         model,
         messages,
-        temperature: options.temperature !== undefined ? options.temperature : 0.7,
+        temperature,
         stream: true,
       });
 
@@ -112,7 +126,7 @@ class OpenAIModel extends ChatModelBase {
       global.logger.error('OpenAI API streaming request failed', {
         error: error.message,
         stack: error.stack,
-        model: options.model || 'gpt-3.5-turbo',
+        model,
         status: error.status,
         type: error.type,
       });
@@ -123,20 +137,28 @@ class OpenAIModel extends ChatModelBase {
 
 // Anthropic Claude model implementation
 class AnthropicModel extends ChatModelBase {
-  constructor(config = {}) {
-    super(config);
+  constructor(providerConfig = {}) {
+    super(providerConfig);
+    
+    const anthropicConfig = config.anthropic;
     
     // Check for API key
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!anthropicConfig.api.key) {
       global.logger.warn('ANTHROPIC_API_KEY environment variable is not set', {
         note: 'Claude chat features will not work without a valid API key',
       });
     }
     
+    // Initialize Anthropic client with API key
     this.client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-      ...config,
+      apiKey: anthropicConfig.api.key || process.env.ANTHROPIC_API_KEY,
+      // Only add baseURL if it's defined
+      ...(anthropicConfig.api.baseUrl ? { baseURL: anthropicConfig.api.baseUrl } : {}),
+      ...providerConfig,
     });
+    
+    this.defaultModel = anthropicConfig.models.default;
+    this.defaults = anthropicConfig.defaults;
   }
 
   // Convert OpenAI format messages to Anthropic format
@@ -161,24 +183,36 @@ class AnthropicModel extends ChatModelBase {
   }
 
   async chat(messages, options = {}) {
-    const model = options.model || 'claude-3-7-sonnet-latest';
+    const model = options.model || this.defaultModel;
+    const temperature = options.temperature !== undefined 
+      ? options.temperature 
+      : this.defaults.temperature;
+    const maxTokens = options.maxTokens || this.defaults.maxTokens;
     
     try {
       const { systemMessage, messages: convertedMessages } = this._convertMessages(messages);
       
       global.logger.debug('Sending request to Anthropic API', {
         model,
-        temperature: options.temperature,
+        temperature,
         messageCount: messages.length,
+        apiKeyPresent: !!this.client.apiKey,
       });
       
-      const response = await this.client.messages.create({
+      // Prepare request parameters (omitting undefined values)
+      const requestParams = {
         model,
-        system: systemMessage,
         messages: convertedMessages,
-        temperature: options.temperature !== undefined ? options.temperature : 0.7,
-        max_tokens: options.max_tokens || 4096,
-      });
+        temperature,
+        max_tokens: maxTokens,
+      };
+      
+      // Only add system parameter if it's not empty
+      if (systemMessage) {
+        requestParams.system = systemMessage;
+      }
+      
+      const response = await this.client.messages.create(requestParams);
       
       global.logger.debug('Received response from Anthropic API', {
         model,
@@ -193,7 +227,7 @@ class AnthropicModel extends ChatModelBase {
       global.logger.error('Anthropic API request failed', {
         error: error.message,
         stack: error.stack,
-        model: options.model || 'claude-3-7-sonnet-latest',
+        model,
         status: error.status,
         type: error.type,
       });
@@ -202,25 +236,37 @@ class AnthropicModel extends ChatModelBase {
   }
 
   async streamChat(messages, onChunk, options = {}) {
-    const model = options.model || 'claude-3-7-sonnet-latest';
+    const model = options.model || this.defaultModel;
+    const temperature = options.temperature !== undefined 
+      ? options.temperature 
+      : this.defaults.temperature;
+    const maxTokens = options.maxTokens || this.defaults.maxTokens;
     
     try {
       const { systemMessage, messages: convertedMessages } = this._convertMessages(messages);
       
       global.logger.debug('Starting streaming request to Anthropic API', {
         model,
-        temperature: options.temperature,
+        temperature,
         messageCount: messages.length,
+        apiKeyPresent: !!this.client.apiKey,
       });
       
-      const stream = await this.client.messages.create({
+      // Prepare request parameters (omitting undefined values)
+      const requestParams = {
         model,
-        system: systemMessage,
         messages: convertedMessages,
-        temperature: options.temperature !== undefined ? options.temperature : 0.7,
-        max_tokens: options.max_tokens || 4096,
+        temperature,
+        max_tokens: maxTokens,
         stream: true,
-      });
+      };
+      
+      // Only add system parameter if it's not empty
+      if (systemMessage) {
+        requestParams.system = systemMessage;
+      }
+      
+      const stream = await this.client.messages.create(requestParams);
 
       let responseText = '';
       let chunkCount = 0;
@@ -244,7 +290,7 @@ class AnthropicModel extends ChatModelBase {
       global.logger.error('Anthropic API streaming request failed', {
         error: error.message,
         stack: error.stack,
-        model: options.model || 'claude-3-7-sonnet-latest',
+        model,
         status: error.status,
         type: error.type,
       });
@@ -255,20 +301,57 @@ class AnthropicModel extends ChatModelBase {
 
 // Factory to create the appropriate model based on the provider
 class ChatModelFactory {
-  static createModel(provider, config = {}) {
-    const normalizedProvider = provider?.toLowerCase() || 'openai';
+  static createModel(provider, providerConfig = {}) {
+    const normalizedProvider = provider?.toLowerCase() || config.providers.default;
     
     global.logger.debug('Creating chat model', {
       provider: normalizedProvider,
-      config: Object.keys(config),
+      config: Object.keys(providerConfig),
     });
     
     switch (normalizedProvider) {
       case 'anthropic':
-        return new AnthropicModel(config);
+        return new AnthropicModel(providerConfig);
       case 'openai':
       default:
-        return new OpenAIModel(config);
+        return new OpenAIModel(providerConfig);
+    }
+  }
+  
+  // Helper method to get available providers
+  static getAvailableProviders() {
+    return config.providers.available;
+  }
+  
+  // Helper method to get available models for a provider
+  static getAvailableModels(provider) {
+    const normalizedProvider = provider?.toLowerCase() || config.providers.default;
+    
+    switch (normalizedProvider) {
+      case 'anthropic':
+        return config.anthropic.models.available;
+      case 'openai':
+      default:
+        return config.openai.models.available;
+    }
+  }
+  
+  // Helper to get provider display name
+  static getProviderDisplayName(provider) {
+    const normalizedProvider = provider?.toLowerCase();
+    return config.providers.ui.displayNames[normalizedProvider] || normalizedProvider;
+  }
+  
+  // Helper to get model display name
+  static getModelDisplayName(provider, model) {
+    const normalizedProvider = provider?.toLowerCase() || config.providers.default;
+    
+    switch (normalizedProvider) {
+      case 'anthropic':
+        return config.anthropic.models.displayNames[model] || model;
+      case 'openai':
+      default:
+        return config.openai.models.displayNames[model] || model;
     }
   }
 }

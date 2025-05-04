@@ -34,9 +34,20 @@ The backend requires the following environment variables:
 - `PORT` - Server port (default: 3131)
 - `MONGODB_URI` - MongoDB connection URI
 - `NODE_ENV` - Environment (development, production, test)
-- `OPENAI_API_KEY` - OpenAI API key for chat functionality
+
+### AI Provider API Keys
+
+- `OPENAI_API_KEY` - OpenAI API key for GPT models
+- `ANTHROPIC_API_KEY` - Anthropic API key for Claude models
+
+Optional provider configuration:
+- `OPENAI_API_BASE_URL` - Custom OpenAI API endpoint
+- `OPENAI_ORGANIZATION` - OpenAI organization ID
+- `ANTHROPIC_API_BASE_URL` - Custom Anthropic API endpoint
 
 These should be defined in a `.env` file in the root project directory.
+
+See [Configuration docs](./src/config/README.md) for more details.
 
 ## API Endpoints
 

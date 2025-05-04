@@ -6,4 +6,7 @@ const router = Router();
 // POST endpoint for chat requests
 router.post('/', chatController.sendMessage);
 
+// GET endpoint for provider configuration
+router.get('/config', chatController.getProviderConfig);
+
 export default router;

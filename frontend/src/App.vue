@@ -150,6 +150,29 @@ const toggleTheme = () => {
 watch(isDarkTheme, (newValue) => {
   localStorage.setItem('theme', newValue ? 'dark' : 'light');
 });
+
+// Watch for edit mode changes
+watch(() => uiStore.isEditingPrompt, (isEditing) => {
+  // When edit mode changes, force layout recalculations
+  nextTick(() => {
+    // Wait for DOM updates
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+      
+      // If we're exiting edit mode and chat was previously open, restore it
+      if (!isEditing && localStorage.getItem('chatWasOpen') === 'true') {
+        isChatExpanded.value = true;
+        localStorage.removeItem('chatWasOpen');
+      }
+    }, 100);
+  });
+  
+  // If entering edit mode and chat is open, save state and close it
+  if (isEditing && isChatExpanded.value) {
+    localStorage.setItem('chatWasOpen', 'true');
+    isChatExpanded.value = false;
+  }
+});
 </script>
 
 <style lang="scss">

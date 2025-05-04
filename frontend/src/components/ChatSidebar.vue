@@ -37,11 +37,12 @@
               class="chat-select"
               @change="handleProviderChange"
             >
-              <option value="openai">
-                OpenAI
-              </option>
-              <option value="anthropic">
-                Anthropic
+              <option 
+                v-for="provider in availableProviders" 
+                :key="provider" 
+                :value="provider"
+              >
+                {{ providerDisplayNames[provider] || provider }}
               </option>
             </select>
             
@@ -51,40 +52,13 @@
               v-model="modelConfig.model"
               class="chat-select"
             >
-              <template v-if="modelConfig.provider === 'openai'">
-                <option value="gpt-3.5-turbo">
-                  GPT-3.5 Turbo
-                </option>
-                <option value="gpt-4">
-                  GPT-4
-                </option>
-                <option value="gpt-4-turbo">
-                  GPT-4 Turbo
-                </option>
-                <option value="gpt-4o">
-                  GPT-4o
-                </option>
-              </template>
-              <template v-else-if="modelConfig.provider === 'anthropic'">
-                <option value="claude-3-7-sonnet-latest">
-                  Claude 3.7 Sonnet (Newest)
-                </option>
-                <option value="claude-3-5-sonnet-latest">
-                  Claude 3.5 Sonnet
-                </option>
-                <option value="claude-3-5-haiku-latest">
-                  Claude 3.5 Haiku
-                </option>
-                <option value="claude-3-opus-20240229">
-                  Claude 3 Opus
-                </option>
-                <option value="claude-3-sonnet-20240229">
-                  Claude 3 Sonnet
-                </option>
-                <option value="claude-3-haiku-20240307">
-                  Claude 3 Haiku
-                </option>
-              </template>
+              <option 
+                v-for="model in availableModels" 
+                :key="model" 
+                :value="model"
+              >
+                {{ modelDisplayNames[model] || model }}
+              </option>
             </select>
           </div>
           
@@ -160,12 +134,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { usePromptStore } from '../stores/promptStore';
 import { marked } from 'marked';
 import highlightjs from 'highlight.js';
 import 'highlight.js/styles/github.css';
 import alertService from '../services/alertService';
+import modelConfigService from '../services/modelConfigService';
 
 // Props
 const props = defineProps({
@@ -229,18 +204,69 @@ const messagesContainer = ref(null);
 const messageInput = ref(null); // Reference to the textarea
 const socket = ref(null);
 const promptStore = usePromptStore();
-const modelConfig = ref({
+const modelConfig = reactive({
   provider: 'openai',
   model: 'gpt-3.5-turbo',
   temperature: 0.7
 });
 const sidebarWidth = ref(400); // Default width
 
+// Model config state
+const availableProviders = ref([]);
+const availableModels = ref([]);
+const providerDisplayNames = ref({});
+const modelDisplayNames = ref({});
+
 // Get current prompt from store
 const currentPrompt = computed(() => promptStore.currentPrompt);
 
 // Define emits
 const emit = defineEmits(['toggle', 'resize']);
+
+// Load provider/model configuration
+const loadModelConfiguration = async () => {
+  try {
+    // Get configuration from service
+    const config = await modelConfigService.getConfig();
+    
+    // Update reactive UI state
+    availableProviders.value = config.providers.available;
+    providerDisplayNames.value = config.providers.displayNames;
+    
+    // Set default provider if current one is not available
+    if (!availableProviders.value.includes(modelConfig.provider)) {
+      modelConfig.provider = config.providers.default;
+    }
+    
+    // Update available models for current provider
+    updateAvailableModels();
+    
+  } catch (error) {
+    console.error('Failed to load model configuration:', error);
+    alertService.showAlert('Failed to load model configuration', 'error', 5000);
+  }
+};
+
+// Update available models based on selected provider
+const updateAvailableModels = async () => {
+  try {
+    const config = await modelConfigService.getConfig();
+    const provider = modelConfig.provider;
+    
+    // Update model options
+    availableModels.value = config.models[provider]?.available || [];
+    modelDisplayNames.value = config.models[provider]?.displayNames || {};
+    
+    // Set default model if current one is not available
+    if (!availableModels.value.includes(modelConfig.model)) {
+      modelConfig.model = config.models[provider]?.default || availableModels.value[0] || '';
+    }
+  } catch (error) {
+    console.error('Failed to update model list:', error);
+    availableModels.value = [];
+    modelDisplayNames.value = {};
+  }
+};
 
 // Note: Toggle function is now handled by parent component via the expanded prop
 
@@ -304,13 +330,9 @@ const adjustTextareaHeight = () => {
 };
 
 // Handle provider change
-const handleProviderChange = () => {
-  // Set default model based on selected provider
-  if (modelConfig.value.provider === 'openai') {
-    modelConfig.value.model = 'gpt-3.5-turbo';
-  } else if (modelConfig.value.provider === 'anthropic') {
-    modelConfig.value.model = 'claude-3-7-sonnet-latest';
-  }
+const handleProviderChange = async () => {
+  // Update available models for selected provider
+  await updateAvailableModels();
   
   // Reset chat history when provider changes
   resetChat('model_change');
@@ -326,7 +348,7 @@ const resetChat = (reason = 'manual_reset') => {
   switch (reason) {
     case 'model_change':
       // Model or provider change message
-      resetMessage = `Chat reset due to model change. Now using: ${modelConfig.value.provider} / ${modelConfig.value.model}`;
+      resetMessage = `Chat reset due to model change. Now using: ${providerDisplayNames.value[modelConfig.provider] || modelConfig.provider} / ${modelDisplayNames.value[modelConfig.model] || modelConfig.model}`;
       break;
     case 'prompt_change':
       // Prompt change message
@@ -457,9 +479,9 @@ const sendMessage = async () => {
         // Add all user and assistant messages
         ...messages.value.filter(m => m.role !== 'system')
       ],
-      provider: modelConfig.value.provider,
-      model: modelConfig.value.model,
-      temperature: modelConfig.value.temperature,
+      provider: modelConfig.provider,
+      model: modelConfig.model,
+      temperature: modelConfig.temperature,
       stream: true
     };
     
@@ -627,7 +649,10 @@ const downloadCodeBlock = (button) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  // Load model configuration first
+  await loadModelConfiguration();
+  
   setupWebSocket();
   
   // Load saved sidebar width from localStorage or use default
@@ -681,7 +706,7 @@ watch(() => currentPrompt.value, (newPrompt) => {
 });
 
 // Watch for changes in the model selection
-watch(() => modelConfig.value.model, (newModel, oldModel) => {
+watch(() => modelConfig.model, (newModel, oldModel) => {
   if (oldModel && newModel !== oldModel) {
     // Reset chat history when model changes
     resetChat('model_change');

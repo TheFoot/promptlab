@@ -1,4 +1,5 @@
 import ChatModelFactory from '../services/chatService.js';
+import config from '../config/index.js';
 
 // Controller for chat API endpoints
 const chatController = {
@@ -14,7 +15,7 @@ const chatController = {
       const {messages, temperature} = req.body;
       
       // Extract and normalize provider and model 
-      provider = req.body.provider?.toLowerCase() || 'openai';
+      provider = req.body.provider?.toLowerCase() || config.providers.default;
       model = req.body.model || '';
 
       if (!messages || !Array.isArray(messages)) {
@@ -67,7 +68,7 @@ const chatController = {
     
     ws.on('message', async (message) => {
       // Store provider and model outside try/catch for error handling access
-      let provider = 'openai';
+      let provider = config.providers.default;
       let model = '';
       let clientRequestData = null;
       
@@ -78,7 +79,7 @@ const chatController = {
         const {messages, temperature, stream = true} = data;
         
         // Extract and normalize provider and model
-        provider = data.provider?.toLowerCase() || 'openai';
+        provider = data.provider?.toLowerCase() || config.providers.default;
         model = data.model || '';
         
         global.logger.debug('WebSocket message received', {
@@ -158,6 +159,45 @@ const chatController = {
       message: 'Chat WebSocket connection established',
     }));
   },
+  
+  // Get available provider and model configurations
+  async getProviderConfig(req, res) {
+    try {
+      // Create a configuration object for the frontend with only what it needs
+      const frontendConfig = {
+        providers: {
+          available: config.providers.available,
+          default: config.providers.default,
+          displayNames: config.providers.ui.displayNames
+        },
+        models: {}
+      };
+      
+      // Add model configurations for each provider
+      config.providers.available.forEach(provider => {
+        const providerConfig = config[provider];
+        if (providerConfig && providerConfig.models) {
+          frontendConfig.models[provider] = {
+            available: providerConfig.models.available,
+            default: providerConfig.models.default,
+            displayNames: providerConfig.models.displayNames
+          };
+        }
+      });
+      
+      return res.json(frontendConfig);
+    } catch (error) {
+      global.logger.error('Error getting provider config', {
+        error: error.message,
+        stack: error.stack
+      });
+      
+      return res.status(500).json({
+        error: 'Failed to retrieve provider configuration',
+        message: error.message
+      });
+    }
+  }
 };
 
 export default chatController;

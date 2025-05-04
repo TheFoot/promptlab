@@ -176,13 +176,23 @@ const enableEditMode = () => {
   editMode.value = true;
 };
 
-const cancelEdit = () => {
+const cancelEdit = async () => {
+  // First, update edit mode state
   editMode.value = false;
   editedPrompt.value = {
     title: prompt.value.title,
     content: prompt.value.content,
     tags: [...prompt.value.tags],
   };
+  
+  // Force UI layout update after state change
+  await nextTick();
+  
+  // Allow time for transitions and layout adjustments
+  setTimeout(() => {
+    // Trigger window resize event to ensure all components adjust
+    window.dispatchEvent(new Event('resize'));
+  }, 100);
 };
 
 const savePrompt = async () => {
@@ -194,7 +204,19 @@ const savePrompt = async () => {
   saving.value = true;
   try {
     await promptStore.updatePrompt(route.params.id, editedPrompt.value);
+    
+    // First, update edit mode state
     editMode.value = false;
+    
+    // Force UI layout update after state change
+    await nextTick();
+    
+    // Allow time for transitions and layout adjustments
+    setTimeout(() => {
+      // Trigger window resize event to ensure all components adjust
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
+    
   } catch (error) {
     console.error('Error saving prompt:', error);
   } finally {
