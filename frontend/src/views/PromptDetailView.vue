@@ -131,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePromptStore } from '../stores/promptStore';
 import { useUiStore } from '../stores/uiStore';
