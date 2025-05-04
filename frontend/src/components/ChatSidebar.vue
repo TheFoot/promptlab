@@ -206,8 +206,8 @@ const messageInput = ref(null); // Reference to the textarea
 const socket = ref(null);
 const promptStore = usePromptStore();
 const modelConfig = reactive({
-  provider: 'openai',
-  model: 'gpt-3.5-turbo',
+  provider: '',  // Will be set from config
+  model: '',     // Will be set from config
   temperature: 0.7
 });
 const sidebarWidth = ref(400); // Default width
@@ -234,13 +234,12 @@ const loadModelConfiguration = async () => {
     availableProviders.value = config.providers.available;
     providerDisplayNames.value = config.providers.displayNames;
 
-    // Set default provider if current one is not available
-    if (!availableProviders.value.includes(modelConfig.provider)) {
-      modelConfig.provider = config.providers.default;
-    }
+    // Always set the provider from config default or first available
+    modelConfig.provider = config.providers.default || availableProviders.value[0] || '';
+    console.log('Setting default provider to:', modelConfig.provider);
 
-    // Update available models for current provider
-    updateAvailableModels();
+    // Update available models for selected provider
+    await updateAvailableModels();
 
   } catch (error) {
     console.error('Failed to load model configuration:', error);
@@ -253,15 +252,19 @@ const updateAvailableModels = async () => {
   try {
     const config = await modelConfigService.getConfig();
     const provider = modelConfig.provider;
+    
+    if (!provider) {
+      console.warn('Provider is empty, cannot update models');
+      return;
+    }
 
     // Update model options
     availableModels.value = config.models[provider]?.available || [];
     modelDisplayNames.value = config.models[provider]?.displayNames || {};
 
-    // Set default model if current one is not available
-    if (!availableModels.value.includes(modelConfig.model)) {
-      modelConfig.model = config.models[provider]?.default || availableModels.value[0] || '';
-    }
+    // Always use the default model from config
+    modelConfig.model = config.models[provider]?.default || availableModels.value[0] || '';
+    console.log('Setting default model to:', modelConfig.model);
   } catch (error) {
     console.error('Failed to update model list:', error);
     availableModels.value = [];
