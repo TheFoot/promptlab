@@ -1,4 +1,4 @@
-# PromptLab Docker Hub Overview
+# PromptLab
 
 ## Available Tags
 

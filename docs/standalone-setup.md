@@ -5,7 +5,7 @@ This guide will help you quickly set up PromptLab using Docker Compose without h
 ## Prerequisites
 
 - Docker and Docker Compose installed on your system
-- API keys for either OpenAI or Anthropic (or both)
+- API keys for either OpenAI or Anthropic (or both) set as environment variables on your system
 
 ## Quick Start
 
@@ -16,33 +16,28 @@ This guide will help you quickly set up PromptLab using Docker Compose without h
    cd promptlab
    ```
 
-2. **Download the Docker Compose files**
+2. **Download the Docker Compose file**
 
    ```bash
    # Download the Docker Compose file
    curl -O https://raw.githubusercontent.com/yourusername/promptlab/main/docs/docker-compose-standalone.yml
-   
-   # Download the environment file template
-   curl -O https://raw.githubusercontent.com/yourusername/promptlab/main/docs/docker-compose-standalone.env
-   
-   # Rename the environment file
-   mv docker-compose-standalone.env .env
    ```
 
-3. **Configure your API keys**
+3. **Ensure API keys are available as environment variables**
 
-   Edit the `.env` file and replace the placeholder values with your actual API keys:
+   Make sure your API keys are set as environment variables on your system:
 
    ```bash
-   # Open the file in your text editor
-   nano .env
+   # For Linux/macOS
+   export OPENAI_API_KEY=your_openai_api_key
+   export ANTHROPIC_API_KEY=your_anthropic_api_key
+   
+   # For Windows PowerShell
+   $env:OPENAI_API_KEY="your_openai_api_key"
+   $env:ANTHROPIC_API_KEY="your_anthropic_api_key"
    ```
 
-   ```
-   # Replace these with your actual API keys
-   OPENAI_API_KEY=your_actual_openai_key
-   ANTHROPIC_API_KEY=your_actual_anthropic_key
-   ```
+   You can add these to your shell profile for persistence.
 
 4. **Start the application**
 
