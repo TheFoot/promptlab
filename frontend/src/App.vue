@@ -3,7 +3,8 @@
     class="app"
     :class="{ 
       'dark-theme': isDarkTheme,
-      'chat-expanded': isChatExpanded && !isChatDisabled
+      'chat-expanded': isChatExpanded && !isChatDisabled,
+      'resizing': isResizing
     }"
   >
     <header class="app-header">
@@ -43,13 +44,14 @@
         :disabled="isChatDisabled" 
         :expanded="isChatExpanded"
         @toggle="isChatExpanded = $event"
+        @resize="handleSidebarResize"
       />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, nextTick } from 'vue';
 import { useUiStore } from './stores/uiStore';
 import ChatSidebar from './components/ChatSidebar.vue';
 
@@ -61,6 +63,8 @@ const isDarkTheme = ref(false);
 
 // Chat state
 const isChatExpanded = ref(false);
+const sidebarWidth = ref(400); // Default sidebar width
+const isResizing = ref(false); // Track if sidebar is being resized
 
 // Determine if chat should be disabled
 // The chat is disabled when in edit mode on the prompt detail view
@@ -68,9 +72,34 @@ const isChatDisabled = computed(() => {
   return uiStore.isEditingPrompt;
 });
 
+// Handle sidebar resize event
+const handleSidebarResize = (width) => {
+  sidebarWidth.value = width;
+  isResizing.value = true;
+  
+  // Debounce the resizing state
+  clearTimeout(window.resizeTimer);
+  window.resizeTimer = setTimeout(() => {
+    isResizing.value = false;
+  }, 100);
+};
+
 // Toggle chat sidebar expanded state
 const toggleChat = () => {
   isChatExpanded.value = !isChatExpanded.value;
+  
+  if (isChatExpanded.value) {
+    // Force layout recalculation to ensure content is pushed aside
+    nextTick(() => {
+      // Small delay to ensure transitions work properly
+      setTimeout(() => {
+        document.querySelector('.app-content').style.transition = 'margin-right 0.3s ease, max-width 0.3s ease';
+      }, 10);
+    });
+  } else {
+    // If collapsed, reset sidebar width to default for next time it's opened
+    sidebarWidth.value = 400;
+  }
 };
 
 // Load theme from localStorage or system preference
@@ -204,12 +233,19 @@ watch(isDarkTheme, (newValue) => {
   margin: 0 auto;
   padding: 1rem 1.5rem;
   box-sizing: border-box;
-  transition: width 0.3s ease, max-width 0.3s ease;
+  transition: margin-right 0.3s ease, max-width 0.3s ease;
+  margin-right: 0; /* Initial state */
+}
+
+/* Disable transition during resize */
+.resizing .app-content {
+  transition: none;
 }
 
 /* Push content when chat is expanded */
 .chat-expanded .app-content {
-  margin-right: 400px; /* Match chat sidebar width */
-  max-width: 1400px; /* Adjust max-width to accommodate sidebar */
+  margin-right: v-bind('sidebarWidth + "px"'); /* Dynamic margin based on sidebar width */
+  max-width: calc(1800px - v-bind('sidebarWidth + "px"')); /* Adjust max-width dynamically */
 }
+
 </style>

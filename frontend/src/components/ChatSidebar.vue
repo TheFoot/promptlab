@@ -4,6 +4,11 @@
     class="chat-sidebar"
     :class="{ 'chat-sidebar-expanded': isExpanded }"
   >
+    <div
+      v-if="isExpanded"
+      class="resize-handle"
+      @mousedown="startResize"
+    ></div>
     
     <div
       v-if="isExpanded"
@@ -87,10 +92,14 @@
       
       <div class="chat-input">
         <textarea 
+          ref="messageInput"
           v-model="newMessage" 
           placeholder="Type your message here..." 
           :disabled="isLoading"
-          @keydown.enter.prevent="sendMessage"
+          @keydown.enter.exact.prevent="sendMessage"
+          @keydown.shift.enter="handleShiftEnter"
+          @input="adjustTextareaHeight"
+          rows="1"
         />
         <button
           class="btn btn-primary"
@@ -128,10 +137,26 @@ const props = defineProps({
 watch(() => props.expanded, (newValue) => {
   if (newValue !== isExpanded.value) {
     isExpanded.value = newValue;
+    
+    // When expanded
     if (isExpanded.value) {
       nextTick(() => {
+        // Apply stored width from state
+        if (document.querySelector('.chat-sidebar')) {
+          document.querySelector('.chat-sidebar').style.width = `${sidebarWidth.value}px`;
+        }
         scrollToBottom();
+        
+        // Notify parent about the width for content adjustment
+        emit('resize', sidebarWidth.value);
       });
+    } 
+    // When collapsed
+    else {
+      // Reset inline style to let CSS handle width
+      if (document.querySelector('.chat-sidebar')) {
+        document.querySelector('.chat-sidebar').style.width = '';
+      }
     }
   }
 });
@@ -154,18 +179,20 @@ const messages = ref([]);
 const newMessage = ref('');
 const isLoading = ref(false);
 const messagesContainer = ref(null);
+const messageInput = ref(null); // Reference to the textarea
 const socket = ref(null);
 const promptStore = usePromptStore();
 const modelConfig = ref({
   model: 'gpt-3.5-turbo',
   temperature: 0.7
 });
+const sidebarWidth = ref(400); // Default width
 
 // Get current prompt from store
 const currentPrompt = computed(() => promptStore.currentPrompt);
 
 // Define emits
-const emit = defineEmits(['toggle']);
+const emit = defineEmits(['toggle', 'resize']);
 
 // Toggle sidebar expansion
 const toggleExpand = () => {
@@ -173,11 +200,82 @@ const toggleExpand = () => {
   // Emit the toggle event so parent components can react
   emit('toggle', isExpanded.value);
   
+  // When expanded
   if (isExpanded.value) {
     nextTick(() => {
+      // Apply stored width from state
+      if (document.querySelector('.chat-sidebar')) {
+        document.querySelector('.chat-sidebar').style.width = `${sidebarWidth.value}px`;
+      }
       scrollToBottom();
+      if (messageInput.value) {
+        adjustTextareaHeight();
+      }
     });
+  } 
+  // When collapsed
+  else {
+    // Reset inline style to let CSS handle width
+    if (document.querySelector('.chat-sidebar')) {
+      document.querySelector('.chat-sidebar').style.width = '';
+    }
   }
+};
+
+// Resize sidebar
+const startResize = (e) => {
+  e.preventDefault();
+  document.body.style.cursor = 'ew-resize';
+  
+  const initialX = e.clientX;
+  const initialWidth = parseInt(getComputedStyle(document.querySelector('.chat-sidebar')).width);
+  
+  // Send initial resize event to indicate resize started
+  emit('resize', initialWidth);
+  
+  const handleMouseMove = (e) => {
+    const newWidth = initialWidth - (e.clientX - initialX);
+    if (newWidth > 250 && newWidth < 600) {
+      sidebarWidth.value = newWidth;
+      document.querySelector('.chat-sidebar').style.width = `${newWidth}px`;
+      
+      // Emit resize event with new width to parent component
+      emit('resize', newWidth);
+    }
+  };
+  
+  const handleMouseUp = () => {
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = '';
+    
+    // Send one final resize event after mouse up
+    emit('resize', sidebarWidth.value);
+  };
+  
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
+};
+
+// Handle Shift+Enter key press to insert a newline
+const handleShiftEnter = (e) => {
+  // No need to prevent default - let the browser insert the newline
+  // Adjust height after inserting newline
+  nextTick(() => {
+    adjustTextareaHeight();
+  });
+};
+
+// Auto-adjust textarea height
+const adjustTextareaHeight = () => {
+  if (!messageInput.value) return;
+  
+  // Reset height to calculate scroll height
+  messageInput.value.style.height = 'auto';
+  
+  // Set new height based on content - min 40px, max 120px
+  const newHeight = Math.min(Math.max(messageInput.value.scrollHeight, 40), 120);
+  messageInput.value.style.height = `${newHeight}px`;
 };
 
 // Reset chat conversation
@@ -210,6 +308,11 @@ const sendMessage = async () => {
   // Store message for potential future use
   const messageText = newMessage.value.trim();
   newMessage.value = ''; // Clear input
+  
+  // Reset textarea height
+  if (messageInput.value) {
+    messageInput.value.style.height = 'auto';
+  }
   
   // Scroll to bottom after new message
   await nextTick();
@@ -382,6 +485,18 @@ onMounted(() => {
   setupWebSocket();
   // Initialize with a clean slate
   resetChat();
+  
+  // Apply initial width from state
+  if (isExpanded.value && document.querySelector('.chat-sidebar')) {
+    document.querySelector('.chat-sidebar').style.width = `${sidebarWidth.value}px`;
+  }
+  
+  // Initialize textarea height
+  nextTick(() => {
+    if (messageInput.value) {
+      adjustTextareaHeight();
+    }
+  });
 });
 
 onUnmounted(() => {
@@ -420,8 +535,27 @@ watch(() => currentPrompt.value, (newPrompt) => {
   
   &.chat-sidebar-expanded {
     width: 400px;
+    transition: none; /* Disable transition when resizing */
   }
   /* Toggle button removed - now in the main app header */
+  
+  .resize-handle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+    background: transparent;
+    
+    &:hover {
+      background-color: rgba(74, 108, 247, 0.1);
+    }
+    
+    &:active {
+      background-color: rgba(74, 108, 247, 0.2);
+    }
+  }
   
   .chat-content {
     display: flex;
@@ -615,14 +749,19 @@ watch(() => currentPrompt.value, (newPrompt) => {
     padding: 15px;
     border-top: 1px solid var(--border-color);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
     gap: 10px;
     
     textarea {
       resize: none;
-      height: 80px;
+      min-height: 40px;
+      max-height: 120px;
       border-radius: 4px;
       padding: 10px;
+      overflow-y: auto;
+      flex-grow: 1;
+      line-height: 1.2;
     }
     
     button {
