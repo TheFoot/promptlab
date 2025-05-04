@@ -1,5 +1,10 @@
 # PromptLab Docker Hub Overview
 
+## Available Tags
+
+- `latest`: Most recent build (may include beta features)
+- `0.9.0-beta`: Current beta release
+
 ## What is PromptLab?
 
 PromptLab is a comprehensive tool for developing, testing, and managing LLM prompts. It provides a centralized workspace where you can create, organize, and iterate on prompts for various AI providers including OpenAI and Anthropic.
@@ -20,8 +25,10 @@ PromptLab is a comprehensive tool for developing, testing, and managing LLM prom
 If you already have MongoDB running locally or in another container:
 
 ```bash
-# Pull the image
+# Pull the image (latest or specific version)
 docker pull thefootonline/promptlab:latest
+# OR
+docker pull thefootonline/promptlab:0.9.0-beta
 
 # Run the application container
 docker run -d --name promptlab \
@@ -29,7 +36,7 @@ docker run -d --name promptlab \
   -e MONGODB_URI=mongodb://host.docker.internal:27017/promptLab \
   -e OPENAI_API_KEY=your_openai_key \
   -e ANTHROPIC_API_KEY=your_anthropic_key \
-  thefootonline/promptlab:latest
+  thefootonline/promptlab:latest  # Or use thefootonline/promptlab:0.9.0-beta for the specific version
 ```
 
 Note: `host.docker.internal` is used to connect to services on your host machine. If your MongoDB uses authentication, adjust the URI accordingly.
@@ -39,8 +46,10 @@ Note: `host.docker.internal` is used to connect to services on your host machine
 If you need to set up both PromptLab and MongoDB:
 
 ```bash
-# Pull the image
+# Pull the image (latest or specific version)
 docker pull thefootonline/promptlab:latest
+# OR
+docker pull thefootonline/promptlab:0.9.0-beta
 
 # Create a network for the containers
 docker network create promptlab-network
@@ -58,7 +67,7 @@ docker run -d --name promptlab \
   -e MONGODB_URI=mongodb://mongodb:27017/promptLab \
   -e OPENAI_API_KEY=your_openai_key \
   -e ANTHROPIC_API_KEY=your_anthropic_key \
-  thefootonline/promptlab:latest
+  thefootonline/promptlab:latest  # Or use thefootonline/promptlab:0.9.0-beta for the specific version
 ```
 
 The application will be available at http://localhost:3131
