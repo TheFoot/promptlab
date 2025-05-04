@@ -273,6 +273,9 @@ const startResize = (e) => {
     
     // Send one final resize event after mouse up
     emit('resize', sidebarWidth.value);
+    
+    // Save the width to localStorage
+    saveSidebarWidth(sidebarWidth.value);
   };
   
   document.addEventListener('mousemove', handleMouseMove);
@@ -372,6 +375,19 @@ const formatMessage = (content) => {
   // Add download buttons to code blocks
   const renderer = new marked.Renderer();
   
+  // Override the paragraph renderer to handle code blocks specially
+  const originalParagraph = renderer.paragraph;
+  renderer.paragraph = function(text) {
+    // If paragraph contains only a code block, don't wrap in <p> tags
+    if (text.trim().startsWith('<div class="code-block-wrapper">') && 
+        text.trim().endsWith('</div>')) {
+      return text;
+    }
+    
+    // Otherwise use the original paragraph renderer
+    return originalParagraph.call(this, text);
+  };
+  
   renderer.code = (code, language) => {
     // Default highlightjs code rendering
     const highlightedCode = language && highlightjs.getLanguage(language)
@@ -383,13 +399,17 @@ const formatMessage = (content) => {
     const extension = language || 'txt';
     const filename = `code-${timestamp}.${extension}`;
     
-    // Return code block with download button
+    // Return code block with download button using an icon
     return `
       <div class="code-block-wrapper">
         <div class="code-header">
           <span class="code-language">${language || 'plain text'}</span>
-          <button class="code-download-btn" data-code="${encodeURIComponent(code)}" data-filename="${filename}" onclick="window.downloadCodeBlock(this)">
-            Download
+          <button class="code-download-btn" title="Download code" data-code="${encodeURIComponent(code)}" data-filename="${filename}" onclick="window.downloadCodeBlock(this)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
           </button>
         </div>
         <pre><code class="hljs ${language}">${highlightedCode}</code></pre>
@@ -574,7 +594,11 @@ const setupWebSocket = () => {
   };
 };
 
-// Lifecycle hooks
+// Store sidebar width in localStorage
+const saveSidebarWidth = (width) => {
+  localStorage.setItem('chat-sidebar-width', width.toString());
+};
+
 // Function to download code blocks
 const downloadCodeBlock = (button) => {
   try {
@@ -605,6 +629,17 @@ const downloadCodeBlock = (button) => {
 
 onMounted(() => {
   setupWebSocket();
+  
+  // Load saved sidebar width from localStorage or use default
+  const savedWidth = localStorage.getItem('chat-sidebar-width');
+  if (savedWidth) {
+    const width = parseInt(savedWidth, 10);
+    // Ensure width is within reasonable bounds (250-600px)
+    if (width >= 250 && width <= 600) {
+      sidebarWidth.value = width;
+    }
+  }
+  
   // Initialize with a clean slate
   resetChat('init');
   
@@ -855,10 +890,33 @@ watch(() => modelConfig.value.model, (newModel, oldModel) => {
       }
       
       :deep(.code-block-wrapper) {
-        margin: 10px 0;
+        margin: 0;
         border-radius: 4px;
         overflow: hidden;
         border: 1px solid var(--border-color);
+        display: block; /* Ensure proper display */
+        line-height: 0; /* Eliminate any extra space */
+        
+        /* But restore line height for children */
+        & > * {
+          line-height: normal;
+        }
+      }
+      
+      /* Margin between elements */
+      :deep(p) {
+        margin-bottom: 10px;
+      }
+      
+      /* Margin between code blocks */
+      :deep(.code-block-wrapper) {
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      
+      /* First code block shouldn't have top margin */
+      :deep(.message-content > .code-block-wrapper:first-child) {
+        margin-top: 0;
       }
       
       :deep(.code-header) {
@@ -867,29 +925,64 @@ watch(() => modelConfig.value.model, (newModel, oldModel) => {
         align-items: center;
         background-color: #343541;
         color: #fff;
-        padding: 6px 10px;
+        padding: 4px 8px;  /* Restored padding */
         font-size: 0.8rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        height: 30px;  /* Increased height for more padding */
+        line-height: 22px;  /* Adjusted line height */
+        box-sizing: border-box;
+        
+        // Dark mode adjustments - make header more visible
+        .dark-theme & {
+          background-color: #1e1e2f;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
       }
       
       :deep(.code-language) {
         font-family: monospace;
         font-size: 0.75rem;
         opacity: 0.8;
+        display: inline-block;
+        line-height: 1;
+        position: relative;
+        top: -1px; /* Fine-tune vertical alignment */
       }
       
       :deep(.code-download-btn) {
         background-color: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: none;
         color: white;
-        font-size: 0.75rem;
-        padding: 2px 8px;
+        width: 22px;
+        height: 22px;
         border-radius: 3px;
         cursor: pointer;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.7;
         transition: all 0.2s;
+        line-height: 1;
+        
+        svg {
+          transition: all 0.2s;
+          width: 14px;
+          height: 14px;
+        }
         
         &:hover {
+          opacity: 1;
           background-color: rgba(255, 255, 255, 0.1);
-          border-color: rgba(255, 255, 255, 0.6);
+          
+          svg {
+            stroke: #fff;
+          }
+        }
+        
+        &:active {
+          background-color: rgba(255, 255, 255, 0.2);
         }
       }
       
@@ -902,16 +995,33 @@ watch(() => modelConfig.value.model, (newModel, oldModel) => {
         font-family: monospace;
         max-height: 400px;
         
-        // Remove margin when inside code-block-wrapper
-        .code-block-wrapper & {
-          margin: 0;
-          border-radius: 0 0 4px 4px;
+        // Dark mode adjustments
+        .dark-theme & {
+          background-color: #2a2a2a;
+          color: #e6e6e6;
+        }
+      }
+      
+      :deep(.code-block-wrapper pre) {
+        margin: 0;
+        border-radius: 0 0 4px 4px;
+        background-color: rgba(0, 0, 0, 0.03);
+        
+        // Dark mode adjustments
+        .dark-theme & {
+          background-color: #2a2a2a;
+          color: #e6e6e6;
         }
         
         code {
           background-color: transparent;
           padding: 0;
           font-family: monospace;
+          
+          // Dark mode adjustments
+          .dark-theme & {
+            color: #e6e6e6;
+          }
         }
       }
       
@@ -922,6 +1032,21 @@ watch(() => modelConfig.value.model, (newModel, oldModel) => {
       :deep(ul), :deep(ol) {
         padding-left: 20px;
         margin-bottom: 10px;
+      }
+      
+      /* Styling for inline code blocks */
+      :deep(code:not(pre code)) {
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: monospace;
+        font-size: 0.9em;
+        
+        // Dark mode adjustments
+        .dark-theme & {
+          background-color: rgba(255, 255, 255, 0.1);
+          color: #e6e6e6;
+        }
       }
     }
   }

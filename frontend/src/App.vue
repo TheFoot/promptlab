@@ -77,6 +77,16 @@ const isChatExpanded = ref(false);
 const sidebarWidth = ref(400); // Default sidebar width
 const isResizing = ref(false); // Track if sidebar is being resized
 
+// Try to load the sidebar width from localStorage
+const savedWidth = localStorage.getItem('chat-sidebar-width');
+if (savedWidth) {
+  const width = parseInt(savedWidth, 10);
+  // Ensure width is within reasonable bounds (250-600px)
+  if (width >= 250 && width <= 600) {
+    sidebarWidth.value = width;
+  }
+}
+
 // Determine if chat should be disabled
 // The chat is disabled when in edit mode on the prompt detail view
 const isChatDisabled = computed(() => {
@@ -107,10 +117,8 @@ const toggleChat = () => {
         document.querySelector('.app-content').style.transition = 'margin-right 0.3s ease, max-width 0.3s ease';
       }, 10);
     });
-  } else {
-    // If collapsed, reset sidebar width to default for next time it's opened
-    sidebarWidth.value = 400;
-  }
+  } 
+  // We don't reset width when closing - we'll use the persisted width from localStorage
 };
 
 // Alert system ref
