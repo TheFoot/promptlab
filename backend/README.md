@@ -31,7 +31,7 @@ npm test
 
 The backend requires the following environment variables:
 
-- `PORT` - Server port (default: 3000)
+- `PORT` - Server port (default: 3131)
 - `MONGODB_URI` - MongoDB connection URI
 - `NODE_ENV` - Environment (development, production, test)
 - `OPENAI_API_KEY` - OpenAI API key for chat functionality

@@ -18,7 +18,7 @@ import pino from 'pino';
  * const logger = serverLogger({ level: 'info' });
  *
  * // Log an informational message with metadata
- * logger.info('Server started', { port: 3000 });
+ * logger.info('Server started', { port: 3131 });
  */
 export const serverLogger = config => {
 

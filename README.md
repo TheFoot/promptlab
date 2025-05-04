@@ -11,9 +11,10 @@ A full-stack application for managing, editing, and filtering LLM prompts with t
 - Split-view interface with markdown editor and preview
 - Dark/light mode theming
 - Integrated chat sidebar for testing prompts with:
-  - OpenAI API integration
+  - OpenAI and Anthropic Claude API integrations
   - Streaming responses via WebSockets
   - Configurable models and temperature
+  - Multiple model options (GPT-3.5, GPT-4, Claude 3 Opus, Sonnet, Haiku)
   - Syntax highlighting for code blocks
 
 ## Tech Stack
@@ -37,7 +38,8 @@ A full-stack application for managing, editing, and filtering LLM prompts with t
 
 - Node.js v22+
 - MongoDB (or Docker for containerized setup)
-- OpenAI API key for testing prompts
+- OpenAI API key for testing prompts with GPT models
+- Anthropic API key for testing prompts with Claude models (optional)
 
 ### Development Setup
 
@@ -48,11 +50,13 @@ A full-stack application for managing, editing, and filtering LLM prompts with t
    cd backend && npm install
    cd frontend && npm install
    ```
-3. Create a `.env` file in the root directory (copy from `.env.example`):
+3. Create an `.env` file in the backend directory (copy from `.env.example`):
    ```
-   cp .env.example .env
+   cp backend/.env.example backend/.env
    ```
-4. Add your OpenAI API key to the `.env` file
+4. Add your API keys to the backend `.env` file:
+   - Add your OpenAI API key for GPT models
+   - Add your Anthropic API key for Claude models (optional)
 5. Start the development servers:
    ```
    npm run dev

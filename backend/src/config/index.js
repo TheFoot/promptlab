@@ -10,7 +10,7 @@ const rootDir = path.resolve(__dirname, '../../..');
 dotenv.config({ path: path.join(rootDir, '.env') });
 
 const config = {
-  port: process.env.PORT || 3000,
+  port: process.env.PORT || 3131,
   mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/promptLibrary',
   nodeEnv: process.env.NODE_ENV || 'development',
   isDev: process.env.NODE_ENV === 'development',

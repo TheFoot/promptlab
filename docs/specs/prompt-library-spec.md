@@ -92,7 +92,7 @@ init-frontend-vue prompt-library/frontend --vite --vue3 --scss --pinia --router
 
 Create an `.env` file with the following variables:
 ```
-PORT=3000
+PORT=3131
 MONGODB_URI=mongodb://mongodb:27717/prompt-library
 NODE_ENV=development
 ```

@@ -20,7 +20,7 @@ const mongoUri = config.mongoUri;
 
 | Name | Description | Default |
 |------|-------------|--------|
-| `port` | Server port | 3000 |
+| `port` | Server port | 3131 |
 | `mongoUri` | MongoDB connection string | localhost:27017/prompt-library |
 | `env` | Application environment | development |
 | `openaiApiKey` | OpenAI API key | - |
