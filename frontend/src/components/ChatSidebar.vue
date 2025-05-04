@@ -118,6 +118,7 @@
           <div
             class="message-content"
             v-html="formatMessage(message.content)"
+            @dblclick="copyMessageToClipboard(message.content)"
           />
         </div>
         <div
@@ -164,6 +165,7 @@ import { usePromptStore } from '../stores/promptStore';
 import { marked } from 'marked';
 import highlightjs from 'highlight.js';
 import 'highlight.js/styles/github.css';
+import alertService from '../services/alertService';
 
 // Props
 const props = defineProps({
@@ -352,9 +354,52 @@ const resetChat = (reason = 'manual_reset') => {
   });
 };
 
+// Copy message to clipboard
+const copyMessageToClipboard = async (message) => {
+  try {
+    await navigator.clipboard.writeText(message);
+    alertService.showAlert('Message copied to clipboard!', 'success', 3000);
+  } catch (err) {
+    console.error('Failed to copy message:', err);
+    alertService.showAlert('Failed to copy to clipboard', 'error', 3000);
+  }
+};
+
 // Format message with markdown and syntax highlighting
 const formatMessage = (content) => {
   if (!content) return '';
+  
+  // Add download buttons to code blocks
+  const renderer = new marked.Renderer();
+  
+  renderer.code = (code, language) => {
+    // Default highlightjs code rendering
+    const highlightedCode = language && highlightjs.getLanguage(language)
+      ? highlightjs.highlight(code, { language }).value
+      : highlightjs.highlightAuto(code).value;
+      
+    // Create a timestamp-based filename with proper extension
+    const timestamp = new Date().getTime();
+    const extension = language || 'txt';
+    const filename = `code-${timestamp}.${extension}`;
+    
+    // Return code block with download button
+    return `
+      <div class="code-block-wrapper">
+        <div class="code-header">
+          <span class="code-language">${language || 'plain text'}</span>
+          <button class="code-download-btn" data-code="${encodeURIComponent(code)}" data-filename="${filename}" onclick="window.downloadCodeBlock(this)">
+            Download
+          </button>
+        </div>
+        <pre><code class="hljs ${language}">${highlightedCode}</code></pre>
+      </div>
+    `;
+  };
+  
+  // Set the custom renderer
+  marked.setOptions({ renderer });
+  
   return marked(content);
 };
 
@@ -530,6 +575,34 @@ const setupWebSocket = () => {
 };
 
 // Lifecycle hooks
+// Function to download code blocks
+const downloadCodeBlock = (button) => {
+  try {
+    const code = decodeURIComponent(button.getAttribute('data-code'));
+    const filename = button.getAttribute('data-filename');
+    
+    // Create blob with code content
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create temporary link element to trigger download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alertService.showAlert(`Downloading ${filename}`, 'success', 3000);
+  } catch (error) {
+    console.error('Error downloading code:', error);
+    alertService.showAlert('Failed to download code', 'error', 3000);
+  }
+};
+
 onMounted(() => {
   setupWebSocket();
   // Initialize with a clean slate
@@ -546,6 +619,9 @@ onMounted(() => {
       adjustTextareaHeight();
     }
   });
+  
+  // Add download function to window object for code download buttons
+  window.downloadCodeBlock = downloadCodeBlock;
 });
 
 onUnmounted(() => {
@@ -553,6 +629,11 @@ onUnmounted(() => {
   if (socket.value) {
     socket.value.close();
     socket.value = null;
+  }
+  
+  // Remove downloadCodeBlock function from window object
+  if (window.downloadCodeBlock === downloadCodeBlock) {
+    window.downloadCodeBlock = undefined;
   }
 });
 
@@ -753,6 +834,64 @@ watch(() => modelConfig.value.model, (newModel, oldModel) => {
       line-height: 1.5;
       white-space: pre-wrap;
       word-break: break-word;
+      cursor: text;
+      position: relative;
+      
+      &:hover {
+        &::after {
+          content: 'Double-click to copy';
+          position: absolute;
+          top: -20px;
+          right: 5px;
+          background-color: rgba(0, 0, 0, 0.7);
+          color: white;
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-size: 10px;
+          opacity: 0.8;
+          pointer-events: none;
+          z-index: 10;
+        }
+      }
+      
+      :deep(.code-block-wrapper) {
+        margin: 10px 0;
+        border-radius: 4px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+      }
+      
+      :deep(.code-header) {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #343541;
+        color: #fff;
+        padding: 6px 10px;
+        font-size: 0.8rem;
+      }
+      
+      :deep(.code-language) {
+        font-family: monospace;
+        font-size: 0.75rem;
+        opacity: 0.8;
+      }
+      
+      :deep(.code-download-btn) {
+        background-color: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        color: white;
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.2s;
+        
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.6);
+        }
+      }
       
       :deep(pre) {
         background-color: rgba(0, 0, 0, 0.05);
@@ -761,6 +900,13 @@ watch(() => modelConfig.value.model, (newModel, oldModel) => {
         overflow-x: auto;
         margin: 10px 0;
         font-family: monospace;
+        max-height: 400px;
+        
+        // Remove margin when inside code-block-wrapper
+        .code-block-wrapper & {
+          margin: 0;
+          border-radius: 0 0 4px 4px;
+        }
         
         code {
           background-color: transparent;

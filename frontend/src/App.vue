@@ -7,9 +7,18 @@
       'resizing': isResizing
     }"
   >
+    <!-- Alert system -->
+    <AlertSystem ref="alertSystemRef" />
     <header class="app-header">
       <div class="container">
-        <h1><router-link to="/" class="app-title">Prompt Library</router-link></h1>
+        <h1>
+          <router-link
+            to="/"
+            class="app-title"
+          >
+            Prompt Library
+          </router-link>
+        </h1>
         <div class="header-controls">
           <!-- Theme toggle button -->
           <button
@@ -26,9 +35,9 @@
             v-if="!isChatDisabled" 
             class="header-button chat-toggle-button"
             :class="{ 'active': isChatExpanded }"
-            @click="toggleChat"
             aria-label="Toggle chat"
             :title="isChatExpanded ? 'Close chat' : 'Open test chat'"
+            @click="toggleChat"
           >
             <!-- Use same icon but with green indicator dot when active -->
             💬
@@ -54,6 +63,8 @@
 import { ref, onMounted, watch, computed, nextTick } from 'vue';
 import { useUiStore } from './stores/uiStore';
 import ChatSidebar from './components/ChatSidebar.vue';
+import AlertSystem from './components/AlertSystem.vue';
+import alertService from './services/alertService';
 
 // Get UI store
 const uiStore = useUiStore();
@@ -102,6 +113,9 @@ const toggleChat = () => {
   }
 };
 
+// Alert system ref
+const alertSystemRef = ref(null);
+
 // Load theme from localStorage or system preference
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme');
@@ -111,6 +125,11 @@ onMounted(() => {
     // Check system preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     isDarkTheme.value = prefersDark;
+  }
+  
+  // Register alert system
+  if (alertSystemRef.value) {
+    alertService.registerAlertSystem(alertSystemRef.value);
   }
 });
 
