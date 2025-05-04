@@ -15,33 +15,7 @@ PromptLab is a comprehensive tool for developing, testing, and managing LLM prom
 
 ## How to Run PromptLab
 
-### Quick Start with Docker Compose
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/promptlab.git
-cd promptlab
-
-# Create .env file with your API keys
-echo "OPENAI_API_KEY=your_openai_key" > .env
-echo "ANTHROPIC_API_KEY=your_anthropic_key" >> .env
-
-# Start the containers
-docker-compose up -d
-```
-
-The application will be available at http://localhost:3131
-
-### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `OPENAI_API_KEY` | Your OpenAI API key | Yes (for OpenAI models) |
-| `ANTHROPIC_API_KEY` | Your Anthropic API key | Yes (for Claude models) |
-| `MONGODB_URI` | Custom MongoDB connection URI | No |
-| `PORT` | Custom port (default: 3131) | No |
-
-### Using as a Standalone Image
+### Using the Docker Image
 
 ```bash
 # Pull the image
@@ -59,16 +33,26 @@ docker run -d --name promptlab \
   yourusername/promptlab:latest
 ```
 
+The application will be available at http://localhost:3131
+
+### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `OPENAI_API_KEY` | Your OpenAI API key | Yes (for OpenAI models) |
+| `ANTHROPIC_API_KEY` | Your Anthropic API key | Yes (for Claude models) |
+| `MONGODB_URI` | Custom MongoDB connection URI | No |
+| `PORT` | Custom port (default: 3131) | No |
+
 ## Data Persistence
 
-PromptLab stores its data in MongoDB. To persist your data, mount a volume for MongoDB:
+PromptLab stores its data in MongoDB. To persist your data, mount a volume for the MongoDB container:
 
-```yaml
-# In docker-compose.yml
-services:
-  mongodb:
-    volumes:
-      - ./data:/data/db
+```bash
+docker run -d --name mongodb \
+  --network promptlab-network \
+  -v /path/on/host:/data/db \
+  mongo:latest
 ```
 
 ## Configuration
@@ -80,7 +64,3 @@ PromptLab can be configured through environment variables:
 - `MONGODB_URI`: Customize the MongoDB connection URI
 - `OPENAI_API_KEY`: Your OpenAI API key
 - `ANTHROPIC_API_KEY`: Your Anthropic API key
-
-## Support
-
-For issues, questions, or feedback, please create an issue in the GitHub repository.
