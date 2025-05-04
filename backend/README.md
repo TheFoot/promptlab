@@ -1,0 +1,56 @@
+# Backend - Express.js API
+
+This directory contains the Express.js backend API for the Prompt Library application. It provides the REST endpoints for managing prompts, tags, and chat functionality.
+
+## Directory Structure
+
+- `src/` - Source code
+  - `index.js` - Application entry point
+  - `config/` - [Configuration settings](./src/config/README.md)
+  - `controllers/` - [API request handlers](./src/controllers/README.md)
+  - `models/` - [Database models](./src/models/README.md)
+  - `modules/` - [Utility modules](./src/modules/README.md)
+  - `routes/` - [API routes](./src/routes/README.md)
+  - `services/` - [Business logic](./src/services/README.md)
+- `package.json` - Backend dependencies
+
+## Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Run tests
+npm test
+```
+
+## Environment Variables
+
+The backend requires the following environment variables:
+
+- `PORT` - Server port (default: 3000)
+- `MONGODB_URI` - MongoDB connection URI
+- `NODE_ENV` - Environment (development, production, test)
+- `OPENAI_API_KEY` - OpenAI API key for chat functionality
+
+These should be defined in a `.env` file in the root project directory.
+
+## API Endpoints
+
+See the [Routes documentation](./src/routes/README.md) for detailed API endpoint information.
+
+## Key Technologies
+
+- Express.js - Web framework
+- MongoDB/Mongoose - Database
+- ESM modules - JavaScript module system
+- WebSockets - Real-time communication
+
+## Related Documentation
+
+- [Main Project README](../README.md)
+- [API Routes](./src/routes/README.md)
+- [Database Models](./src/models/README.md)

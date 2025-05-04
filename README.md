@@ -66,6 +66,28 @@ To run the application using Docker:
 docker-compose up -d
 ```
 
+## Documentation Structure
+
+This project uses a comprehensive documentation system with README files in each major directory:
+
+- [Frontend Documentation](./frontend/README.md) - Vue 3 frontend details
+  - [Components](./frontend/src/components/README.md) - UI component documentation
+  - [Views](./frontend/src/views/README.md) - Page components
+  - [Stores](./frontend/src/stores/README.md) - State management
+  - [Router](./frontend/src/router/README.md) - Routing configuration
+  - [Styles](./frontend/src/styles/README.md) - Styling guidelines
+
+- [Backend Documentation](./backend/README.md) - Express.js backend details
+  - [Models](./backend/src/models/README.md) - Database schema definitions
+  - [Controllers](./backend/src/controllers/README.md) - Request handlers
+  - [Routes](./backend/src/routes/README.md) - API endpoint definitions
+  - [Services](./backend/src/services/README.md) - Business logic
+  - [Config](./backend/src/config/README.md) - Configuration management
+  - [Modules](./backend/src/modules/README.md) - Utility modules
+
+- [Docs](./docs/README.md) - Additional project documentation
+  - [Specs](./docs/specs/README.md) - Technical specifications
+
 ## Project Structure
 
 ```
@@ -74,15 +96,19 @@ prompt-library/
 ├── docker-compose.yml       # Docker configuration
 ├── package.json             # Root package.json for project management
 ├── README.md                # Project documentation
+├── CLAUDE.md                # Claude AI assistant guide
 ├── backend/                 # Backend application
 │   ├── src/
 │   │   ├── index.js         # Entry point
 │   │   ├── config/          # Configuration management
 │   │   ├── controllers/     # Request handlers
 │   │   ├── models/          # Database models
+│   │   ├── modules/         # Utility modules
 │   │   ├── routes/          # API routes
 │   │   └── services/        # Business logic
 │   └── package.json         # Backend dependencies
+├── docs/                    # Additional documentation
+│   └── specs/               # Technical specifications
 └── frontend/                # Frontend application
     ├── index.html           # HTML entry
     ├── vite.config.js       # Vite configuration
@@ -98,3 +124,7 @@ prompt-library/
         ├── styles/          # Global styles
         └── views/           # Page components
 ```
+
+## Development Commands
+
+See [CLAUDE.md](./CLAUDE.md) for detailed development commands and workflow guidelines.
