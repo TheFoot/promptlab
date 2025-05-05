@@ -1,10 +1,10 @@
 <template>
   <div
     class="app"
-    :class="{ 
+    :class="{
       'dark-theme': isDarkTheme,
       'chat-expanded': isChatExpanded && !isChatDisabled,
-      'resizing': isResizing
+      resizing: isResizing,
     }"
   >
     <!-- Alert system -->
@@ -29,12 +29,12 @@
             <span v-if="isDarkTheme">☀️</span>
             <span v-else>🌙</span>
           </button>
-          
+
           <!-- Chat toggle button - only show when not in edit mode -->
-          <button 
-            v-if="!isChatDisabled" 
+          <button
+            v-if="!isChatDisabled"
             class="header-button chat-toggle-button"
-            :class="{ 'active': isChatExpanded }"
+            :class="{ active: isChatExpanded }"
             aria-label="Toggle chat"
             :title="isChatExpanded ? 'Close chat' : 'Open test chat'"
             @click="toggleChat"
@@ -49,8 +49,8 @@
       <main class="app-content">
         <router-view />
       </main>
-      <ChatSidebar 
-        :disabled="isChatDisabled" 
+      <ChatSidebar
+        :disabled="isChatDisabled"
         :expanded="isChatExpanded"
         @toggle="isChatExpanded = $event"
         @resize="handleSidebarResize"
@@ -60,11 +60,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed, nextTick } from 'vue';
-import { useUiStore } from './stores/uiStore';
-import ChatSidebar from './components/ChatSidebar.vue';
-import AlertSystem from './components/AlertSystem.vue';
-import alertService from './services/alertService';
+import { ref, onMounted, watch, computed, nextTick } from "vue";
+import { useUiStore } from "./stores/uiStore";
+import ChatSidebar from "./components/ChatSidebar.vue";
+import AlertSystem from "./components/AlertSystem.vue";
+import alertService from "./services/alertService";
 
 // Get app version from Vite define
 const appVersion = __APP_VERSION__;
@@ -81,7 +81,7 @@ const sidebarWidth = ref(400); // Default sidebar width
 const isResizing = ref(false); // Track if sidebar is being resized
 
 // Try to load the sidebar width from localStorage
-const savedWidth = localStorage.getItem('chat-sidebar-width');
+const savedWidth = localStorage.getItem("chat-sidebar-width");
 if (savedWidth) {
   const width = parseInt(savedWidth, 10);
   // Ensure width is within reasonable bounds (250-600px)
@@ -100,7 +100,7 @@ const isChatDisabled = computed(() => {
 const handleSidebarResize = (width) => {
   sidebarWidth.value = width;
   isResizing.value = true;
-  
+
   // Debounce the resizing state
   clearTimeout(window.resizeTimer);
   window.resizeTimer = setTimeout(() => {
@@ -111,16 +111,17 @@ const handleSidebarResize = (width) => {
 // Toggle chat sidebar expanded state
 const toggleChat = () => {
   isChatExpanded.value = !isChatExpanded.value;
-  
+
   if (isChatExpanded.value) {
     // Force layout recalculation to ensure content is pushed aside
     nextTick(() => {
       // Small delay to ensure transitions work properly
       setTimeout(() => {
-        document.querySelector('.app-content').style.transition = 'margin-right 0.3s ease, max-width 0.3s ease';
+        document.querySelector(".app-content").style.transition =
+          "margin-right 0.3s ease, max-width 0.3s ease";
       }, 10);
     });
-  } 
+  }
   // We don't reset width when closing - we'll use the persisted width from localStorage
 };
 
@@ -129,15 +130,17 @@ const alertSystemRef = ref(null);
 
 // Load theme from localStorage or system preference
 onMounted(() => {
-  const savedTheme = localStorage.getItem('theme');
+  const savedTheme = localStorage.getItem("theme");
   if (savedTheme) {
-    isDarkTheme.value = savedTheme === 'dark';
+    isDarkTheme.value = savedTheme === "dark";
   } else {
     // Check system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
     isDarkTheme.value = prefersDark;
   }
-  
+
   // Register alert system
   if (alertSystemRef.value) {
     alertService.registerAlertSystem(alertSystemRef.value);
@@ -151,35 +154,38 @@ const toggleTheme = () => {
 
 // Save theme preference whenever it changes
 watch(isDarkTheme, (newValue) => {
-  localStorage.setItem('theme', newValue ? 'dark' : 'light');
+  localStorage.setItem("theme", newValue ? "dark" : "light");
 });
 
 // Watch for edit mode changes
-watch(() => uiStore.isEditingPrompt, (isEditing) => {
-  // When edit mode changes, force layout recalculations
-  nextTick(() => {
-    // Wait for DOM updates
-    setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
-      
-      // If we're exiting edit mode and chat was previously open, restore it
-      if (!isEditing && localStorage.getItem('chatWasOpen') === 'true') {
-        isChatExpanded.value = true;
-        localStorage.removeItem('chatWasOpen');
-      }
-    }, 100);
-  });
-  
-  // If entering edit mode and chat is open, save state and close it
-  if (isEditing && isChatExpanded.value) {
-    localStorage.setItem('chatWasOpen', 'true');
-    isChatExpanded.value = false;
-  }
-});
+watch(
+  () => uiStore.isEditingPrompt,
+  (isEditing) => {
+    // When edit mode changes, force layout recalculations
+    nextTick(() => {
+      // Wait for DOM updates
+      setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+
+        // If we're exiting edit mode and chat was previously open, restore it
+        if (!isEditing && localStorage.getItem("chatWasOpen") === "true") {
+          isChatExpanded.value = true;
+          localStorage.removeItem("chatWasOpen");
+        }
+      }, 100);
+    });
+
+    // If entering edit mode and chat is open, save state and close it
+    if (isEditing && isChatExpanded.value) {
+      localStorage.setItem("chatWasOpen", "true");
+      isChatExpanded.value = false;
+    }
+  },
+);
 </script>
 
 <style lang="scss">
-@use './styles/variables.scss' as *;
+@use "./styles/variables.scss" as *;
 
 .app {
   height: 100vh;
@@ -187,7 +193,9 @@ watch(() => uiStore.isEditingPrompt, (isEditing) => {
   flex-direction: column;
   background-color: var(--bg-color);
   color: var(--text-color);
-  transition: background-color 0.3s, color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
   overflow: hidden; /* Prevent app container from scrolling */
 }
 
@@ -215,16 +223,16 @@ watch(() => uiStore.isEditingPrompt, (isEditing) => {
     margin: 0;
     font-size: 1.5rem;
   }
-  
+
   .app-title {
     color: white;
     text-decoration: none;
-    
+
     &:hover {
       text-decoration: none;
       opacity: 0.9;
     }
-    
+
     .version {
       font-size: 0.6rem;
       font-weight: normal;
@@ -256,16 +264,16 @@ watch(() => uiStore.isEditingPrompt, (isEditing) => {
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   &:active {
     background-color: rgba(255, 255, 255, 0.2);
   }
-  
+
   &.chat-toggle-button {
     position: relative;
-    
+
     &:after {
-      content: '';
+      content: "";
       position: absolute;
       bottom: 5px;
       right: 5px;
@@ -276,7 +284,7 @@ watch(() => uiStore.isEditingPrompt, (isEditing) => {
       opacity: 0;
       transition: opacity 0.2s;
     }
-    
+
     &.active:after {
       opacity: 1;
     }
@@ -297,7 +305,9 @@ watch(() => uiStore.isEditingPrompt, (isEditing) => {
   width: 100%;
   padding: 1rem 1.5rem;
   box-sizing: border-box;
-  transition: margin-right 0.3s ease, width 0.3s ease;
+  transition:
+    margin-right 0.3s ease,
+    width 0.3s ease;
   margin-right: 0; /* Initial state */
   overflow-y: auto; /* Allow content area to scroll */
   height: 100%; /* Take full height of parent */
@@ -310,8 +320,11 @@ watch(() => uiStore.isEditingPrompt, (isEditing) => {
 
 /* Push content when chat is expanded */
 .chat-expanded .app-content {
-  margin-right: v-bind('sidebarWidth + "px"'); /* Dynamic margin based on sidebar width */
-  width: calc(100% - v-bind('sidebarWidth + "px"')); /* Adjust width dynamically */
+  margin-right: v-bind(
+    'sidebarWidth + "px"'
+  ); /* Dynamic margin based on sidebar width */
+  width: calc(
+    100% - v-bind('sidebarWidth + "px"')
+  ); /* Adjust width dynamically */
 }
-
 </style>

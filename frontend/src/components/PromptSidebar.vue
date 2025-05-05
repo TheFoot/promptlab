@@ -8,9 +8,9 @@
         class="search-input"
         @input="handleSearch"
       >
-      <select 
-        v-model="selectedTag" 
-        class="tag-filter mt-2" 
+      <select
+        v-model="selectedTag"
+        class="tag-filter mt-2"
         @change="handleTagChange"
       >
         <option value="">
@@ -83,16 +83,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { usePromptStore } from '../stores/promptStore';
+import { ref, computed, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
+import { usePromptStore } from "../stores/promptStore";
 
 const promptStore = usePromptStore();
 const route = useRoute();
 
 // Local state
-const searchQuery = ref('');
-const selectedTag = ref('');
+const searchQuery = ref("");
+const selectedTag = ref("");
 
 // Computed properties
 const loading = computed(() => promptStore.loading);
@@ -134,9 +134,13 @@ onMounted(async () => {
   selectedTag.value = promptStore.selectedTag;
 
   // Only fetch if not already loaded
-  const tagsPromise = promptStore.tags.length === 0 ? promptStore.fetchTags() : Promise.resolve();
-  const promptsPromise = promptStore.prompts.length === 0 ? promptStore.fetchPrompts() : Promise.resolve();
-  
+  const tagsPromise =
+    promptStore.tags.length === 0 ? promptStore.fetchTags() : Promise.resolve();
+  const promptsPromise =
+    promptStore.prompts.length === 0
+      ? promptStore.fetchPrompts()
+      : Promise.resolve();
+
   await Promise.all([tagsPromise, promptsPromise]);
 });
 
@@ -147,7 +151,7 @@ watch(
     if (searchQuery.value !== newVal) {
       searchQuery.value = newVal;
     }
-  }
+  },
 );
 
 watch(
@@ -156,7 +160,7 @@ watch(
     if (selectedTag.value !== newVal) {
       selectedTag.value = newVal;
     }
-  }
+  },
 );
 </script>
 
@@ -191,7 +195,9 @@ watch(
     border: 1px solid var(--border-color);
     color: var(--text-color);
     text-decoration: none;
-    transition: background-color 0.2s, border-color 0.2s;
+    transition:
+      background-color 0.2s,
+      border-color 0.2s;
 
     &:hover {
       background-color: rgba(74, 108, 247, 0.05);

@@ -43,10 +43,10 @@ Views follow this general structure:
 ```vue
 <script setup>
 // Imports
-import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { usePromptStore } from '../stores/promptStore';
-import SomeComponent from '../components/SomeComponent.vue';
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { usePromptStore } from "../stores/promptStore";
+import SomeComponent from "../components/SomeComponent.vue";
 
 // Router and store initialization
 const route = useRoute();
@@ -77,7 +77,7 @@ function handleSomeAction() {
 </template>
 
 <style scoped lang="scss">
-@import '../styles/variables.scss';
+@import "../styles/variables.scss";
 
 .view-container {
   // Styles

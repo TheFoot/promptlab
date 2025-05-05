@@ -56,7 +56,7 @@
             class="btn btn-primary"
             :disabled="saving"
           >
-            {{ saving ? 'Creating...' : 'Create Prompt' }}
+            {{ saving ? "Creating..." : "Create Prompt" }}
           </button>
           <router-link
             to="/"
@@ -71,12 +71,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { usePromptStore } from '../stores/promptStore';
-import PromptSidebar from '../components/PromptSidebar.vue';
-import MarkdownPreview from '../components/MarkdownPreview.vue';
-import TagInput from '../components/TagInput.vue';
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { usePromptStore } from "../stores/promptStore";
+import PromptSidebar from "../components/PromptSidebar.vue";
+import MarkdownPreview from "../components/MarkdownPreview.vue";
+import TagInput from "../components/TagInput.vue";
 
 const router = useRouter();
 const promptStore = usePromptStore();
@@ -84,25 +84,25 @@ const promptStore = usePromptStore();
 // Component state
 const saving = ref(false);
 const prompt = ref({
-  title: '',
-  content: '',
+  title: "",
+  content: "",
   tags: [],
 });
 
 // Methods
 const savePrompt = async () => {
   if (!prompt.value.title || !prompt.value.content) {
-    alert('Title and content are required');
+    alert("Title and content are required");
     return;
   }
 
   saving.value = true;
   try {
     const newPrompt = await promptStore.createPrompt(prompt.value);
-    
+
     // Explicitly set the current prompt in the store
     promptStore.currentPrompt = newPrompt;
-    
+
     // Make sure the ID exists before redirecting
     if (newPrompt && newPrompt._id) {
       // Add a small delay to ensure store updates
@@ -110,12 +110,12 @@ const savePrompt = async () => {
         router.push(`/prompts/${newPrompt._id}`);
       }, 100);
     } else {
-      console.error('New prompt created but no ID returned');
-      router.push('/');
+      console.error("New prompt created but no ID returned");
+      router.push("/");
     }
   } catch (error) {
-    console.error('Error creating prompt:', error);
-    alert('Failed to create prompt: ' + (error.message || 'Unknown error'));
+    console.error("Error creating prompt:", error);
+    alert("Failed to create prompt: " + (error.message || "Unknown error"));
   } finally {
     saving.value = false;
   }
@@ -123,7 +123,7 @@ const savePrompt = async () => {
 </script>
 
 <style lang="scss" scoped>
-@use '../styles/variables' as *;
+@use "../styles/variables" as *;
 
 .prompt-create-view {
   display: grid;

@@ -24,7 +24,7 @@
         @keydown.enter.prevent="addTag"
         @keydown.backspace="handleBackspace"
         @keydown.tab.prevent="addTag"
-        @keydown.comma.prevent="addTag"
+        @keydown="onKeydown"
         @blur="addTag"
       >
     </div>
@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref } from "vue";
 
 const props = defineProps({
   modelValue: {
@@ -44,27 +44,30 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(["update:modelValue"]);
 
-const tagInputValue = ref('');
+const tagInputValue = ref("");
 
 // Add a new tag
 const addTag = () => {
   if (tagInputValue.value.trim()) {
     // Split by comma in case user typed multiple tags with commas
-    const tags = tagInputValue.value.split(',').map(tag => tag.trim()).filter(tag => tag);
-    
+    const tags = tagInputValue.value
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag);
+
     const newTags = [...props.modelValue];
-    
+
     // Add each tag if it's not already in the list
-    tags.forEach(tag => {
+    tags.forEach((tag) => {
       if (tag && !newTags.includes(tag)) {
         newTags.push(tag);
       }
     });
-    
-    emit('update:modelValue', newTags);
-    tagInputValue.value = '';
+
+    emit("update:modelValue", newTags);
+    tagInputValue.value = "";
   }
 };
 
@@ -72,15 +75,24 @@ const addTag = () => {
 const removeTag = (index) => {
   const newTags = [...props.modelValue];
   newTags.splice(index, 1);
-  emit('update:modelValue', newTags);
+  emit("update:modelValue", newTags);
 };
 
 // Handle backspace to remove the last tag when input is empty
-const handleBackspace = (event) => {
-  if (tagInputValue.value === '' && props.modelValue.length > 0) {
+const handleBackspace = () => {
+  if (tagInputValue.value === "" && props.modelValue.length > 0) {
     const newTags = [...props.modelValue];
     newTags.pop();
-    emit('update:modelValue', newTags);
+    emit("update:modelValue", newTags);
+  }
+};
+
+// Handle keydown events
+const onKeydown = (event) => {
+  // Check if comma key is pressed
+  if (event.key === ",") {
+    event.preventDefault();
+    addTag();
   }
 };
 </script>

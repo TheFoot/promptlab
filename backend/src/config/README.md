@@ -12,7 +12,7 @@ This directory contains configuration management code for the PromptLab backend,
 ## Usage
 
 ```javascript
-import config from '../config';
+import config from "../config";
 
 // Access basic configuration
 const port = config.port;
@@ -29,13 +29,13 @@ const anthropicModels = config.anthropic.models.available;
 
 ## Core Configuration
 
-| Name | Description | Default                        |
-|------|-------------|--------------------------------|
-| `port` | Server port | 3131                           |
+| Name       | Description               | Default                        |
+| ---------- | ------------------------- | ------------------------------ |
+| `port`     | Server port               | 3131                           |
 | `mongoUri` | MongoDB connection string | localhost:27017/promptLab      |
-| `nodeEnv` | Application environment | development                    |
-| `isDev` | Development mode flag | true if nodeEnv is development |
-| `isProd` | Production mode flag | true if nodeEnv is production  |
+| `nodeEnv`  | Application environment   | development                    |
+| `isDev`    | Development mode flag     | true if nodeEnv is development |
+| `isProd`   | Production mode flag      | true if nodeEnv is production  |
 
 ## Provider Configuration
 
@@ -65,12 +65,12 @@ The configuration system centralizes all provider settings:
 
 ## Environment Variables
 
-| Name | Description | Used In |
-|------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI API key | openai.js |
-| `OPENAI_API_BASE_URL` | Custom OpenAI API endpoint (optional) | openai.js |
-| `OPENAI_ORGANIZATION` | OpenAI organization ID (optional) | openai.js |
-| `ANTHROPIC_API_KEY` | Anthropic API key | anthropic.js |
+| Name                     | Description                              | Used In      |
+| ------------------------ | ---------------------------------------- | ------------ |
+| `OPENAI_API_KEY`         | OpenAI API key                           | openai.js    |
+| `OPENAI_API_BASE_URL`    | Custom OpenAI API endpoint (optional)    | openai.js    |
+| `OPENAI_ORGANIZATION`    | OpenAI organization ID (optional)        | openai.js    |
+| `ANTHROPIC_API_KEY`      | Anthropic API key                        | anthropic.js |
 | `ANTHROPIC_API_BASE_URL` | Custom Anthropic API endpoint (optional) | anthropic.js |
 
 ## Related Documentation

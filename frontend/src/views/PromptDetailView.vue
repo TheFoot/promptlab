@@ -26,7 +26,7 @@
   <div
     v-else
     class="prompt-detail-view"
-    :class="{ 'editing': editMode }"
+    :class="{ editing: editMode }"
   >
     <div class="sidebar">
       <PromptSidebar />
@@ -52,7 +52,9 @@
               v-for="tag in prompt.tags"
               :key="tag"
               class="prompt-tag"
-            >{{ tag }}</span>
+            >{{
+              tag
+            }}</span>
           </div>
           <TagInput
             v-else
@@ -73,7 +75,7 @@
               :disabled="saving"
               @click="savePrompt"
             >
-              {{ saving ? 'Saving...' : 'Save' }}
+              {{ saving ? "Saving..." : "Save" }}
             </button>
             <button
               class="btn btn-secondary"
@@ -131,13 +133,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { usePromptStore } from '../stores/promptStore';
-import { useUiStore } from '../stores/uiStore';
-import PromptSidebar from '../components/PromptSidebar.vue';
-import MarkdownPreview from '../components/MarkdownPreview.vue';
-import TagInput from '../components/TagInput.vue';
+import { ref, computed, onMounted, watch, nextTick } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { usePromptStore } from "../stores/promptStore";
+import { useUiStore } from "../stores/uiStore";
+import PromptSidebar from "../components/PromptSidebar.vue";
+import MarkdownPreview from "../components/MarkdownPreview.vue";
+import TagInput from "../components/TagInput.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -148,8 +150,8 @@ const uiStore = useUiStore();
 const editMode = ref(false);
 const saving = ref(false);
 const editedPrompt = ref({
-  title: '',
-  content: '',
+  title: "",
+  content: "",
   tags: [],
 });
 
@@ -163,7 +165,7 @@ const fetchPrompt = async () => {
   try {
     await promptStore.fetchPromptById(route.params.id);
   } catch (error) {
-    console.error('Error fetching prompt:', error);
+    console.error("Error fetching prompt:", error);
   }
 };
 
@@ -184,53 +186,52 @@ const cancelEdit = async () => {
     content: prompt.value.content,
     tags: [...prompt.value.tags],
   };
-  
+
   // Force UI layout update after state change
   await nextTick();
-  
+
   // Allow time for transitions and layout adjustments
   setTimeout(() => {
     // Trigger window resize event to ensure all components adjust
-    window.dispatchEvent(new Event('resize'));
+    window.dispatchEvent(new Event("resize"));
   }, 100);
 };
 
 const savePrompt = async () => {
   if (!editedPrompt.value.title || !editedPrompt.value.content) {
-    alert('Title and content are required');
+    alert("Title and content are required");
     return;
   }
 
   saving.value = true;
   try {
     await promptStore.updatePrompt(route.params.id, editedPrompt.value);
-    
+
     // First, update edit mode state
     editMode.value = false;
-    
+
     // Force UI layout update after state change
     await nextTick();
-    
+
     // Allow time for transitions and layout adjustments
     setTimeout(() => {
       // Trigger window resize event to ensure all components adjust
-      window.dispatchEvent(new Event('resize'));
+      window.dispatchEvent(new Event("resize"));
     }, 100);
-    
   } catch (error) {
-    console.error('Error saving prompt:', error);
+    console.error("Error saving prompt:", error);
   } finally {
     saving.value = false;
   }
 };
 
 const confirmDelete = async () => {
-  if (confirm('Are you sure you want to delete this prompt?')) {
+  if (confirm("Are you sure you want to delete this prompt?")) {
     try {
       await promptStore.deletePrompt(route.params.id);
-      router.push('/');
+      router.push("/");
     } catch (error) {
-      console.error('Error deleting prompt:', error);
+      console.error("Error deleting prompt:", error);
     }
   }
 };
@@ -241,14 +242,14 @@ watch(
   async (newId) => {
     if (newId) {
       await fetchPrompt();
-      
+
       // Redirect if prompt not found after fetch
       if (!promptStore.currentPrompt && !loading.value) {
-        console.error('Prompt not found, redirecting to home');
-        router.push('/');
+        console.error("Prompt not found, redirecting to home");
+        router.push("/");
       }
     }
-  }
+  },
 );
 
 // Update global UI state when edit mode changes
@@ -260,30 +261,37 @@ watch(editMode, (isEditMode) => {
 watch(
   () => promptStore.loading,
   (isLoading) => {
-    if (!isLoading && route.params.id && !promptStore.currentPrompt && !promptStore.error) {
+    if (
+      !isLoading &&
+      route.params.id &&
+      !promptStore.currentPrompt &&
+      !promptStore.error
+    ) {
       // Loading finished but no prompt found and no error either
-      console.error('Prompt not found after loading completed, redirecting to home');
-      router.push('/');
+      console.error(
+        "Prompt not found after loading completed, redirecting to home",
+      );
+      router.push("/");
     }
-  }
+  },
 );
 
 // Lifecycle hooks
 onMounted(async () => {
   if (route.params.id) {
     await fetchPrompt();
-    
+
     // Redirect if prompt not found after initial fetch
     if (!promptStore.currentPrompt && !loading.value) {
-      console.error('Prompt not found on initial load, redirecting to home');
-      router.push('/');
+      console.error("Prompt not found on initial load, redirecting to home");
+      router.push("/");
     }
   }
 });
 </script>
 
 <style lang="scss" scoped>
-@use '../styles/variables' as *;
+@use "../styles/variables" as *;
 
 .prompt-detail-view {
   display: grid;
@@ -294,7 +302,7 @@ onMounted(async () => {
   padding: 0;
   margin: 0;
   overflow: hidden; /* Prevent outer container from scrolling */
-  
+
   &.editing {
     /* Ensure content spans full width when in edit mode */
     width: 100%;

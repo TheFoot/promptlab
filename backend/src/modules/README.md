@@ -9,10 +9,10 @@ This directory contains utility modules that provide shared functionality across
 The `logger.js` module provides a standardized logging interface for the application.
 
 ```javascript
-import logger from '../modules/logger.js';
+import logger from "../modules/logger.js";
 
-logger.info('Server started');
-logger.error('Database connection failed', error);
+logger.info("Server started");
+logger.error("Database connection failed", error);
 ```
 
 #### Features:
@@ -27,10 +27,10 @@ logger.error('Database connection failed', error);
 Import the specific module you need:
 
 ```javascript
-import logger from '../modules/logger.js';
+import logger from "../modules/logger.js";
 
 // Use the module
-logger.info('Operation successful', { additionalData: 'value' });
+logger.info("Operation successful", { additionalData: "value" });
 ```
 
 ## Creating New Modules

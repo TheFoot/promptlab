@@ -18,15 +18,17 @@
             to="/prompts/new"
             class="btn btn-primary"
           >
-            {{ hasPrompts ? 'Create New Prompt' : 'Create Your First Prompt' }}
+            {{ hasPrompts ? "Create New Prompt" : "Create Your First Prompt" }}
           </router-link>
 
           <div
             v-if="hasPrompts"
             class="existing-prompts-message mt-2"
           >
-            You have {{ promptStore.prompts.length }} prompt{{ promptStore.prompts.length !== 1 ? 's' : '' }} available.
-            <br>Select one from the sidebar to view or edit.
+            You have {{ promptStore.prompts.length }} prompt{{
+              promptStore.prompts.length !== 1 ? "s" : ""
+            }}
+            available. <br>Select one from the sidebar to view or edit.
           </div>
         </div>
       </div>
@@ -35,9 +37,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
-import { usePromptStore } from '../stores/promptStore';
-import PromptSidebar from '../components/PromptSidebar.vue';
+import { computed, onMounted } from "vue";
+import { usePromptStore } from "../stores/promptStore";
+import PromptSidebar from "../components/PromptSidebar.vue";
 
 const promptStore = usePromptStore();
 
@@ -53,7 +55,7 @@ const hasPrompts = computed(() => promptStore.prompts.length > 0);
 </script>
 
 <style lang="scss" scoped>
-@use '../styles/variables' as *;
+@use "../styles/variables" as *;
 
 .home-view {
   display: grid;
@@ -107,7 +109,7 @@ const hasPrompts = computed(() => promptStore.prompts.length > 0);
       padding-left: 1.5rem;
 
       &:before {
-        content: '✓';
+        content: "✓";
         color: var(--success-color);
         position: absolute;
         left: 0;

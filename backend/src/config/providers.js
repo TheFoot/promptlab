@@ -12,9 +12,9 @@ const providers = {
     // Display names for providers in UI dropdowns
     displayNames: {
       openai: 'OpenAI',
-      anthropic: 'Anthropic'
-    }
-  }
+      anthropic: 'Anthropic',
+    },
+  },
 };
 
 export default providers;

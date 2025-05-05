@@ -6,7 +6,7 @@ describe('Logger Module', () => {
   it('should create a logger with expected methods', () => {
     // Arrange & Act
     const logger = serverLogger({ level: 'info' });
-    
+
     // Assert
     assert.strictEqual(typeof logger.info, 'function');
     assert.strictEqual(typeof logger.debug, 'function');

@@ -12,11 +12,13 @@
     "build": "cd frontend && npm run build:quiet",
     "build:with-warnings": "cd frontend && npm run build",
     "lint": "concurrently \"cd backend && npm run lint\" \"cd frontend && npm run lint\"",
+    "lint:fix": "cd backend && npm run lint -- --fix || true && cd ../frontend && npm run lint -- --fix || true",
     "format": "concurrently \"cd backend && npm run format\" \"cd frontend && npm run format\"",
     "test": "concurrently \"cd backend && npm run test\" \"cd frontend && npm run test\"",
     "test:coverage": "concurrently \"cd backend && npm run test:coverage\" \"cd frontend && npm run test:coverage\"",
     "test:backend": "cd backend && npm run test",
-    "test:frontend": "cd frontend && npm run test"
+    "test:frontend": "cd frontend && npm run test",
+    "production": "npm run format && npm run test && npm run lint:fix && npm run build && echo \"\\n\\033[33mWarning: Some linting errors could not be automatically fixed and were ignored. Run 'npm run lint' to view them.\\033[0m\""
   },
   "keywords": ["prompt", "llm", "library", "markdown"],
   "author": "",

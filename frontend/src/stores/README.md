@@ -20,7 +20,7 @@ Manages the state related to prompts and tags, including:
 ### Usage
 
 ```javascript
-import { usePromptStore } from '../stores/promptStore';
+import { usePromptStore } from "../stores/promptStore";
 
 const promptStore = usePromptStore();
 
@@ -48,7 +48,7 @@ Manages UI-related state, including:
 ### Usage
 
 ```javascript
-import { useUiStore } from '../stores/uiStore';
+import { useUiStore } from "../stores/uiStore";
 
 const uiStore = useUiStore();
 
@@ -66,21 +66,21 @@ uiStore.setSidebarVisible(false);
 Stores follow this general structure:
 
 ```javascript
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
 
-export const useExampleStore = defineStore('example', {
+export const useExampleStore = defineStore("example", {
   // State
   state: () => ({
     items: [],
     loading: false,
-    error: null
+    error: null,
   }),
-  
+
   // Getters
   getters: {
-    filteredItems: (state) => state.items.filter(item => item.active)
+    filteredItems: (state) => state.items.filter((item) => item.active),
   },
-  
+
   // Actions
   actions: {
     async fetchItems() {
@@ -92,8 +92,8 @@ export const useExampleStore = defineStore('example', {
         this.error = error.message;
         this.loading = false;
       }
-    }
-  }
+    },
+  },
 });
 ```
 

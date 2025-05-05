@@ -33,7 +33,8 @@ process.on('unhandledRejection', (reason, promise) => {
   if (global.logger) {
     global.logger.error('Unhandled promise rejection', {
       reason: reason instanceof Error ? reason.message : String(reason),
-      stack: reason instanceof Error ? reason.stack : 'No stack trace available',
+      stack:
+        reason instanceof Error ? reason.stack : 'No stack trace available',
     });
   }
   // DON'T exit the process - keep the server running despite errors
@@ -65,7 +66,7 @@ const __dirname = path.dirname(__filename);
     } catch (dbError) {
       global.logger.error('Failed to connect to MongoDB', {
         error: dbError.message,
-        stack: dbError.stack
+        stack: dbError.stack,
       });
 
       // Fallback to localhost if Docker connection fails
@@ -105,14 +106,14 @@ const __dirname = path.dirname(__filename);
     // Set up WebSocket server for chat
     const wss = new WebSocketServer({
       server,
-      path: '/api/chat/ws'
+      path: '/api/chat/ws',
     });
 
     wss.on('connection', (ws, req) => {
       const clientIp = req.socket.remoteAddress;
       global.logger.info('WebSocket client connected', {
         ip: clientIp,
-        headers: req.headers['user-agent']
+        headers: req.headers['user-agent'],
       });
 
       chatController.handleWebSocket(ws, req);
@@ -121,7 +122,7 @@ const __dirname = path.dirname(__filename);
         global.logger.info('WebSocket client disconnected', {
           ip: clientIp,
           code,
-          reason: reason.toString()
+          reason: reason.toString(),
         });
       });
     });
@@ -129,30 +130,40 @@ const __dirname = path.dirname(__filename);
     // Serve static assets in production
     if (config.isProd) {
       const frontendBuildPath = path.resolve(__dirname, '../../frontend/dist');
-      
+
       // Log the path for debugging
-      global.logger.info('Serving static files from', { path: frontendBuildPath });
-      
+      global.logger.info('Serving static files from', {
+        path: frontendBuildPath,
+      });
+
       // Check if the path exists
       try {
         const fs = await import('fs');
         if (!fs.existsSync(frontendBuildPath)) {
-          global.logger.error('Frontend build path does not exist', { path: frontendBuildPath });
+          global.logger.error('Frontend build path does not exist', {
+            path: frontendBuildPath,
+          });
         } else {
-          global.logger.info('Frontend build path exists', { path: frontendBuildPath });
-          
+          global.logger.info('Frontend build path exists', {
+            path: frontendBuildPath,
+          });
+
           // Check if index.html exists
           const indexPath = path.join(frontendBuildPath, 'index.html');
           if (!fs.existsSync(indexPath)) {
-            global.logger.error('index.html not found in build directory', { path: indexPath });
+            global.logger.error('index.html not found in build directory', {
+              path: indexPath,
+            });
           } else {
             global.logger.info('index.html found', { path: indexPath });
           }
         }
       } catch (error) {
-        global.logger.error('Error checking frontend build path', { error: error.message });
+        global.logger.error('Error checking frontend build path', {
+          error: error.message,
+        });
       }
-      
+
       app.use(express.static(frontendBuildPath));
 
       app.get('*', (req, res) => {
@@ -164,16 +175,16 @@ const __dirname = path.dirname(__filename);
     server.listen(config.port, () => {
       global.logger.info('Server started', {
         mode: config.nodeEnv,
-        port: config.port
+        port: config.port,
       });
       global.logger.info('WebSocket server available', {
-        url: `ws://localhost:${config.port}/api/chat/ws`
+        url: `ws://localhost:${config.port}/api/chat/ws`,
       });
     });
   } catch (error) {
     global.logger.error('Server initialization failed', {
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
     process.exit(1);
   }

@@ -17,11 +17,13 @@ describe('Providers Configuration', () => {
   it('should have UI display names for each provider', () => {
     assert.ok(providers.ui);
     assert.ok(providers.ui.displayNames);
-    
+
     // Check display names for all available providers
-    providers.available.forEach(provider => {
-      assert.ok(providers.ui.displayNames[provider], 
-        `Display name missing for provider: ${provider}`);
+    providers.available.forEach((provider) => {
+      assert.ok(
+          providers.ui.displayNames[provider],
+          `Display name missing for provider: ${provider}`,
+      );
     });
   });
 });

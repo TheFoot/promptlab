@@ -9,12 +9,12 @@
   border: 1px solid var(--border-color);
   display: block;
   line-height: 0; /* Eliminate any extra space */
-  
+
   /* Restore line height for children */
   & > * {
     line-height: normal;
   }
-  
+
   // First code block shouldn't have top margin
   &:first-child {
     margin-top: 0;
@@ -34,7 +34,7 @@
   height: 30px;
   line-height: 22px;
   box-sizing: border-box;
-  
+
   // Dark mode adjustments
   .dark-theme & {
     background-color: #1e1e2f;
@@ -70,22 +70,22 @@
   opacity: 0.7;
   transition: all 0.2s;
   line-height: 1;
-  
+
   svg {
     transition: all 0.2s;
     width: 14px;
     height: 14px;
   }
-  
+
   &:hover {
     opacity: 1;
     background-color: rgba(255, 255, 255, 0.1);
-    
+
     svg {
       stroke: #fff;
     }
   }
-  
+
   &:active {
     background-color: rgba(255, 255, 255, 0.2);
   }
@@ -100,7 +100,7 @@ pre {
   margin: 10px 0;
   font-family: monospace;
   max-height: 400px;
-  
+
   // Dark mode adjustments
   .dark-theme & {
     background-color: #2a2a2a;
@@ -113,18 +113,18 @@ pre {
   margin: 0;
   border-radius: 0 0 4px 4px;
   background-color: rgba(0, 0, 0, 0.03);
-  
+
   // Dark mode adjustments
   .dark-theme & {
     background-color: #2a2a2a;
     color: #e6e6e6;
   }
-  
+
   code {
     background-color: transparent;
     padding: 0;
     font-family: monospace;
-    
+
     // Dark mode adjustments
     .dark-theme & {
       color: #e6e6e6;
@@ -139,7 +139,7 @@ code:not(pre code) {
   border-radius: 3px;
   font-family: monospace;
   font-size: 0.9em;
-  
+
   // Dark mode adjustments
   .dark-theme & {
     background-color: rgba(255, 255, 255, 0.1);

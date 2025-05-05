@@ -6,10 +6,10 @@ describe('API Routes Index', async () => {
   it('should have registered routes for main API endpoints', () => {
     // Get all registered route paths
     const routePaths = apiRoutes.stack
-      .map(layer => layer.regexp)
-      .map(regexp => regexp.toString())
-      .join(' ');
-    
+        .map((layer) => layer.regexp)
+        .map((regexp) => regexp.toString())
+        .join(' ');
+
     // Check that the main API endpoints are present
     assert.ok(routePaths.includes('prompts'), 'Should have /prompts endpoint');
     assert.ok(routePaths.includes('tags'), 'Should have /tags endpoint');

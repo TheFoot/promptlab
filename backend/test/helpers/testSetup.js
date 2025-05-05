@@ -9,12 +9,12 @@ import sinon from 'sinon';
 export const setupInMemoryMongoDB = async () => {
   const mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
-  
+
   await mongoose.connect(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
-  
+
   return { mongod, uri };
 };
 
@@ -34,13 +34,13 @@ export const setupLoggerMock = () => {
     error: sinon.stub(),
     fatal: sinon.stub(),
   };
-  
+
   // Store original logger if it exists
   const originalLogger = global.logger;
-  
+
   // Set up mock logger
   global.logger = loggerMock;
-  
+
   // Return function to restore original logger
   return () => {
     global.logger = originalLogger;
@@ -56,7 +56,7 @@ export const mockExpressReqRes = (reqOverrides = {}, resOverrides = {}) => {
     ip: '127.0.0.1',
     ...reqOverrides,
   };
-  
+
   const res = {
     status: sinon.stub().returnsThis(),
     json: sinon.stub().returnsThis(),
@@ -64,9 +64,9 @@ export const mockExpressReqRes = (reqOverrides = {}, resOverrides = {}) => {
     sendFile: sinon.stub().returnsThis(),
     ...resOverrides,
   };
-  
+
   const next = sinon.stub();
-  
+
   return { req, res, next };
 };
 

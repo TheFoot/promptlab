@@ -84,10 +84,13 @@
           v-for="(message, index) in messages"
           :key="index"
           class="chat-message"
-          :class="{ 'user-message': message.role === 'user', 'assistant-message': message.role === 'assistant' }"
+          :class="{
+            'user-message': message.role === 'user',
+            'assistant-message': message.role === 'assistant',
+          }"
         >
           <div class="message-role">
-            {{ message.role === 'user' ? 'You' : 'Assistant' }}
+            {{ message.role === "user" ? "You" : "Assistant" }}
           </div>
           <div
             class="message-content"
@@ -134,60 +137,72 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { usePromptStore } from '../stores/promptStore';
-import * as marked from 'marked';
-import highlightjs from 'highlight.js';
-import 'highlight.js/styles/github.css';
-import alertService from '../services/alertService';
-import modelConfigService from '../services/modelConfigService';
-import '../styles/code-blocks.scss';
+import {
+  ref,
+  reactive,
+  computed,
+  watch,
+  nextTick,
+  onMounted,
+  onUnmounted,
+} from "vue";
+import { usePromptStore } from "../stores/promptStore";
+import * as marked from "marked";
+import highlightjs from "highlight.js";
+import "highlight.js/styles/github.css";
+import alertService from "../services/alertService";
+import modelConfigService from "../services/modelConfigService";
+import "../styles/code-blocks.scss";
 
 // Props
 const props = defineProps({
   disabled: {
     type: Boolean,
-    default: false
+    default: false,
   },
   // Allow parent component to control expanded state
   expanded: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 // Watch for parent-controlled expanded state
-watch(() => props.expanded, (newValue) => {
-  if (newValue !== isExpanded.value) {
-    isExpanded.value = newValue;
+watch(
+  () => props.expanded,
+  (newValue) => {
+    if (newValue !== isExpanded.value) {
+      isExpanded.value = newValue;
 
-    // When expanded
-    if (isExpanded.value) {
-      nextTick(() => {
-        // Apply stored width from state
-        if (document.querySelector('.chat-sidebar')) {
-          document.querySelector('.chat-sidebar').style.width = `${sidebarWidth.value}px`;
+      // When expanded
+      if (isExpanded.value) {
+        nextTick(() => {
+          // Apply stored width from state
+          if (document.querySelector(".chat-sidebar")) {
+            document.querySelector(".chat-sidebar").style.width =
+              `${sidebarWidth.value}px`;
+          }
+          scrollToBottom();
+
+          // Notify parent about the width for content adjustment
+          emit("resize", sidebarWidth.value);
+        });
+      }
+      // When collapsed
+      else {
+        // Reset inline style to let CSS handle width
+        if (document.querySelector(".chat-sidebar")) {
+          document.querySelector(".chat-sidebar").style.width = "";
         }
-        scrollToBottom();
-
-        // Notify parent about the width for content adjustment
-        emit('resize', sidebarWidth.value);
-      });
-    }
-    // When collapsed
-    else {
-      // Reset inline style to let CSS handle width
-      if (document.querySelector('.chat-sidebar')) {
-        document.querySelector('.chat-sidebar').style.width = '';
       }
     }
-  }
-});
+  },
+);
 
 // Configure marked with code highlighting
 // Use modern marked API (v9+)
 const markedOptions = {
-  highlight: function(code, lang) {
+  highlight: function (code, lang) {
     if (lang && highlightjs.getLanguage(lang)) {
       return highlightjs.highlight(code, { language: lang }).value;
     }
@@ -200,16 +215,16 @@ const markedOptions = {
 // Initialize expanded state from props
 const isExpanded = ref(props.expanded);
 const messages = ref([]);
-const newMessage = ref('');
+const newMessage = ref("");
 const isLoading = ref(false);
 const messagesContainer = ref(null);
 const messageInput = ref(null); // Reference to the textarea
 const socket = ref(null);
 const promptStore = usePromptStore();
 const modelConfig = reactive({
-  provider: '',  // Will be set from config
-  model: '',     // Will be set from config
-  temperature: 0.7
+  provider: "", // Will be set from config
+  model: "", // Will be set from config
+  temperature: 0.7,
 });
 const sidebarWidth = ref(400); // Default width
 
@@ -223,7 +238,7 @@ const modelDisplayNames = ref({});
 const currentPrompt = computed(() => promptStore.currentPrompt);
 
 // Define emits
-const emit = defineEmits(['toggle', 'resize']);
+const emit = defineEmits(["toggle", "resize"]);
 
 // Load provider/model configuration
 const loadModelConfiguration = async () => {
@@ -236,15 +251,15 @@ const loadModelConfiguration = async () => {
     providerDisplayNames.value = config.providers.displayNames;
 
     // Always set the provider from config default or first available
-    modelConfig.provider = config.providers.default || availableProviders.value[0] || '';
-    console.log('Setting default provider to:', modelConfig.provider);
+    modelConfig.provider =
+      config.providers.default || availableProviders.value[0] || "";
+    console.log("Setting default provider to:", modelConfig.provider);
 
     // Update available models for selected provider
     await updateAvailableModels();
-
   } catch (error) {
-    console.error('Failed to load model configuration:', error);
-    alertService.showAlert('Failed to load model configuration', 'error', 5000);
+    console.error("Failed to load model configuration:", error);
+    alertService.showAlert("Failed to load model configuration", "error", 5000);
   }
 };
 
@@ -253,9 +268,9 @@ const updateAvailableModels = async () => {
   try {
     const config = await modelConfigService.getConfig();
     const provider = modelConfig.provider;
-    
+
     if (!provider) {
-      console.warn('Provider is empty, cannot update models');
+      console.warn("Provider is empty, cannot update models");
       return;
     }
 
@@ -264,10 +279,11 @@ const updateAvailableModels = async () => {
     modelDisplayNames.value = config.models[provider]?.displayNames || {};
 
     // Always use the default model from config
-    modelConfig.model = config.models[provider]?.default || availableModels.value[0] || '';
-    console.log('Setting default model to:', modelConfig.model);
+    modelConfig.model =
+      config.models[provider]?.default || availableModels.value[0] || "";
+    console.log("Setting default model to:", modelConfig.model);
   } catch (error) {
-    console.error('Failed to update model list:', error);
+    console.error("Failed to update model list:", error);
     availableModels.value = [];
     modelDisplayNames.value = {};
   }
@@ -278,39 +294,41 @@ const updateAvailableModels = async () => {
 // Resize sidebar
 const startResize = (e) => {
   e.preventDefault();
-  document.body.style.cursor = 'ew-resize';
+  document.body.style.cursor = "ew-resize";
 
   const initialX = e.clientX;
-  const initialWidth = parseInt(getComputedStyle(document.querySelector('.chat-sidebar')).width);
+  const initialWidth = parseInt(
+    getComputedStyle(document.querySelector(".chat-sidebar")).width,
+  );
 
   // Send initial resize event to indicate resize started
-  emit('resize', initialWidth);
+  emit("resize", initialWidth);
 
   const handleMouseMove = (e) => {
     const newWidth = initialWidth - (e.clientX - initialX);
     if (newWidth > 250 && newWidth < 600) {
       sidebarWidth.value = newWidth;
-      document.querySelector('.chat-sidebar').style.width = `${newWidth}px`;
+      document.querySelector(".chat-sidebar").style.width = `${newWidth}px`;
 
       // Emit resize event with new width to parent component
-      emit('resize', newWidth);
+      emit("resize", newWidth);
     }
   };
 
   const handleMouseUp = () => {
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-    document.body.style.cursor = '';
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+    document.body.style.cursor = "";
 
     // Send one final resize event after mouse up
-    emit('resize', sidebarWidth.value);
+    emit("resize", sidebarWidth.value);
 
     // Save the width to localStorage
     saveSidebarWidth(sidebarWidth.value);
   };
 
-  document.addEventListener('mousemove', handleMouseMove);
-  document.addEventListener('mouseup', handleMouseUp);
+  document.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("mouseup", handleMouseUp);
 };
 
 // Handle Shift+Enter key press to insert a newline
@@ -327,10 +345,13 @@ const adjustTextareaHeight = () => {
   if (!messageInput.value) return;
 
   // Reset height to calculate scroll height
-  messageInput.value.style.height = 'auto';
+  messageInput.value.style.height = "auto";
 
   // Set new height based on content - min 40px, max 120px
-  const newHeight = Math.min(Math.max(messageInput.value.scrollHeight, 40), 120);
+  const newHeight = Math.min(
+    Math.max(messageInput.value.scrollHeight, 40),
+    120,
+  );
   messageInput.value.style.height = `${newHeight}px`;
 };
 
@@ -340,47 +361,47 @@ const handleProviderChange = async () => {
   await updateAvailableModels();
 
   // Reset chat history when provider changes
-  resetChat('model_change');
+  resetChat("model_change");
 };
 
 // Reset chat conversation
-const resetChat = (reason = 'manual_reset') => {
+const resetChat = (reason = "manual_reset") => {
   messages.value = [];
 
   // Add appropriate system message based on reset reason
-  let resetMessage = '';
+  let resetMessage = "";
 
   switch (reason) {
-    case 'model_change':
+    case "model_change":
       // Model or provider change message
       resetMessage = `Chat reset due to model change. Now using: ${providerDisplayNames.value[modelConfig.provider] || modelConfig.provider} / ${modelDisplayNames.value[modelConfig.model] || modelConfig.model}`;
       break;
-    case 'prompt_change':
+    case "prompt_change":
       // Prompt change message
-      resetMessage = `Chat reset due to prompt change. Now testing: ${currentPrompt.value?.title || 'Unknown prompt'}`;
+      resetMessage = `Chat reset due to prompt change. Now testing: ${currentPrompt.value?.title || "Unknown prompt"}`;
       break;
-    case 'manual_reset':
+    case "manual_reset":
       // Manual reset by user
-      resetMessage = 'Chat manually reset.';
+      resetMessage = "Chat manually reset.";
       break;
-    case 'init':
+    case "init":
       // Initial setup
-      resetMessage = 'Chat initialized.';
+      resetMessage = "Chat initialized.";
       break;
     default:
       // Default message
-      resetMessage = 'Chat reset.';
+      resetMessage = "Chat reset.";
   }
 
   // Add the prompt information if available
-  if (currentPrompt.value && reason !== 'prompt_change') {
+  if (currentPrompt.value && reason !== "prompt_change") {
     resetMessage += ` Testing system prompt: ${currentPrompt.value.title}`;
   }
 
   // Add the system message
   messages.value.push({
-    role: 'system',
-    content: resetMessage
+    role: "system",
+    content: resetMessage,
   });
 };
 
@@ -388,35 +409,36 @@ const resetChat = (reason = 'manual_reset') => {
 const copyMessageToClipboard = async (message) => {
   try {
     await navigator.clipboard.writeText(message);
-    alertService.showAlert('Message copied to clipboard!', 'success', 3000);
+    alertService.showAlert("Message copied to clipboard!", "success", 3000);
   } catch (err) {
-    console.error('Failed to copy message:', err);
-    alertService.showAlert('Failed to copy to clipboard', 'error', 3000);
+    console.error("Failed to copy message:", err);
+    alertService.showAlert("Failed to copy to clipboard", "error", 3000);
   }
 };
 
 // Format message with markdown and syntax highlighting
 const formatMessage = (content) => {
-  if (!content) return '';
+  if (!content) return "";
 
   // Create custom renderer
   const renderer = {
     code(code, language) {
       // Default highlightjs code rendering
-      const highlightedCode = language && highlightjs.getLanguage(language)
-        ? highlightjs.highlight(code, { language }).value
-        : highlightjs.highlightAuto(code).value;
+      const highlightedCode =
+        language && highlightjs.getLanguage(language)
+          ? highlightjs.highlight(code, { language }).value
+          : highlightjs.highlightAuto(code).value;
 
       // Create a timestamp-based filename with proper extension
       const timestamp = new Date().getTime();
-      const extension = language || 'txt';
+      const extension = language || "txt";
       const filename = `code-${timestamp}.${extension}`;
 
       // Return code block with download button using an icon
       return `
         <div class="code-block-wrapper">
           <div class="code-header">
-            <span class="code-language">${language || 'plain text'}</span>
+            <span class="code-language">${language || "plain text"}</span>
             <button class="code-download-btn" title="Download code" data-code="${encodeURIComponent(code)}" data-filename="${filename}" onclick="window.downloadCodeBlock(this)">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -429,23 +451,25 @@ const formatMessage = (content) => {
         </div>
       `;
     },
-    
+
     paragraph(text) {
       // If paragraph contains only a code block, don't wrap in <p> tags
-      if (text.trim().startsWith('<div class="code-block-wrapper">') &&
-          text.trim().endsWith('</div>')) {
+      if (
+        text.trim().startsWith('<div class="code-block-wrapper">') &&
+        text.trim().endsWith("</div>")
+      ) {
         return text;
       }
-      
+
       // Otherwise use the normal paragraph formatting
       return `<p>${text}</p>`;
-    }
+    },
   };
 
   // Use modern marked API with options including custom renderer
   const options = {
     ...markedOptions,
-    renderer
+    renderer,
   };
 
   return marked.parse(content, options);
@@ -457,16 +481,16 @@ const sendMessage = async () => {
 
   // Add user message to chat
   messages.value.push({
-    role: 'user',
-    content: newMessage.value.trim()
+    role: "user",
+    content: newMessage.value.trim(),
   });
 
   // Clear input after storing message
-  newMessage.value = ''; // Clear input
+  newMessage.value = ""; // Clear input
 
   // Reset textarea height
   if (messageInput.value) {
-    messageInput.value.style.height = 'auto';
+    messageInput.value.style.height = "auto";
   }
 
   // Scroll to bottom after new message
@@ -481,53 +505,55 @@ const sendMessage = async () => {
     const messageObj = {
       messages: [
         // Add system message with the current prompt content
-        ...(currentPrompt.value?.content ? [{ role: 'system', content: currentPrompt.value.content }] : []),
+        ...(currentPrompt.value?.content
+          ? [{ role: "system", content: currentPrompt.value.content }]
+          : []),
         // Add all user and assistant messages
-        ...messages.value.filter(m => m.role !== 'system')
+        ...messages.value.filter((m) => m.role !== "system"),
       ],
       provider: modelConfig.provider,
       model: modelConfig.model,
       temperature: modelConfig.temperature,
-      stream: true
+      stream: true,
     };
 
     if (socket.value && socket.value.readyState === WebSocket.OPEN) {
       // Use WebSocket if connected
       socket.value.send(JSON.stringify(messageObj));
       // The response will be handled by the websocket message handlers
-      console.log('Message sent via WebSocket');
+      console.log("Message sent via WebSocket");
     } else {
-      console.log('WebSocket not connected, using REST API fallback');
+      console.log("WebSocket not connected, using REST API fallback");
       // Fallback to REST API if WebSocket not connected
 
       // Use the API endpoint through Vite's proxy
-      const apiUrl = '/api/chat';
+      const apiUrl = "/api/chat";
 
-      console.log('Using API endpoint:', apiUrl);
+      console.log("Using API endpoint:", apiUrl);
 
       const response = await fetch(apiUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(messageObj)
+        body: JSON.stringify(messageObj),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error("Failed to send message");
       }
 
       const data = await response.json();
       messages.value.push({
-        role: 'assistant',
-        content: data.message
+        role: "assistant",
+        content: data.message,
       });
     }
   } catch (error) {
-    console.error('Error sending message:', error);
+    console.error("Error sending message:", error);
     messages.value.push({
-      role: 'assistant',
-      content: 'Sorry, there was an error processing your request.'
+      role: "assistant",
+      content: "Sorry, there was an error processing your request.",
     });
   } finally {
     isLoading.value = false;
@@ -546,10 +572,10 @@ const scrollToBottom = () => {
 const setupWebSocket = () => {
   // Create WebSocket connection using the browser's current protocol and host
   // This leverages Vite's WebSocket proxy configuration
-  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const wsUrl = `${wsProtocol}//${window.location.host}/api/chat/ws`;
 
-  console.log('Setting up WebSocket connection to:', wsUrl);
+  console.log("Setting up WebSocket connection to:", wsUrl);
 
   const ws = new WebSocket(wsUrl);
   socket.value = ws;
@@ -557,64 +583,70 @@ const setupWebSocket = () => {
   let currentAssistantMessage = null;
 
   ws.onopen = () => {
-    console.log('WebSocket connection established successfully');
+    console.log("WebSocket connection established successfully");
   };
 
   ws.onmessage = (event) => {
-    console.log('WebSocket message received:', event.data);
+    console.log("WebSocket message received:", event.data);
 
     try {
       const data = JSON.parse(event.data);
 
-      if (data.type === 'start') {
+      if (data.type === "start") {
         // Start of a new message
-        console.log('Starting new assistant message');
-        currentAssistantMessage = { role: 'assistant', content: '' };
+        console.log("Starting new assistant message");
+        currentAssistantMessage = { role: "assistant", content: "" };
         messages.value.push(currentAssistantMessage);
-      } else if (data.type === 'stream' && currentAssistantMessage) {
+      } else if (data.type === "stream" && currentAssistantMessage) {
         // Continuation of a message
-        console.log('Received content chunk:', data.content);
+        console.log("Received content chunk:", data.content);
         currentAssistantMessage.content += data.content;
         // Force reactive update by creating a new array reference
         messages.value = [...messages.value];
         scrollToBottom();
-      } else if (data.type === 'end') {
+      } else if (data.type === "end") {
         // End of a message
-        console.log('Message completed');
+        console.log("Message completed");
         isLoading.value = false;
         scrollToBottom();
-      } else if (data.type === 'error') {
-        console.error('WebSocket error from server:', data.error);
+      } else if (data.type === "error") {
+        console.error("WebSocket error from server:", data.error);
         isLoading.value = false;
         messages.value.push({
-          role: 'assistant',
-          content: `Error: ${data.error}`
+          role: "assistant",
+          content: `Error: ${data.error}`,
         });
         scrollToBottom();
-      } else if (data.type === 'info') {
-        console.log('WebSocket info:', data.message);
+      } else if (data.type === "info") {
+        console.log("WebSocket info:", data.message);
       } else {
-        console.warn('Unknown message type:', data.type);
+        console.warn("Unknown message type:", data.type);
       }
     } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
+      console.error("Error parsing WebSocket message:", error);
     }
   };
 
   ws.onerror = (error) => {
-    console.error('WebSocket connection error:', error);
+    console.error("WebSocket connection error:", error);
     isLoading.value = false;
   };
 
   ws.onclose = (event) => {
-    console.log('WebSocket connection closed with code:', event.code, 'reason:', event.reason);
+    console.log(
+      "WebSocket connection closed with code:",
+      event.code,
+      "reason:",
+      event.reason,
+    );
     isLoading.value = false;
 
     // Attempt to reconnect after delay if not closed cleanly
     if (!event.wasClean) {
-      console.log('Attempting to reconnect in 3 seconds...');
+      console.log("Attempting to reconnect in 3 seconds...");
       setTimeout(() => {
-        if (socket.value === ws) { // Only reconnect if this is still the current socket
+        if (socket.value === ws) {
+          // Only reconnect if this is still the current socket
           setupWebSocket();
         }
       }, 3000);
@@ -624,21 +656,21 @@ const setupWebSocket = () => {
 
 // Store sidebar width in localStorage
 const saveSidebarWidth = (width) => {
-  localStorage.setItem('chat-sidebar-width', width.toString());
+  localStorage.setItem("chat-sidebar-width", width.toString());
 };
 
 // Function to download code blocks
 const downloadCodeBlock = (button) => {
   try {
-    const code = decodeURIComponent(button.getAttribute('data-code'));
-    const filename = button.getAttribute('data-filename');
+    const code = decodeURIComponent(button.getAttribute("data-code"));
+    const filename = button.getAttribute("data-filename");
 
     // Create blob with code content
-    const blob = new Blob([code], { type: 'text/plain' });
+    const blob = new Blob([code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
 
     // Create temporary link element to trigger download
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
@@ -648,10 +680,10 @@ const downloadCodeBlock = (button) => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    alertService.showAlert(`Downloading ${filename}`, 'success', 3000);
+    alertService.showAlert(`Downloading ${filename}`, "success", 3000);
   } catch (error) {
-    console.error('Error downloading code:', error);
-    alertService.showAlert('Failed to download code', 'error', 3000);
+    console.error("Error downloading code:", error);
+    alertService.showAlert("Failed to download code", "error", 3000);
   }
 };
 
@@ -662,7 +694,7 @@ onMounted(async () => {
   setupWebSocket();
 
   // Load saved sidebar width from localStorage or use default
-  const savedWidth = localStorage.getItem('chat-sidebar-width');
+  const savedWidth = localStorage.getItem("chat-sidebar-width");
   if (savedWidth) {
     const width = parseInt(savedWidth, 10);
     // Ensure width is within reasonable bounds (250-600px)
@@ -672,11 +704,12 @@ onMounted(async () => {
   }
 
   // Initialize with a clean slate
-  resetChat('init');
+  resetChat("init");
 
   // Apply initial width from state
-  if (isExpanded.value && document.querySelector('.chat-sidebar')) {
-    document.querySelector('.chat-sidebar').style.width = `${sidebarWidth.value}px`;
+  if (isExpanded.value && document.querySelector(".chat-sidebar")) {
+    document.querySelector(".chat-sidebar").style.width =
+      `${sidebarWidth.value}px`;
   }
 
   // Initialize textarea height
@@ -704,24 +737,30 @@ onUnmounted(() => {
 });
 
 // Watch for changes in the current prompt
-watch(() => currentPrompt.value, (newPrompt) => {
-  if (newPrompt) {
-    // Reset the chat history when the prompt changes
-    resetChat('prompt_change');
-  }
-});
+watch(
+  () => currentPrompt.value,
+  (newPrompt) => {
+    if (newPrompt) {
+      // Reset the chat history when the prompt changes
+      resetChat("prompt_change");
+    }
+  },
+);
 
 // Watch for changes in the model selection
-watch(() => modelConfig.model, (newModel, oldModel) => {
-  if (oldModel && newModel !== oldModel) {
-    // Reset chat history when model changes
-    resetChat('model_change');
-  }
-});
+watch(
+  () => modelConfig.model,
+  (newModel, oldModel) => {
+    if (oldModel && newModel !== oldModel) {
+      // Reset chat history when model changes
+      resetChat("model_change");
+    }
+  },
+);
 </script>
 
 <style lang="scss" scoped>
-@use '../styles/variables' as *;
+@use "../styles/variables" as *;
 
 .chat-sidebar {
   position: absolute;
@@ -905,7 +944,7 @@ watch(() => modelConfig.model, (newModel, oldModel) => {
 
       &:hover {
         &::after {
-          content: 'Double-click to copy';
+          content: "Double-click to copy";
           position: absolute;
           top: -20px;
           right: 5px;
@@ -933,7 +972,8 @@ watch(() => modelConfig.model, (newModel, oldModel) => {
         margin-top: 0;
       }
 
-      :deep(ul), :deep(ol) {
+      :deep(ul),
+      :deep(ol) {
         padding-left: 20px;
         margin-bottom: 10px;
       }
@@ -988,11 +1028,13 @@ watch(() => modelConfig.model, (newModel, oldModel) => {
 }
 
 @keyframes bounce {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
   }
   40% {
-    transform: scale(1.0);
+    transform: scale(1);
   }
 }
 

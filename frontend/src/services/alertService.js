@@ -1,5 +1,5 @@
 // Alert service for managing alerts throughout the application
-import { ref } from 'vue';
+import { ref } from "vue";
 
 const alertSystemRef = ref(null);
 
@@ -10,11 +10,11 @@ export const useAlertService = () => {
   };
 
   // Show an alert
-  const showAlert = (message, type = 'info', duration = 5000) => {
+  const showAlert = (message, type = "info", duration = 5000) => {
     if (alertSystemRef.value) {
       return alertSystemRef.value.addAlert(message, type, duration);
     } else {
-      console.warn('Alert system not registered. Message:', message);
+      console.warn("Alert system not registered. Message:", message);
       return -1;
     }
   };

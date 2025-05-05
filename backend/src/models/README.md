@@ -22,20 +22,20 @@ The `Prompt.js` model defines the schema for LLM prompts stored in the applicati
 ## Usage
 
 ```javascript
-import Prompt from '../models/Prompt.js';
+import Prompt from "../models/Prompt.js";
 
 // Create a new prompt
 const prompt = new Prompt({
-  title: 'Example Prompt',
-  content: 'This is a prompt for an LLM.',
-  tags: ['example', 'documentation']
+  title: "Example Prompt",
+  content: "This is a prompt for an LLM.",
+  tags: ["example", "documentation"],
 });
 
 // Save to database
 await prompt.save();
 
 // Find prompts
-const prompts = await Prompt.find({ tags: 'example' });
+const prompts = await Prompt.find({ tags: "example" });
 ```
 
 ## Validation

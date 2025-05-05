@@ -31,14 +31,14 @@ The Chat Service manages communication with OpenAI's API for generating response
 ### Usage
 
 ```javascript
-import * as chatService from '../services/chatService.js';
+import * as chatService from "../services/chatService.js";
 
 // Regular response
 const response = await chatService.sendMessage(message, model, temperature);
 
 // Streaming response
 const stream = chatService.streamResponse(message, model, temperature);
-stream.on('data', chunk => {
+stream.on("data", (chunk) => {
   // Handle streaming response chunk
 });
 ```

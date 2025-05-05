@@ -31,17 +31,21 @@ $text-light: #333;
 $text-dark: #eee;
 
 // Typography
-$font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-$font-family-mono: 'Fira Code', monospace;
+$font-family-base:
+  "Inter",
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
+$font-family-mono: "Fira Code", monospace;
 $font-size-base: 16px;
 $line-height-base: 1.5;
 
 // Spacing
-$spacing-xs: 0.25rem;  // 4px
-$spacing-sm: 0.5rem;   // 8px
-$spacing-md: 1rem;     // 16px
-$spacing-lg: 1.5rem;   // 24px
-$spacing-xl: 2rem;     // 32px
+$spacing-xs: 0.25rem; // 4px
+$spacing-sm: 0.5rem; // 8px
+$spacing-md: 1rem; // 16px
+$spacing-lg: 1.5rem; // 24px
+$spacing-xl: 2rem; // 32px
 
 // Breakpoints
 $breakpoint-sm: 640px;
@@ -60,7 +64,7 @@ To use these styles in Vue components:
 
 ```vue
 <style scoped lang="scss">
-@import '../styles/variables.scss';
+@import "../styles/variables.scss";
 
 .some-element {
   color: $primary-color;

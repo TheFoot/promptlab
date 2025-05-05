@@ -17,7 +17,7 @@ export const getAll = async (req, res) => {
   try {
     // Call service function to get data
     const data = await service.getAll();
-    
+
     // Return successful response
     return res.status(200).json(data);
   } catch (error) {

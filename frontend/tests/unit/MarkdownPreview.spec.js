@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { computed, ref } from 'vue';
-import { mount } from '@vue/test-utils';
+import { describe, it, expect } from "vitest";
+import { computed } from "vue";
+import { mount } from "@vue/test-utils";
 
 // Create a mock component instead of using the real one
 const MockMarkdownPreview = {
@@ -13,39 +13,43 @@ const MockMarkdownPreview = {
   props: {
     content: {
       type: String,
-      default: '',
+      default: "",
     },
   },
   setup(props) {
     const renderedMarkdown = computed(() => {
-      if (!props.content) return '';
+      if (!props.content) return "";
       return `<p>Mocked markdown: ${props.content}</p>`;
     });
 
     return {
-      renderedMarkdown
+      renderedMarkdown,
     };
-  }
+  },
 };
 
-describe('MarkdownPreview.vue', () => {
-  it('renders empty preview message when content is not provided', () => {
+describe("MarkdownPreview.vue", () => {
+  it("renders empty preview message when content is not provided", () => {
     const wrapper = mount(MockMarkdownPreview);
-    
-    expect(wrapper.find('.empty-preview').exists()).toBe(true);
-    expect(wrapper.find('.empty-preview').text()).toBe('No content to preview.');
-    expect(wrapper.find('.markdown-content').exists()).toBe(false);
+
+    expect(wrapper.find(".empty-preview").exists()).toBe(true);
+    expect(wrapper.find(".empty-preview").text()).toBe(
+      "No content to preview.",
+    );
+    expect(wrapper.find(".markdown-content").exists()).toBe(false);
   });
 
-  it('renders markdown content when content is provided', () => {
+  it("renders markdown content when content is provided", () => {
     const wrapper = mount(MockMarkdownPreview, {
       props: {
-        content: '# Test Content'
-      }
+        content: "# Test Content",
+      },
     });
-    
-    expect(wrapper.find('.empty-preview').exists()).toBe(false);
-    expect(wrapper.find('.markdown-content').exists()).toBe(true);
-    expect(wrapper.find('.markdown-content').html()).toContain('Mocked markdown: # Test Content');
+
+    expect(wrapper.find(".empty-preview").exists()).toBe(false);
+    expect(wrapper.find(".markdown-content").exists()).toBe(true);
+    expect(wrapper.find(".markdown-content").html()).toContain(
+      "Mocked markdown: # Test Content",
+    );
   });
 });

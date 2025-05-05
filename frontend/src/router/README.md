@@ -10,28 +10,28 @@ This directory contains the Vue Router configuration for the PromptLab applicati
 
 The `index.js` file defines the following routes:
 
-| Path | Component | Description |
-|------|-----------|-------------|
-| `/` | HomeView | Main dashboard with prompt list |
-| `/prompts/new` | PromptCreateView | Create a new prompt |
-| `/prompts/:id` | PromptDetailView | View and edit a prompt |
+| Path           | Component        | Description                     |
+| -------------- | ---------------- | ------------------------------- |
+| `/`            | HomeView         | Main dashboard with prompt list |
+| `/prompts/new` | PromptCreateView | Create a new prompt             |
+| `/prompts/:id` | PromptDetailView | View and edit a prompt          |
 
 ## Configuration
 
 ```javascript
-import { createRouter, createWebHistory } from 'vue-router';
-import HomeView from '../views/HomeView.vue';
+import { createRouter, createWebHistory } from "vue-router";
+import HomeView from "../views/HomeView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: HomeView
+      path: "/",
+      name: "home",
+      component: HomeView,
     },
     // Other routes
-  ]
+  ],
 });
 
 export default router;
@@ -54,7 +54,7 @@ Some routes use parameters to identify resources:
 ## Usage in Components
 
 ```javascript
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter, useRoute } from "vue-router";
 
 // In setup()
 const router = useRouter();
@@ -65,7 +65,7 @@ const promptId = route.params.id;
 
 // Programmatic navigation
 function goToDetail(id) {
-  router.push({ name: 'prompt-detail', params: { id } });
+  router.push({ name: "prompt-detail", params: { id } });
 }
 ```
 

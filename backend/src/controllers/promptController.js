@@ -6,7 +6,7 @@ import Prompt from '../models/Prompt.js';
 const getPrompts = async (req, res) => {
   try {
     const { search, tag } = req.query;
-    let query = {};
+    const query = {};
 
     // Apply search filter if provided
     if (search) {
@@ -19,8 +19,8 @@ const getPrompts = async (req, res) => {
     }
 
     const prompts = await Prompt.find(query)
-      .sort({ updatedAt: -1 }) // Sort by most recently updated
-      .select('title tags updatedAt');
+        .sort({ updatedAt: -1 }) // Sort by most recently updated
+        .select('title tags updatedAt');
 
     res.json(prompts);
   } catch (error) {
@@ -51,7 +51,9 @@ const createPrompt = async (req, res) => {
     const { title, content, tags = [] } = req.body;
 
     if (!title || !content) {
-      return res.status(400).json({ message: 'Title and content are required' });
+      return res
+          .status(400)
+          .json({ message: 'Title and content are required' });
     }
 
     const newPrompt = new Prompt({
@@ -74,9 +76,9 @@ const updatePrompt = async (req, res) => {
   try {
     const { title, content, tags } = req.body;
     const updatedPrompt = await Prompt.findByIdAndUpdate(
-      req.params.id,
-      { title, content, tags },
-      { new: true, runValidators: true }
+        req.params.id,
+        { title, content, tags },
+        { new: true, runValidators: true },
     );
 
     if (!updatedPrompt) {

@@ -41,6 +41,7 @@ The backend requires the following environment variables:
 - `ANTHROPIC_API_KEY` - Anthropic API key for Claude models
 
 Optional provider configuration:
+
 - `OPENAI_API_BASE_URL` - Custom OpenAI API endpoint
 - `OPENAI_ORGANIZATION` - OpenAI organization ID
 - `ANTHROPIC_API_BASE_URL` - Custom Anthropic API endpoint

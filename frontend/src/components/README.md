@@ -16,18 +16,18 @@ Each component follows this general structure:
 ```vue
 <script setup>
 // Imports
-import { ref, computed } from 'vue';
+import { ref, computed } from "vue";
 
 // Props
 const props = defineProps({
   title: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 // Emits
-const emit = defineEmits(['update', 'delete']);
+const emit = defineEmits(["update", "delete"]);
 
 // State and logic
 const isActive = ref(false);
@@ -35,7 +35,7 @@ const isActive = ref(false);
 // Methods
 function handleClick() {
   isActive.value = !isActive.value;
-  emit('update', isActive.value);
+  emit("update", isActive.value);
 }
 </script>
 
@@ -47,7 +47,7 @@ function handleClick() {
 </template>
 
 <style scoped lang="scss">
-@import '../styles/variables.scss';
+@import "../styles/variables.scss";
 
 div {
   // Styles

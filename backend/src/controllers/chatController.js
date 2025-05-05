@@ -8,18 +8,20 @@ const chatController = {
     // Define variables outside try/catch to make them available in the catch block
     let provider = 'openai';
     let model = '';
-    let clientIp = req.ip || '0.0.0.0';
-    
+    const clientIp = req.ip || '0.0.0.0';
+
     try {
       // Extract request data
-      const {messages, temperature} = req.body;
-      
-      // Extract and normalize provider and model 
+      const { messages, temperature } = req.body;
+
+      // Extract and normalize provider and model
       provider = req.body.provider?.toLowerCase() || config.providers.default;
       model = req.body.model || '';
 
       if (!messages || !Array.isArray(messages)) {
-        return res.status(400).json({error: 'Messages are required and must be an array'});
+        return res
+            .status(400)
+            .json({ error: 'Messages are required and must be an array' });
       }
 
       global.logger.debug('Processing chat request', {
@@ -28,10 +30,10 @@ const chatController = {
         model,
         messageCount: messages.length,
       });
-      
+
       const chatModel = ChatModelFactory.createModel(provider);
-      const response = await chatModel.chat(messages, {model, temperature});
-      
+      const response = await chatModel.chat(messages, { model, temperature });
+
       global.logger.info('Chat request successful', {
         clientIp,
         provider,
@@ -45,11 +47,11 @@ const chatController = {
         error: error.message,
         stack: error.stack,
         clientIp,
-        provider,  // Now safely defined
-        model,     // Now safely defined
+        provider, // Now safely defined
+        model, // Now safely defined
         requestBody: req.body, // Log the request body for debugging
       });
-      
+
       return res.status(500).json({
         error: 'Failed to process chat request',
         message: error.message,
@@ -60,28 +62,28 @@ const chatController = {
   // Handle WebSocket connections for streaming responses
   handleWebSocket(ws, req) {
     const clientIp = req.socket.remoteAddress;
-    
+
     global.logger.debug('WebSocket handler initialized', {
       clientIp,
       userAgent: req.headers['user-agent'],
     });
-    
+
     ws.on('message', async (message) => {
       // Store provider and model outside try/catch for error handling access
       let provider = config.providers.default;
       let model = '';
       let clientRequestData = null;
-      
+
       try {
         // Parse the incoming data
         const data = JSON.parse(message);
         clientRequestData = data;
-        const {messages, temperature, stream = true} = data;
-        
+        const { messages, temperature, stream = true } = data;
+
         // Extract and normalize provider and model
         provider = data.provider?.toLowerCase() || config.providers.default;
         model = data.model || '';
-        
+
         global.logger.debug('WebSocket message received', {
           clientIp,
           messageCount: messages?.length,
@@ -91,14 +93,16 @@ const chatController = {
         });
 
         if (!messages || !Array.isArray(messages)) {
-          return ws.send(JSON.stringify({
-            type: 'error',
-            error: 'Messages are required and must be an array',
-          }));
+          return ws.send(
+              JSON.stringify({
+                type: 'error',
+                error: 'Messages are required and must be an array',
+              }),
+          );
         }
 
         // Start the message
-        ws.send(JSON.stringify({type: 'start'}));
+        ws.send(JSON.stringify({ type: 'start' }));
 
         const chatModel = ChatModelFactory.createModel(provider);
 
@@ -107,13 +111,13 @@ const chatController = {
           await chatModel.streamChat(
               messages,
               (content) => {
-                ws.send(JSON.stringify({type: 'stream', content}));
+                ws.send(JSON.stringify({ type: 'stream', content }));
               },
-              {model, temperature},
+              { model, temperature },
           );
 
           // End the message
-          ws.send(JSON.stringify({type: 'end'}));
+          ws.send(JSON.stringify({ type: 'end' }));
           global.logger.info('WebSocket stream completed', {
             clientIp,
             provider,
@@ -121,12 +125,17 @@ const chatController = {
           });
         } else {
           // Get the full response at once
-          const response = await chatModel.chat(messages, {model, temperature});
-          ws.send(JSON.stringify({
-            type: 'stream',
-            content: response.message,
-          }));
-          ws.send(JSON.stringify({type: 'end'}));
+          const response = await chatModel.chat(messages, {
+            model,
+            temperature,
+          });
+          ws.send(
+              JSON.stringify({
+                type: 'stream',
+                content: response.message,
+              }),
+          );
+          ws.send(JSON.stringify({ type: 'end' }));
           global.logger.info('WebSocket non-streaming response completed', {
             clientIp,
             provider,
@@ -141,25 +150,29 @@ const chatController = {
           stack: error.stack,
           clientIp: req.socket.remoteAddress,
           provider, // Now safely defined
-          model,    // Now safely defined
+          model, // Now safely defined
           requestData: clientRequestData, // Include the original request data for debugging
         });
-        
+
         // Send error response to client
-        ws.send(JSON.stringify({
-          type: 'error',
-          error: error.message || 'Failed to process chat request',
-        }));
+        ws.send(
+            JSON.stringify({
+              type: 'error',
+              error: error.message || 'Failed to process chat request',
+            }),
+        );
       }
     });
 
     // Handle connection opened
-    ws.send(JSON.stringify({
-      type: 'info',
-      message: 'Chat WebSocket connection established',
-    }));
+    ws.send(
+        JSON.stringify({
+          type: 'info',
+          message: 'Chat WebSocket connection established',
+        }),
+    );
   },
-  
+
   // Get available provider and model configurations
   async getProviderConfig(req, res) {
     try {
@@ -168,36 +181,36 @@ const chatController = {
         providers: {
           available: config.providers.available,
           default: config.providers.default,
-          displayNames: config.providers.ui.displayNames
+          displayNames: config.providers.ui.displayNames,
         },
-        models: {}
+        models: {},
       };
-      
+
       // Add model configurations for each provider
-      config.providers.available.forEach(provider => {
+      config.providers.available.forEach((provider) => {
         const providerConfig = config[provider];
         if (providerConfig && providerConfig.models) {
           frontendConfig.models[provider] = {
             available: providerConfig.models.available,
             default: providerConfig.models.default,
-            displayNames: providerConfig.models.displayNames
+            displayNames: providerConfig.models.displayNames,
           };
         }
       });
-      
+
       return res.json(frontendConfig);
     } catch (error) {
       global.logger.error('Error getting provider config', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       return res.status(500).json({
         error: 'Failed to retrieve provider configuration',
-        message: error.message
+        message: error.message,
       });
     }
-  }
+  },
 };
 
 export default chatController;

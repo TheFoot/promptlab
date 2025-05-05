@@ -4,7 +4,11 @@ import sinon from 'sinon';
 
 import { getAllTags } from '../../src/controllers/tagController.js';
 import Prompt from '../../src/models/Prompt.js';
-import { mockExpressReqRes, setupLoggerMock, restoreAllSinon } from '../helpers/testSetup.js';
+import {
+  mockExpressReqRes,
+  setupLoggerMock,
+  restoreAllSinon,
+} from '../helpers/testSetup.js';
 
 describe('Tag Controller', async () => {
   let restoreLogger;
@@ -35,11 +39,11 @@ describe('Tag Controller', async () => {
       const mockTags = [
         { name: 'test' },
         { name: 'example' },
-        { name: 'coding' }
+        { name: 'coding' },
       ];
-      
+
       Prompt.aggregate.resolves(mockTags);
-      
+
       const { req, res } = mockExpressReqRes();
 
       // Act
@@ -49,7 +53,7 @@ describe('Tag Controller', async () => {
       assert.equal(res.json.calledOnce, true);
       const returnedTags = res.json.firstCall.args[0];
       assert.deepEqual(returnedTags, ['test', 'example', 'coding']);
-      
+
       // Verify the aggregation pipeline
       const pipeline = Prompt.aggregate.firstCall.args[0];
       assert.equal(pipeline.length, 4);
@@ -62,7 +66,7 @@ describe('Tag Controller', async () => {
     it('should handle empty tag results properly', async () => {
       // Arrange
       Prompt.aggregate.resolves([]);
-      
+
       const { req, res } = mockExpressReqRes();
 
       // Act
@@ -78,7 +82,7 @@ describe('Tag Controller', async () => {
       // Arrange
       const error = new Error('Database error');
       Prompt.aggregate.throws(error);
-      
+
       const { req, res } = mockExpressReqRes();
 
       // Act

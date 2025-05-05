@@ -1,14 +1,14 @@
 <template>
   <div class="alert-container">
     <transition-group name="alert">
-      <div 
-        v-for="alert in alerts" 
+      <div
+        v-for="alert in alerts"
         :key="alert.id"
         class="alert"
-        :class="{ 
+        :class="{
           'alert-success': alert.type === 'success',
           'alert-error': alert.type === 'error',
-          'alert-info': alert.type === 'info'
+          'alert-info': alert.type === 'info',
         }"
       >
         {{ alert.message }}
@@ -18,37 +18,37 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue';
+import { ref, onUnmounted } from "vue";
 
 const alerts = ref([]);
 let nextId = 1;
 const timeouts = new Map();
 
 // Function to add a new alert
-const addAlert = (message, type = 'info', duration = 5000) => {
+const addAlert = (message, type = "info", duration = 5000) => {
   const id = nextId++;
   const alert = { id, message, type };
-  
+
   // Add alert to the list
   alerts.value.push(alert);
-  
+
   // Set timeout to remove the alert
   const timeout = setTimeout(() => {
     removeAlert(id);
   }, duration);
-  
+
   // Store timeout reference
   timeouts.set(id, timeout);
-  
+
   return id;
 };
 
 // Function to remove an alert
 const removeAlert = (id) => {
-  const index = alerts.value.findIndex(alert => alert.id === id);
+  const index = alerts.value.findIndex((alert) => alert.id === id);
   if (index !== -1) {
     alerts.value.splice(index, 1);
-    
+
     // Clear timeout if it exists
     if (timeouts.has(id)) {
       clearTimeout(timeouts.get(id));
@@ -59,14 +59,14 @@ const removeAlert = (id) => {
 
 // Clean up timeouts when component is unmounted
 onUnmounted(() => {
-  timeouts.forEach(timeout => clearTimeout(timeout));
+  timeouts.forEach((timeout) => clearTimeout(timeout));
   timeouts.clear();
 });
 
 // Make the functions available to other components
 defineExpose({
   addAlert,
-  removeAlert
+  removeAlert,
 });
 </script>
 
@@ -106,7 +106,7 @@ defineExpose({
 }
 
 .alert-info {
-  background-color: var(--primary-color, #4A6CF7);
+  background-color: var(--primary-color, #4a6cf7);
   color: white;
 }
 
