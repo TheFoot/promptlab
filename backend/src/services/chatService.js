@@ -8,13 +8,15 @@ class ChatModelBase {
     this.providerConfig = providerConfig;
   }
 
-  async chat(messages, options = {}) {
+  /* eslint-disable no-unused-vars */
+  async chat(messages) {
     throw new Error('Not implemented');
   }
 
-  async streamChat(messages, onChunk, options = {}) {
+  async streamChat(messages, onChunk) {
     throw new Error('Not implemented');
   }
+  /* eslint-enable no-unused-vars */
 }
 
 // OpenAI model implementation

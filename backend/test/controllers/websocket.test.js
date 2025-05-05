@@ -30,7 +30,7 @@ describe('WebSocket Chat Controller', async () => {
     });
 
     // Setup streamChat to call the callback and resolve
-    mockChatModel.streamChat.callsFake(async (messages, callback, options) => {
+    mockChatModel.streamChat.callsFake(async (messages, callback) => {
       callback('This is a mock stream response');
       return { message: 'This is a mock stream response' };
     });
@@ -166,7 +166,7 @@ describe('WebSocket Chat Controller', async () => {
 
     // Setup streaming response with multiple chunks
     const chunks = ['Chunk 1', 'Chunk 2', 'Chunk 3'];
-    mockChatModel.streamChat.callsFake(async (messages, callback, options) => {
+    mockChatModel.streamChat.callsFake(async (messages, callback) => {
       chunks.forEach((chunk) => callback(chunk));
       return { message: chunks.join('') };
     });

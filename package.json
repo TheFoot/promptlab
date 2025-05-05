@@ -20,7 +20,7 @@
     "test:frontend": "cd frontend && npm run test",
     "check-outdated": "! npm outdated | grep -v '^$' && ! (cd backend && npm outdated | grep -v '^$') && ! (cd frontend && npm outdated | grep -v '^$')",
     "sonar": "./sonar-scanner.sh",
-    "production": "npm run check-outdated && npm run format && npm run test && npm run lint:fix && npm run build && npm run sonar"
+    "production": "npm run check-outdated && npm run format && npm run lint:fix && npm run test && npm run build && npm run sonar"
   },
   "keywords": [
     "prompt",

@@ -27,7 +27,7 @@ process.on('uncaughtException', (error) => {
 });
 
 // Set up unhandled rejection handler (for promises)
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
   console.error('UNHANDLED REJECTION:', reason);
   // Log to the global logger if it's been initialized
   if (global.logger) {
@@ -86,7 +86,7 @@ const __dirname = path.dirname(__filename);
     app.use('/api', apiRoutes);
 
     // Add error handling middleware
-    app.use((err, req, res, next) => {
+    app.use((err, req, res) => {
       global.logger.error('Express error handler caught an error', {
         error: err.message,
         stack: err.stack,

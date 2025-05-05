@@ -40,7 +40,7 @@ describe('Chat Controller', async () => {
     });
 
     // Setup streamChat to call the callback and resolve
-    mockChatModel.streamChat.callsFake(async (messages, callback, options) => {
+    mockChatModel.streamChat.callsFake(async (messages, callback) => {
       callback('This is a mock stream response');
       return { message: 'This is a mock stream response' };
     });
