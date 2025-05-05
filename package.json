@@ -18,7 +18,7 @@
     "test:coverage": "concurrently \"cd backend && npm run test:coverage\" \"cd frontend && npm run test:coverage\"",
     "test:backend": "cd backend && npm run test",
     "test:frontend": "cd frontend && npm run test",
-    "generate-reports": "cd frontend && npm run nyc:report && cd ../backend && npm run nyc:report",
+    "generate-reports": "concurrently \"cd frontend && npm run nyc:report\"  \"cd backend && npm run nyc:report\"",
     "sonar": "./sonar-scanner.sh",
     "production": "npm run format && npm run test && npm run lint:fix && npm run build && npm run sonar && echo \"\\n\\033[33mWarning: Some linting errors could not be automatically fixed and were ignored. Run 'npm run lint' to view them.\\033[0m\""
   },
