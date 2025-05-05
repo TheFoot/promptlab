@@ -136,7 +136,7 @@
 <script setup>
 import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { usePromptStore } from '../stores/promptStore';
-import { marked } from 'marked';
+import * as marked from 'marked';
 import highlightjs from 'highlight.js';
 import 'highlight.js/styles/github.css';
 import alertService from '../services/alertService';
@@ -185,7 +185,8 @@ watch(() => props.expanded, (newValue) => {
 });
 
 // Configure marked with code highlighting
-marked.setOptions({
+// Use modern marked API (v9+)
+const markedOptions = {
   highlight: function(code, lang) {
     if (lang && highlightjs.getLanguage(lang)) {
       return highlightjs.highlight(code, { language: lang }).value;
@@ -194,7 +195,7 @@ marked.setOptions({
   },
   breaks: true,
   gfm: true,
-});
+};
 
 // Initialize expanded state from props
 const isExpanded = ref(props.expanded);
@@ -398,55 +399,56 @@ const copyMessageToClipboard = async (message) => {
 const formatMessage = (content) => {
   if (!content) return '';
 
-  // Add download buttons to code blocks
-  const renderer = new marked.Renderer();
+  // Create custom renderer
+  const renderer = {
+    code(code, language) {
+      // Default highlightjs code rendering
+      const highlightedCode = language && highlightjs.getLanguage(language)
+        ? highlightjs.highlight(code, { language }).value
+        : highlightjs.highlightAuto(code).value;
 
-  // Override the paragraph renderer to handle code blocks specially
-  const originalParagraph = renderer.paragraph;
-  renderer.paragraph = function(text) {
-    // If paragraph contains only a code block, don't wrap in <p> tags
-    if (text.trim().startsWith('<div class="code-block-wrapper">') &&
-        text.trim().endsWith('</div>')) {
-      return text;
-    }
+      // Create a timestamp-based filename with proper extension
+      const timestamp = new Date().getTime();
+      const extension = language || 'txt';
+      const filename = `code-${timestamp}.${extension}`;
 
-    // Otherwise use the original paragraph renderer
-    return originalParagraph.call(this, text);
-  };
-
-  renderer.code = (code, language) => {
-    // Default highlightjs code rendering
-    const highlightedCode = language && highlightjs.getLanguage(language)
-      ? highlightjs.highlight(code, { language }).value
-      : highlightjs.highlightAuto(code).value;
-
-    // Create a timestamp-based filename with proper extension
-    const timestamp = new Date().getTime();
-    const extension = language || 'txt';
-    const filename = `code-${timestamp}.${extension}`;
-
-    // Return code block with download button using an icon
-    return `
-      <div class="code-block-wrapper">
-        <div class="code-header">
-          <span class="code-language">${language || 'plain text'}</span>
-          <button class="code-download-btn" title="Download code" data-code="${encodeURIComponent(code)}" data-filename="${filename}" onclick="window.downloadCodeBlock(this)">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-          </button>
+      // Return code block with download button using an icon
+      return `
+        <div class="code-block-wrapper">
+          <div class="code-header">
+            <span class="code-language">${language || 'plain text'}</span>
+            <button class="code-download-btn" title="Download code" data-code="${encodeURIComponent(code)}" data-filename="${filename}" onclick="window.downloadCodeBlock(this)">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </button>
+          </div>
+          <pre><code class="hljs ${language}">${highlightedCode}</code></pre>
         </div>
-        <pre><code class="hljs ${language}">${highlightedCode}</code></pre>
-      </div>
-    `;
+      `;
+    },
+    
+    paragraph(text) {
+      // If paragraph contains only a code block, don't wrap in <p> tags
+      if (text.trim().startsWith('<div class="code-block-wrapper">') &&
+          text.trim().endsWith('</div>')) {
+        return text;
+      }
+      
+      // Otherwise use the normal paragraph formatting
+      return `<p>${text}</p>`;
+    }
   };
 
-  // Set the custom renderer
-  marked.setOptions({ renderer });
+  // Use modern marked API with options including custom renderer
+  const options = {
+    ...markedOptions,
+    renderer
+  };
 
-  return marked(content);
+  return marked.parse(content, options);
 };
 
 // Send message function
