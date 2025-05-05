@@ -13,8 +13,7 @@
     "sass-migrate": "sass-migrator --load-path=./src/styles module **/*.scss",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "nyc:report": "nyc report --reporter=lcov --temp-dir=coverage"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "axios": "^1.5.1",
