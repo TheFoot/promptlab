@@ -1,14 +1,14 @@
 # Documentation
 
-This directory contains additional documentation for the PromptLab project, including technical specifications, architecture details, and implementation guides.
+This directory contains additional documentation for the PromptLab project, including architecture details, feature documentation, and implementation guides.
 
 ## Directories
 
-- `specs/` - [Technical specifications](./specs/README.md) for the application
+- `features/` - Detailed feature documentation and guides
 
-## Technical Specifications
+## Feature Documentation
 
-The `specs/` directory contains detailed specifications for key features and components of the application. These documents serve as reference material for developers working on the project.
+The `features/` directory contains detailed documentation for the application's features. These documents serve as reference material for developers and users.
 
 ## Contributing to Documentation
 
@@ -35,4 +35,4 @@ All documentation should:
 
 - [Main Project README](../README.md)
 - [CLAUDE.md](../CLAUDE.md) - Development guide for using Claude AI assistant
-- [Technical Specifications](./specs/README.md)
+- [Feature Documentation](./features/README.md)

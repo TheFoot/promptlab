@@ -43,7 +43,7 @@ We use GitHub issues to track public bugs. Report a bug by [opening a new issue]
 * Run `npm run lint` to verify your code meets the style requirements
 
 ## Code of Conduct
-Please note we have a code of conduct, please follow it in all your interactions with the project.
+Please note we have a code of conduct, please follow it in all your interactions with the project. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details.
 
 ## License
 By contributing, you agree that your contributions will be licensed under its MIT License.
