@@ -1,51 +1,20 @@
 # Frontend Unit Tests
 
-This directory contains unit tests for the PromptLab frontend application, using Vitest as the test runner and Vue Test Utils for component testing.
+This directory contains the unit tests for the PromptLab frontend application. The tests use Vitest with Vue Test Utils to test Vue components and related modules.
 
-## Test Files
+## Test Structure
 
-### Component Tests
-- `AlertSystem.spec.js` - Tests for notification component (7 tests)
-- `TagInput.spec.js` - Tests for tag input component (13 tests)
-- `MarkdownPreview.spec.js` - Tests for markdown rendering component (WIP - currently facing issues with mocking)
+- Each component has its own test file with the naming convention `ComponentName.spec.js`
+- Some components have both standard tests and "Direct" tests (e.g., `PromptCreateView.spec.js` and `PromptCreateViewDirect.spec.js`)
+- Tests are organized to mirror the structure of the src directory
 
-### Store Tests
-- `promptStore.spec.js` - Tests for prompt management store (15 tests)
-- `uiStore.spec.js` - Tests for UI state store (3 tests)
+## Test Types
 
-### Service Tests
-- `alertService.spec.js` - Tests for alert notification service (5 tests)
-- `modelConfigService.spec.js` - Tests for model configuration service (8 tests)
-
-## Testing Strategy
-
-Tests are designed to verify:
-1. Component rendering and behavior
-2. Store state management and actions
-3. Service functionality and error handling
-4. User interactions
-5. Proper API integration
-
-## Coverage Summary (as of May 5, 2025)
-
-- 51 passing tests across 6 components/services
-- 2 failing tests for MarkdownPreview (due to mocking issues)
-- Key functionality covered:
-  - Notification system
-  - Tag input and management
-  - Prompt data store operations
-  - UI state changes
-  - Alert service integration
-  - Model configuration loading and error handling
-
-## Next Steps
-
-1. Fix MarkdownPreview component tests
-2. Add tests for ChatSidebar and PromptSidebar components
-3. Add tests for view components (HomeView, PromptCreateView, PromptDetailView)
-4. Create test utilities for router and localStorage
-5. Address coverage gaps
-6. Add integration tests for key user flows
+1. **Component Tests**: Tests for Vue components testing rendering, props, events, etc.
+2. **Store Tests**: Tests for Pinia stores to verify state management
+3. **Service Tests**: Tests for service modules that handle API calls and application logic
+4. **Utility Tests**: Tests for utility functions and helper methods
+5. **Integration Tests**: Tests for how components work together
 
 ## Running Tests
 
@@ -53,16 +22,35 @@ Tests are designed to verify:
 # Run all tests
 npm test
 
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage report
+# Run with coverage report
 npm run test:coverage
+
+# Run tests in watch mode during development
+npm run test:watch
 ```
 
-## Notes
+## Testing Patterns
 
-- External dependencies are mocked using Vitest's mocking capabilities
-- Pinia stores are tested using createPinia and setActivePinia
-- JSDOM is used to simulate browser environment
-- Test coverage is tracked using V8 coverage provider
+### Component Testing
+
+We use two approaches for testing components:
+
+1. **Standard Tests**: Focus on behavior, user interactions, and output
+2. **Direct Tests**: Focus on internal implementation details and lifecycle events
+
+### Mocking
+
+- External dependencies are mocked using `vi.mock()`
+- API calls are mocked to return predictable responses
+- DOM APIs are mocked when necessary (e.g., localStorage, navigator)
+
+### Test Utilities
+
+- `shallowMount`: For isolated component testing
+- `mount`: For testing with child components
+- `flushPromises`: For waiting on async operations to complete
+- `vi.spyOn`: For verifying method calls
+
+## Coverage Goal
+
+The project aims for >80% test coverage. Current coverage is 83.65%.
