@@ -972,4 +972,4 @@ backend/bin/
 
 # Exclude task-tracking and specs
 docs/task-tracking/
-docs/specs/
+docs/specs/.idea/sonarlint.xml
