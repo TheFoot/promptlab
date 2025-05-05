@@ -18,13 +18,21 @@
     "test:coverage": "concurrently \"cd backend && npm run test:coverage\" \"cd frontend && npm run test:coverage\"",
     "test:backend": "cd backend && npm run test",
     "test:frontend": "cd frontend && npm run test",
-    "production": "npm run format && npm run test && npm run lint:fix && npm run build && echo \"\\n\\033[33mWarning: Some linting errors could not be automatically fixed and were ignored. Run 'npm run lint' to view them.\\033[0m\""
+    "generate-reports": "cd frontend && npm run nyc:report && cd ../backend && npm run nyc:report",
+    "sonar": "./sonar-scanner.sh",
+    "production": "npm run format && npm run test && npm run lint:fix && npm run build && npm run sonar && echo \"\\n\\033[33mWarning: Some linting errors could not be automatically fixed and were ignored. Run 'npm run lint' to view them.\\033[0m\""
   },
-  "keywords": ["prompt", "llm", "library", "markdown"],
+  "keywords": [
+    "prompt",
+    "llm",
+    "library",
+    "markdown"
+  ],
   "author": "",
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
+    "nyc": "^17.1.0"
   }
 }

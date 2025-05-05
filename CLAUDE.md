@@ -12,6 +12,7 @@
 - `npm run test:frontend` - Run only frontend tests
 - `npm run test:backend` - Run only backend tests
 - `npm run test:coverage` - Generate test coverage reports for both frontend and backend
+- `npm run sonar` - Run SonarQube analysis for both frontend and backend
 
 ## Code Style Guidelines
 - **Modules:** Use ES Modules (ESM) not CommonJS
