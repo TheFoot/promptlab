@@ -1,16 +1,16 @@
-import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert';
-import sinon from 'sinon';
+import { describe, it, before, after, beforeEach, afterEach } from "node:test";
+import assert from "node:assert";
+import sinon from "sinon";
 
-import { getAllTags } from '../../src/controllers/tagController.js';
-import Prompt from '../../src/models/Prompt.js';
+import { getAllTags } from "../../src/controllers/tagController.js";
+import Prompt from "../../src/models/Prompt.js";
 import {
   mockExpressReqRes,
   setupLoggerMock,
   restoreAllSinon,
-} from '../helpers/testSetup.js';
+} from "../helpers/testSetup.js";
 
-describe('Tag Controller', async () => {
+describe("Tag Controller", async () => {
   let restoreLogger;
 
   before(() => {
@@ -25,7 +25,7 @@ describe('Tag Controller', async () => {
 
   beforeEach(() => {
     // Create stub for Prompt model aggregate method
-    sinon.stub(Prompt, 'aggregate');
+    sinon.stub(Prompt, "aggregate");
   });
 
   afterEach(() => {
@@ -33,13 +33,13 @@ describe('Tag Controller', async () => {
     restoreAllSinon();
   });
 
-  describe('getAllTags', async () => {
-    it('should return all unique tags from the database', async () => {
+  describe("getAllTags", async () => {
+    it("should return all unique tags from the database", async () => {
       // Arrange
       const mockTags = [
-        { name: 'test' },
-        { name: 'example' },
-        { name: 'coding' },
+        { name: "test" },
+        { name: "example" },
+        { name: "coding" },
       ];
 
       Prompt.aggregate.resolves(mockTags);
@@ -52,18 +52,18 @@ describe('Tag Controller', async () => {
       // Assert
       assert.equal(res.json.calledOnce, true);
       const returnedTags = res.json.firstCall.args[0];
-      assert.deepEqual(returnedTags, ['test', 'example', 'coding']);
+      assert.deepEqual(returnedTags, ["test", "example", "coding"]);
 
       // Verify the aggregation pipeline
       const pipeline = Prompt.aggregate.firstCall.args[0];
       assert.equal(pipeline.length, 4);
-      assert.deepEqual(pipeline[0], { $unwind: '$tags' });
-      assert.deepEqual(pipeline[1], { $group: { _id: '$tags' } });
+      assert.deepEqual(pipeline[0], { $unwind: "$tags" });
+      assert.deepEqual(pipeline[1], { $group: { _id: "$tags" } });
       assert.deepEqual(pipeline[2], { $sort: { _id: 1 } });
-      assert.deepEqual(pipeline[3], { $project: { _id: 0, name: '$_id' } });
+      assert.deepEqual(pipeline[3], { $project: { _id: 0, name: "$_id" } });
     });
 
-    it('should handle empty tag results properly', async () => {
+    it("should handle empty tag results properly", async () => {
       // Arrange
       Prompt.aggregate.resolves([]);
 
@@ -78,9 +78,9 @@ describe('Tag Controller', async () => {
       assert.deepEqual(returnedTags, []);
     });
 
-    it('should handle errors properly', async () => {
+    it("should handle errors properly", async () => {
       // Arrange
-      const error = new Error('Database error');
+      const error = new Error("Database error");
       Prompt.aggregate.throws(error);
 
       const { req, res } = mockExpressReqRes();

@@ -1,6 +1,6 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert';
-import sinon from 'sinon';
+import { describe, it } from "node:test";
+import assert from "node:assert";
+import sinon from "sinon";
 
 import {
   getPrompts,
@@ -8,9 +8,9 @@ import {
   createPrompt,
   updatePrompt,
   deletePrompt,
-} from '../../src/controllers/promptController.js';
+} from "../../src/controllers/promptController.js";
 
-import Prompt from '../../src/models/Prompt.js';
+import Prompt from "../../src/models/Prompt.js";
 
 // Mock test helper for mocking Express req/res
 const mockExpressReqRes = (reqOverrides = {}, resOverrides = {}) => {
@@ -18,7 +18,7 @@ const mockExpressReqRes = (reqOverrides = {}, resOverrides = {}) => {
     body: {},
     params: {},
     query: {},
-    ip: '127.0.0.1',
+    ip: "127.0.0.1",
     ...reqOverrides,
   };
 
@@ -32,20 +32,20 @@ const mockExpressReqRes = (reqOverrides = {}, resOverrides = {}) => {
   return { req, res };
 };
 
-describe('Prompt Controller Basic Tests', async () => {
-  it('should have the required controller methods', () => {
-    assert.strictEqual(typeof getPrompts, 'function');
-    assert.strictEqual(typeof getPromptById, 'function');
-    assert.strictEqual(typeof createPrompt, 'function');
-    assert.strictEqual(typeof updatePrompt, 'function');
-    assert.strictEqual(typeof deletePrompt, 'function');
+describe("Prompt Controller Basic Tests", async () => {
+  it("should have the required controller methods", () => {
+    assert.strictEqual(typeof getPrompts, "function");
+    assert.strictEqual(typeof getPromptById, "function");
+    assert.strictEqual(typeof createPrompt, "function");
+    assert.strictEqual(typeof updatePrompt, "function");
+    assert.strictEqual(typeof deletePrompt, "function");
   });
 
-  it('should handle error cases', async () => {
+  it("should handle error cases", async () => {
     // Mock Prompt.find to throw an error
     const originalFind = Prompt.find;
     Prompt.find = () => {
-      throw new Error('Test error');
+      throw new Error("Test error");
     };
 
     // Create mock request and response
@@ -57,7 +57,7 @@ describe('Prompt Controller Basic Tests', async () => {
     // Assert
     assert.strictEqual(res.status.firstCall.args[0], 500);
     assert.deepStrictEqual(res.json.firstCall.args[0], {
-      message: 'Test error',
+      message: "Test error",
     });
 
     // Restore original Prompt.find

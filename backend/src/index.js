@@ -1,24 +1,24 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import morgan from 'morgan';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import http from 'http';
-import { WebSocketServer } from 'ws';
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import morgan from "morgan";
+import path from "path";
+import { fileURLToPath } from "url";
+import http from "http";
+import { WebSocketServer } from "ws";
 
-import config from './config/index.js';
-import apiRoutes from './routes/index.js';
-import chatController from './controllers/chatController.js';
-import { serverLogger } from './modules/logger.js';
+import config from "./config/index.js";
+import apiRoutes from "./routes/index.js";
+import chatController from "./controllers/chatController.js";
+import { serverLogger } from "./modules/logger.js";
 
 // Set up global uncaught exception handler
-process.on('uncaughtException', (error) => {
-  console.error('UNCAUGHT EXCEPTION:', error.message);
+process.on("uncaughtException", (error) => {
+  console.error("UNCAUGHT EXCEPTION:", error.message);
   console.error(error.stack);
   // Log to the global logger if it's been initialized
   if (global.logger) {
-    global.logger.fatal('Uncaught exception', {
+    global.logger.fatal("Uncaught exception", {
       error: error.message,
       stack: error.stack,
     });
@@ -27,14 +27,14 @@ process.on('uncaughtException', (error) => {
 });
 
 // Set up unhandled rejection handler (for promises)
-process.on('unhandledRejection', (reason) => {
-  console.error('UNHANDLED REJECTION:', reason);
+process.on("unhandledRejection", (reason) => {
+  console.error("UNHANDLED REJECTION:", reason);
   // Log to the global logger if it's been initialized
   if (global.logger) {
-    global.logger.error('Unhandled promise rejection', {
+    global.logger.error("Unhandled promise rejection", {
       reason: reason instanceof Error ? reason.message : String(reason),
       stack:
-        reason instanceof Error ? reason.stack : 'No stack trace available',
+        reason instanceof Error ? reason.stack : "No stack trace available",
     });
   }
   // DON'T exit the process - keep the server running despite errors
@@ -42,7 +42,7 @@ process.on('unhandledRejection', (reason) => {
 
 // Initialize the global logger
 global.logger = serverLogger({
-  level: config.isDev ? 'debug' : 'info',
+  level: config.isDev ? "debug" : "info",
 });
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,22 +56,22 @@ const __dirname = path.dirname(__filename);
     const server = http.createServer(app);
 
     // Connect to MongoDB
-    global.logger.info('Connecting to MongoDB', { uri: config.mongodbUri });
+    global.logger.info("Connecting to MongoDB", { uri: config.mongodbUri });
     try {
       await mongoose.connect(config.mongodbUri);
-      global.logger.info('MongoDB connected successfully');
+      global.logger.info("MongoDB connected successfully");
     } catch (dbError) {
-      global.logger.error('Failed to connect to MongoDB', {
+      global.logger.error("Failed to connect to MongoDB", {
         error: dbError.message,
         stack: dbError.stack,
       });
 
       // Fallback to localhost if Docker connection fails
-      if (config.mongodbUri.includes('mongodb:')) {
-        const fallbackUri = 'mongodb://localhost:27017/promptLab';
-        global.logger.info('Trying fallback connection', { uri: fallbackUri });
+      if (config.mongodbUri.includes("mongodb:")) {
+        const fallbackUri = "mongodb://localhost:27017/promptLab";
+        global.logger.info("Trying fallback connection", { uri: fallbackUri });
         await mongoose.connect(fallbackUri);
-        global.logger.info('MongoDB connected via fallback');
+        global.logger.info("MongoDB connected via fallback");
       } else {
         throw dbError;
       }
@@ -79,15 +79,15 @@ const __dirname = path.dirname(__filename);
 
     // Middleware
     app.use(cors());
-    app.use(express.json({ limit: '5mb' }));
-    app.use(morgan('dev'));
+    app.use(express.json({ limit: "5mb" }));
+    app.use(morgan("dev"));
 
     // API routes
-    app.use('/api', apiRoutes);
+    app.use("/api", apiRoutes);
 
     // Add error handling middleware
     app.use((err, req, res) => {
-      global.logger.error('Express error handler caught an error', {
+      global.logger.error("Express error handler caught an error", {
         error: err.message,
         stack: err.stack,
         path: req.path,
@@ -95,28 +95,28 @@ const __dirname = path.dirname(__filename);
       });
 
       res.status(err.status || 500).json({
-        error: 'Internal Server Error',
-        message: config.isDev ? err.message : 'Something went wrong',
+        error: "Internal Server Error",
+        message: config.isDev ? err.message : "Something went wrong",
       });
     });
 
     // Set up WebSocket server for chat
     const wss = new WebSocketServer({
       server,
-      path: '/api/chat/ws',
+      path: "/api/chat/ws",
     });
 
-    wss.on('connection', (ws, req) => {
+    wss.on("connection", (ws, req) => {
       const clientIp = req.socket.remoteAddress;
-      global.logger.info('WebSocket client connected', {
+      global.logger.info("WebSocket client connected", {
         ip: clientIp,
-        headers: req.headers['user-agent'],
+        headers: req.headers["user-agent"],
       });
 
       chatController.handleWebSocket(ws, req);
 
-      ws.on('close', (code, reason) => {
-        global.logger.info('WebSocket client disconnected', {
+      ws.on("close", (code, reason) => {
+        global.logger.info("WebSocket client disconnected", {
           ip: clientIp,
           code,
           reason: reason.toString(),
@@ -126,60 +126,60 @@ const __dirname = path.dirname(__filename);
 
     // Serve static assets in production
     if (config.isProd) {
-      const frontendBuildPath = path.resolve(__dirname, '../../frontend/dist');
+      const frontendBuildPath = path.resolve(__dirname, "../../frontend/dist");
 
       // Log the path for debugging
-      global.logger.info('Serving static files from', {
+      global.logger.info("Serving static files from", {
         path: frontendBuildPath,
       });
 
       // Check if the path exists
       try {
-        const fs = await import('fs');
+        const fs = await import("fs");
         if (!fs.existsSync(frontendBuildPath)) {
-          global.logger.error('Frontend build path does not exist', {
+          global.logger.error("Frontend build path does not exist", {
             path: frontendBuildPath,
           });
         } else {
-          global.logger.info('Frontend build path exists', {
+          global.logger.info("Frontend build path exists", {
             path: frontendBuildPath,
           });
 
           // Check if index.html exists
-          const indexPath = path.join(frontendBuildPath, 'index.html');
+          const indexPath = path.join(frontendBuildPath, "index.html");
           if (!fs.existsSync(indexPath)) {
-            global.logger.error('index.html not found in build directory', {
+            global.logger.error("index.html not found in build directory", {
               path: indexPath,
             });
           } else {
-            global.logger.info('index.html found', { path: indexPath });
+            global.logger.info("index.html found", { path: indexPath });
           }
         }
       } catch (error) {
-        global.logger.error('Error checking frontend build path', {
+        global.logger.error("Error checking frontend build path", {
           error: error.message,
         });
       }
 
       app.use(express.static(frontendBuildPath));
 
-      app.get('*', (req, res) => {
-        res.sendFile(path.join(frontendBuildPath, 'index.html'));
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(frontendBuildPath, "index.html"));
       });
     }
 
     // Start the server
     server.listen(config.port, () => {
-      global.logger.info('Server started', {
+      global.logger.info("Server started", {
         mode: config.nodeEnv,
         port: config.port,
       });
-      global.logger.info('WebSocket server available', {
+      global.logger.info("WebSocket server available", {
         url: `ws://localhost:${config.port}/api/chat/ws`,
       });
     });
   } catch (error) {
-    global.logger.error('Server initialization failed', {
+    global.logger.error("Server initialization failed", {
       error: error.message,
       stack: error.stack,
     });

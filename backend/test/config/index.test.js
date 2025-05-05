@@ -1,10 +1,10 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert';
-import sinon from 'sinon';
-import dotenv from 'dotenv';
-import { restoreAllSinon } from '../helpers/testSetup.js';
+import { describe, it, beforeEach, afterEach } from "node:test";
+import assert from "node:assert";
+import sinon from "sinon";
+import dotenv from "dotenv";
+import { restoreAllSinon } from "../helpers/testSetup.js";
 
-describe('Configuration Module', async () => {
+describe("Configuration Module", async () => {
   let originalEnv;
 
   beforeEach(() => {
@@ -12,7 +12,7 @@ describe('Configuration Module', async () => {
     originalEnv = { ...process.env };
 
     // Mock dotenv.config
-    sinon.stub(dotenv, 'config').returns({});
+    sinon.stub(dotenv, "config").returns({});
   });
 
   afterEach(() => {
@@ -23,16 +23,16 @@ describe('Configuration Module', async () => {
     restoreAllSinon();
   });
 
-  it('should have the correct structure', async () => {
+  it("should have the correct structure", async () => {
     // Import the actual config
-    const config = (await import('../../src/config/index.js')).default;
+    const config = (await import("../../src/config/index.js")).default;
 
     // Assert basic structure
     assert.ok(config.port);
     assert.ok(config.mongodbUri);
     assert.ok(config.nodeEnv);
-    assert.ok('isDev' in config);
-    assert.ok('isProd' in config);
+    assert.ok("isDev" in config);
+    assert.ok("isProd" in config);
 
     // Assert provider configurations
     assert.ok(config.providers);
@@ -41,7 +41,7 @@ describe('Configuration Module', async () => {
 
     // Assert providers
     assert.ok(Array.isArray(config.providers.available));
-    assert.ok(config.providers.available.includes('openai'));
-    assert.ok(config.providers.available.includes('anthropic'));
+    assert.ok(config.providers.available.includes("openai"));
+    assert.ok(config.providers.available.includes("anthropic"));
   });
 });

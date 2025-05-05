@@ -186,10 +186,10 @@ export const usePromptStore = defineStore("prompt", () => {
     error,
     searchQuery,
     selectedTag,
-    
+
     // Getters
     filteredPrompts,
-    
+
     // Actions
     fetchPrompts,
     fetchPromptById,
@@ -199,6 +199,6 @@ export const usePromptStore = defineStore("prompt", () => {
     fetchTags,
     setSearchQuery,
     setSelectedTag,
-    clearFilters
+    clearFilters,
   };
 });

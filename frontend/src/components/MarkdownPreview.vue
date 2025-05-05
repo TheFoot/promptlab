@@ -97,7 +97,7 @@ const getRenderedMarkdown = () => {
 
   // Create a marked instance with our options and custom renderer
   const options = { ...markedOptions, renderer };
-  
+
   // In v15, we use the parse method on Marked instance
   return marked.parse(props.content, options);
 };

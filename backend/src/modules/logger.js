@@ -4,7 +4,7 @@
  * @requires pino
  */
 
-import pino from 'pino';
+import pino from "pino";
 
 /**
  * Creates and configures a server logger instance
@@ -22,14 +22,14 @@ import pino from 'pino';
  */
 export const serverLogger = (config) => {
   const logger = pino({
-    level: config.level || 'info',
+    level: config.level || "info",
     transport: {
-      target: 'pino-pretty',
+      target: "pino-pretty",
       options: {
         colorize: true,
         colorizeObjects: true,
-        translateTime: 'UTC:yyyy-MM-dd\'T\'HH:MM:ss\'Z\'',
-        ignore: 'pid,hostname',
+        translateTime: "UTC:yyyy-MM-dd'T'HH:MM:ss'Z'",
+        ignore: "pid,hostname",
       },
     },
   });

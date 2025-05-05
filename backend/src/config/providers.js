@@ -2,17 +2,17 @@
 
 const providers = {
   // List of available AI providers
-  available: ['openai', 'anthropic'],
+  available: ["openai", "anthropic"],
 
   // Default provider to use if none specified
-  default: 'anthropic',
+  default: "anthropic",
 
   // Configuration for provider selection UI
   ui: {
     // Display names for providers in UI dropdowns
     displayNames: {
-      openai: 'OpenAI',
-      anthropic: 'Anthropic',
+      openai: "OpenAI",
+      anthropic: "Anthropic",
     },
   },
 };

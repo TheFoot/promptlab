@@ -1,11 +1,11 @@
-import { describe, it, before, after } from 'node:test';
-import assert from 'node:assert';
-import sinon from 'sinon';
+import { describe, it, before, after } from "node:test";
+import assert from "node:assert";
+import sinon from "sinon";
 
-import openaiConfig from '../../src/config/openai.js';
-import { setupLoggerMock } from '../helpers/testSetup.js';
+import openaiConfig from "../../src/config/openai.js";
+import { setupLoggerMock } from "../helpers/testSetup.js";
 
-describe('OpenAI Configuration', async () => {
+describe("OpenAI Configuration", async () => {
   let restoreLogger;
   let originalEnv;
 
@@ -28,7 +28,7 @@ describe('OpenAI Configuration', async () => {
     sinon.restore();
   });
 
-  it('should have the required configuration structure', () => {
+  it("should have the required configuration structure", () => {
     // Assert
     assert.ok(openaiConfig.api);
     assert.ok(openaiConfig.models);
@@ -38,50 +38,50 @@ describe('OpenAI Configuration', async () => {
     assert.ok(openaiConfig.defaults);
   });
 
-  it('should include default configuration values', () => {
+  it("should include default configuration values", () => {
     // Assert default values
-    assert.strictEqual(typeof openaiConfig.defaults.temperature, 'number');
+    assert.strictEqual(typeof openaiConfig.defaults.temperature, "number");
     assert.ok(
-        openaiConfig.defaults.temperature >= 0 &&
+      openaiConfig.defaults.temperature >= 0 &&
         openaiConfig.defaults.temperature <= 1,
     );
-    assert.strictEqual(typeof openaiConfig.defaults.maxTokens, 'number');
+    assert.strictEqual(typeof openaiConfig.defaults.maxTokens, "number");
     assert.ok(openaiConfig.defaults.maxTokens > 0);
   });
 
-  it('should include default model', () => {
+  it("should include default model", () => {
     // Assert default model is in available models
     assert.ok(
-        openaiConfig.models.available.includes(openaiConfig.models.default),
+      openaiConfig.models.available.includes(openaiConfig.models.default),
     );
   });
 
-  it('should have display names for all available models', () => {
+  it("should have display names for all available models", () => {
     // Assert all available models have display names
     openaiConfig.models.available.forEach((model) => {
       assert.ok(openaiConfig.models.displayNames[model]);
     });
   });
 
-  it('should use API key from environment variable if available', () => {
+  it("should use API key from environment variable if available", () => {
     // Arrange
-    const testApiKey = 'test-openai-api-key';
+    const testApiKey = "test-openai-api-key";
     process.env.OPENAI_API_KEY = testApiKey;
 
     // Act & Assert
     // Need to re-create config object to reflect current env vars
     const freshConfig = {
       api: {
-        key: process.env.OPENAI_API_KEY || '',
-        baseUrl: process.env.OPENAI_API_BASE_URL || 'https://api.openai.com/v1',
-        organization: process.env.OPENAI_ORGANIZATION || '',
+        key: process.env.OPENAI_API_KEY || "",
+        baseUrl: process.env.OPENAI_API_BASE_URL || "https://api.openai.com/v1",
+        organization: process.env.OPENAI_ORGANIZATION || "",
       },
     };
 
     assert.strictEqual(freshConfig.api.key, testApiKey);
   });
 
-  it('should use default base URL if not specified in environment', () => {
+  it("should use default base URL if not specified in environment", () => {
     // Arrange - no base URL specified
     delete process.env.OPENAI_API_BASE_URL;
 
@@ -89,42 +89,42 @@ describe('OpenAI Configuration', async () => {
     // Need to re-create config object to reflect current env vars
     const freshConfig = {
       api: {
-        key: process.env.OPENAI_API_KEY || '',
-        baseUrl: process.env.OPENAI_API_BASE_URL || 'https://api.openai.com/v1',
-        organization: process.env.OPENAI_ORGANIZATION || '',
+        key: process.env.OPENAI_API_KEY || "",
+        baseUrl: process.env.OPENAI_API_BASE_URL || "https://api.openai.com/v1",
+        organization: process.env.OPENAI_ORGANIZATION || "",
       },
     };
 
-    assert.strictEqual(freshConfig.api.baseUrl, 'https://api.openai.com/v1');
+    assert.strictEqual(freshConfig.api.baseUrl, "https://api.openai.com/v1");
 
     // Arrange - with base URL specified
-    const testBaseUrl = 'https://test-api.openai.com';
+    const testBaseUrl = "https://test-api.openai.com";
     process.env.OPENAI_API_BASE_URL = testBaseUrl;
 
     // Act & Assert
     const freshConfigWithBase = {
       api: {
-        key: process.env.OPENAI_API_KEY || '',
-        baseUrl: process.env.OPENAI_API_BASE_URL || 'https://api.openai.com/v1',
-        organization: process.env.OPENAI_ORGANIZATION || '',
+        key: process.env.OPENAI_API_KEY || "",
+        baseUrl: process.env.OPENAI_API_BASE_URL || "https://api.openai.com/v1",
+        organization: process.env.OPENAI_ORGANIZATION || "",
       },
     };
 
     assert.strictEqual(freshConfigWithBase.api.baseUrl, testBaseUrl);
   });
 
-  it('should use organization from environment variable if available', () => {
+  it("should use organization from environment variable if available", () => {
     // Arrange
-    const testOrg = 'test-openai-org';
+    const testOrg = "test-openai-org";
     process.env.OPENAI_ORGANIZATION = testOrg;
 
     // Act & Assert
     // Need to re-create config object to reflect current env vars
     const freshConfig = {
       api: {
-        key: process.env.OPENAI_API_KEY || '',
-        baseUrl: process.env.OPENAI_API_BASE_URL || 'https://api.openai.com/v1',
-        organization: process.env.OPENAI_ORGANIZATION || '',
+        key: process.env.OPENAI_API_KEY || "",
+        baseUrl: process.env.OPENAI_API_BASE_URL || "https://api.openai.com/v1",
+        organization: process.env.OPENAI_ORGANIZATION || "",
       },
     };
 

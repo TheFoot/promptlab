@@ -1,4 +1,4 @@
-import Prompt from '../models/Prompt.js';
+import Prompt from "../models/Prompt.js";
 
 /**
  * Get all unique tags from prompts
@@ -6,10 +6,10 @@ import Prompt from '../models/Prompt.js';
 const getAllTags = async (req, res) => {
   try {
     const tags = await Prompt.aggregate([
-      { $unwind: '$tags' },
-      { $group: { _id: '$tags' } },
+      { $unwind: "$tags" },
+      { $group: { _id: "$tags" } },
       { $sort: { _id: 1 } },
-      { $project: { _id: 0, name: '$_id' } },
+      { $project: { _id: 0, name: "$_id" } },
     ]);
 
     res.json(tags.map((tag) => tag.name));

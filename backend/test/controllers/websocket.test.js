@@ -1,12 +1,12 @@
-import { describe, it, before, after } from 'node:test';
-import assert from 'node:assert';
-import sinon from 'sinon';
+import { describe, it, before, after } from "node:test";
+import assert from "node:assert";
+import sinon from "sinon";
 
-import chatController from '../../src/controllers/chatController.js';
-import ChatModelFactory from '../../src/services/chatService.js';
-import { setupLoggerMock } from '../helpers/testSetup.js';
+import chatController from "../../src/controllers/chatController.js";
+import ChatModelFactory from "../../src/services/chatService.js";
+import { setupLoggerMock } from "../helpers/testSetup.js";
 
-describe('WebSocket Chat Controller', async () => {
+describe("WebSocket Chat Controller", async () => {
   let restoreLogger;
   let chatModelStub;
   let mockChatModel;
@@ -25,20 +25,20 @@ describe('WebSocket Chat Controller', async () => {
 
     // Set up default mock behaviors
     mockChatModel.chat.resolves({
-      message: 'This is a mock response',
+      message: "This is a mock response",
       usage: { total_tokens: 100 },
     });
 
     // Setup streamChat to call the callback and resolve
     mockChatModel.streamChat.callsFake(async (messages, callback) => {
-      callback('This is a mock stream response');
-      return { message: 'This is a mock stream response' };
+      callback("This is a mock stream response");
+      return { message: "This is a mock stream response" };
     });
 
     // Create stub for ChatModelFactory
     chatModelStub = sinon
-        .stub(ChatModelFactory, 'createModel')
-        .returns(mockChatModel);
+      .stub(ChatModelFactory, "createModel")
+      .returns(mockChatModel);
 
     // Create a WebSocket mock
     ws = {
@@ -49,8 +49,8 @@ describe('WebSocket Chat Controller', async () => {
 
     // Create a request mock
     req = {
-      socket: { remoteAddress: '127.0.0.1' },
-      headers: { 'user-agent': 'test-agent' },
+      socket: { remoteAddress: "127.0.0.1" },
+      headers: { "user-agent": "test-agent" },
     };
   });
 
@@ -62,11 +62,11 @@ describe('WebSocket Chat Controller', async () => {
     sinon.restore();
   });
 
-  it('should handle WebSocket connection cleanup on close event', async () => {
+  it("should handle WebSocket connection cleanup on close event", async () => {
     // Arrange
     let closeHandler;
     ws.on.callsFake((event, handler) => {
-      if (event === 'close') {
+      if (event === "close") {
         closeHandler = handler;
       }
     });
@@ -83,12 +83,12 @@ describe('WebSocket Chat Controller', async () => {
     // Verify cleanup was handled properly
     assert.ok(global.logger.info.called);
     const logCall = global.logger.info
-        .getCalls()
-        .find((call) => call.args[0] === 'WebSocket connection closed');
+      .getCalls()
+      .find((call) => call.args[0] === "WebSocket connection closed");
     assert.ok(logCall);
   });
 
-  it('should handle WebSocket errors', async () => {
+  it("should handle WebSocket errors", async () => {
     // Reset stubs
     ws.on.resetHistory();
     global.logger.error.resetHistory();
@@ -96,7 +96,7 @@ describe('WebSocket Chat Controller', async () => {
     // Arrange
     let errorHandler;
     ws.on.callsFake((event, handler) => {
-      if (event === 'error') {
+      if (event === "error") {
         errorHandler = handler;
       }
     });
@@ -108,19 +108,19 @@ describe('WebSocket Chat Controller', async () => {
     assert.ok(errorHandler);
 
     // Simulate error event
-    const testError = new Error('Test WebSocket error');
+    const testError = new Error("Test WebSocket error");
     errorHandler(testError);
 
     // Verify error was logged
     assert.ok(global.logger.error.called);
     const logCall = global.logger.error
-        .getCalls()
-        .find((call) => call.args[0] === 'WebSocket error');
+      .getCalls()
+      .find((call) => call.args[0] === "WebSocket error");
     assert.ok(logCall);
-    assert.strictEqual(logCall.args[1].error, 'Test WebSocket error');
+    assert.strictEqual(logCall.args[1].error, "Test WebSocket error");
   });
 
-  it('should handle malformed JSON in WebSocket messages', async () => {
+  it("should handle malformed JSON in WebSocket messages", async () => {
     // Reset stubs
     ws.on.resetHistory();
     ws.send.resetHistory();
@@ -128,7 +128,7 @@ describe('WebSocket Chat Controller', async () => {
     // Arrange
     let messageHandler;
     ws.on.callsFake((event, handler) => {
-      if (event === 'message') {
+      if (event === "message") {
         messageHandler = handler;
       }
     });
@@ -140,17 +140,17 @@ describe('WebSocket Chat Controller', async () => {
     assert.ok(messageHandler);
 
     // Simulate receiving invalid JSON
-    await messageHandler('this is not valid JSON');
+    await messageHandler("this is not valid JSON");
 
     // Check that error was sent back to client
     assert.ok(ws.send.called);
     const lastCall = ws.send.lastCall.args[0];
     const response = JSON.parse(lastCall);
-    assert.strictEqual(response.type, 'error');
-    assert.ok(response.error.includes('Invalid JSON'));
+    assert.strictEqual(response.type, "error");
+    assert.ok(response.error.includes("Invalid JSON"));
   });
 
-  it('should handle streaming responses with multiple chunks', async () => {
+  it("should handle streaming responses with multiple chunks", async () => {
     // Reset stubs
     ws.on.resetHistory();
     ws.send.resetHistory();
@@ -159,16 +159,16 @@ describe('WebSocket Chat Controller', async () => {
     // Arrange
     let messageHandler;
     ws.on.callsFake((event, handler) => {
-      if (event === 'message') {
+      if (event === "message") {
         messageHandler = handler;
       }
     });
 
     // Setup streaming response with multiple chunks
-    const chunks = ['Chunk 1', 'Chunk 2', 'Chunk 3'];
+    const chunks = ["Chunk 1", "Chunk 2", "Chunk 3"];
     mockChatModel.streamChat.callsFake(async (messages, callback) => {
       chunks.forEach((chunk) => callback(chunk));
-      return { message: chunks.join('') };
+      return { message: chunks.join("") };
     });
 
     // Act
@@ -176,9 +176,9 @@ describe('WebSocket Chat Controller', async () => {
 
     // Simulate receiving message that requests streaming
     const message = JSON.stringify({
-      messages: [{ role: 'user', content: 'Hello' }],
-      provider: 'openai',
-      model: 'gpt-4',
+      messages: [{ role: "user", content: "Hello" }],
+      provider: "openai",
+      model: "gpt-4",
       stream: true,
     });
 
@@ -194,17 +194,17 @@ describe('WebSocket Chat Controller', async () => {
     // Check content of each chunk message
     for (let i = 0; i < chunks.length; i++) {
       const chunkMessage = JSON.parse(ws.send.getCall(i + 2).args[0]);
-      assert.equal(chunkMessage.type, 'stream');
+      assert.equal(chunkMessage.type, "stream");
       assert.equal(chunkMessage.content, chunks[i]);
     }
 
     // Verify end message was sent
     const endMessage = JSON.parse(ws.send.lastCall.args[0]);
-    assert.equal(endMessage.type, 'end');
-    assert.equal(endMessage.content, chunks.join(''));
+    assert.equal(endMessage.type, "end");
+    assert.equal(endMessage.content, chunks.join(""));
   });
 
-  it('should send error message when model is not available', async () => {
+  it("should send error message when model is not available", async () => {
     // Reset stubs
     ws.on.resetHistory();
     ws.send.resetHistory();
@@ -213,37 +213,37 @@ describe('WebSocket Chat Controller', async () => {
     // Arrange
     let messageHandler;
     ws.on.callsFake((event, handler) => {
-      if (event === 'message') {
+      if (event === "message") {
         messageHandler = handler;
       }
     });
 
     // Force model creation to fail
-    chatModelStub.throws(new Error('Model not available'));
+    chatModelStub.throws(new Error("Model not available"));
 
     // Act
     chatController.handleWebSocket(ws, req);
 
     // Simulate receiving a message
     const message = JSON.stringify({
-      messages: [{ role: 'user', content: 'Hello' }],
-      provider: 'invalid-provider',
-      model: 'invalid-model',
+      messages: [{ role: "user", content: "Hello" }],
+      provider: "invalid-provider",
+      model: "invalid-model",
     });
 
     await messageHandler(message);
 
     // Assert error was sent to client
     const errorMessage = JSON.parse(ws.send.lastCall.args[0]);
-    assert.equal(errorMessage.type, 'error');
-    assert.ok(errorMessage.error.includes('Model not available'));
+    assert.equal(errorMessage.type, "error");
+    assert.ok(errorMessage.error.includes("Model not available"));
 
     // Reset stub for subsequent tests
     chatModelStub.reset();
     chatModelStub.returns(mockChatModel);
   });
 
-  it('should handle messages without the stream option as non-streaming', async () => {
+  it("should handle messages without the stream option as non-streaming", async () => {
     // Reset stubs
     ws.on.resetHistory();
     ws.send.resetHistory();
@@ -257,7 +257,7 @@ describe('WebSocket Chat Controller', async () => {
     // Arrange
     let messageHandler;
     ws.on.callsFake((event, handler) => {
-      if (event === 'message') {
+      if (event === "message") {
         messageHandler = handler;
       }
     });
@@ -267,9 +267,9 @@ describe('WebSocket Chat Controller', async () => {
 
     // Simulate receiving a message without stream option
     const message = JSON.stringify({
-      messages: [{ role: 'user', content: 'Hello' }],
-      provider: 'openai',
-      model: 'gpt-4',
+      messages: [{ role: "user", content: "Hello" }],
+      provider: "openai",
+      model: "gpt-4",
       // No stream option
     });
 
@@ -280,7 +280,7 @@ describe('WebSocket Chat Controller', async () => {
     assert.equal(mockChatModel.streamChat.called, false);
   });
 
-  it('should explicitly set stream to false when requested', async () => {
+  it("should explicitly set stream to false when requested", async () => {
     // Reset stubs
     ws.on.resetHistory();
     ws.send.resetHistory();
@@ -290,7 +290,7 @@ describe('WebSocket Chat Controller', async () => {
     // Arrange
     let messageHandler;
     ws.on.callsFake((event, handler) => {
-      if (event === 'message') {
+      if (event === "message") {
         messageHandler = handler;
       }
     });
@@ -300,9 +300,9 @@ describe('WebSocket Chat Controller', async () => {
 
     // Simulate receiving a message with stream: false
     const message = JSON.stringify({
-      messages: [{ role: 'user', content: 'Hello' }],
-      provider: 'openai',
-      model: 'gpt-4',
+      messages: [{ role: "user", content: "Hello" }],
+      provider: "openai",
+      model: "gpt-4",
       stream: false,
     });
 

@@ -1,42 +1,42 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const promptSchema = new mongoose.Schema(
-    {
-      title: {
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    content: {
+      type: String,
+      required: true,
+    },
+    tags: [
+      {
         type: String,
-        required: true,
         trim: true,
       },
-      content: {
-        type: String,
-        required: true,
-      },
-      tags: [
-        {
-          type: String,
-          trim: true,
-        },
-      ],
-    },
-    { timestamps: true },
+    ],
+  },
+  { timestamps: true },
 );
 
 // Create text index for search functionality
 promptSchema.index(
-    {
-      title: 'text',
-      content: 'text',
-      tags: 'text',
+  {
+    title: "text",
+    content: "text",
+    tags: "text",
+  },
+  {
+    weights: {
+      title: 10,
+      content: 5,
+      tags: 3,
     },
-    {
-      weights: {
-        title: 10,
-        content: 5,
-        tags: 3,
-      },
-    },
+  },
 );
 
-const Prompt = mongoose.model('Prompt', promptSchema);
+const Prompt = mongoose.model("Prompt", promptSchema);
 
 export default Prompt;

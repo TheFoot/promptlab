@@ -1,14 +1,14 @@
-import ChatModelFactory from '../services/chatService.js';
-import config from '../config/index.js';
+import ChatModelFactory from "../services/chatService.js";
+import config from "../config/index.js";
 
 // Controller for chat API endpoints
 const chatController = {
   // Handle regular chat requests
   async sendMessage(req, res) {
     // Define variables outside try/catch to make them available in the catch block
-    let provider = 'openai';
-    let model = '';
-    const clientIp = req.ip || '0.0.0.0';
+    let provider = "openai";
+    let model = "";
+    const clientIp = req.ip || "0.0.0.0";
 
     try {
       // Extract request data
@@ -16,15 +16,15 @@ const chatController = {
 
       // Extract and normalize provider and model
       provider = req.body.provider?.toLowerCase() || config.providers.default;
-      model = req.body.model || '';
+      model = req.body.model || "";
 
       if (!messages || !Array.isArray(messages)) {
         return res
-            .status(400)
-            .json({ error: 'Messages are required and must be an array' });
+          .status(400)
+          .json({ error: "Messages are required and must be an array" });
       }
 
-      global.logger.debug('Processing chat request', {
+      global.logger.debug("Processing chat request", {
         clientIp,
         provider,
         model,
@@ -34,7 +34,7 @@ const chatController = {
       const chatModel = ChatModelFactory.createModel(provider);
       const response = await chatModel.chat(messages, { model, temperature });
 
-      global.logger.info('Chat request successful', {
+      global.logger.info("Chat request successful", {
         clientIp,
         provider,
         model,
@@ -43,7 +43,7 @@ const chatController = {
 
       return res.json(response);
     } catch (error) {
-      global.logger.error('Chat request failed', {
+      global.logger.error("Chat request failed", {
         error: error.message,
         stack: error.stack,
         clientIp,
@@ -53,7 +53,7 @@ const chatController = {
       });
 
       return res.status(500).json({
-        error: 'Failed to process chat request',
+        error: "Failed to process chat request",
         message: error.message,
       });
     }
@@ -63,14 +63,14 @@ const chatController = {
   handleWebSocket(ws, req) {
     const clientIp = req.socket.remoteAddress;
 
-    global.logger.debug('WebSocket handler initialized', {
+    global.logger.debug("WebSocket handler initialized", {
       clientIp,
-      userAgent: req.headers['user-agent'],
+      userAgent: req.headers["user-agent"],
     });
 
     // Handle WebSocket errors
-    ws.on('error', (error) => {
-      global.logger.error('WebSocket error', {
+    ws.on("error", (error) => {
+      global.logger.error("WebSocket error", {
         error: error.message,
         stack: error.stack,
         clientIp,
@@ -78,16 +78,16 @@ const chatController = {
     });
 
     // Handle WebSocket closing
-    ws.on('close', () => {
-      global.logger.info('WebSocket connection closed', {
+    ws.on("close", () => {
+      global.logger.info("WebSocket connection closed", {
         clientIp,
       });
     });
 
-    ws.on('message', async (message) => {
+    ws.on("message", async (message) => {
       // Store provider and model outside try/catch for error handling access
       let provider = config.providers.default;
-      let model = '';
+      let model = "";
       let clientRequestData = null;
 
       try {
@@ -98,10 +98,10 @@ const chatController = {
         } catch (parseError) {
           // Handle JSON parsing errors
           ws.send(
-              JSON.stringify({
-                type: 'error',
-                error: `Invalid JSON: ${parseError.message}`,
-              }),
+            JSON.stringify({
+              type: "error",
+              error: `Invalid JSON: ${parseError.message}`,
+            }),
           );
           return;
         }
@@ -110,13 +110,13 @@ const chatController = {
         // Extract with explicit check for undefined to differentiate between missing and false
         const { messages, temperature } = data;
         // Only default to true if stream is completely missing from the data
-        const stream = 'stream' in data ? data.stream : false;
+        const stream = "stream" in data ? data.stream : false;
 
         // Extract and normalize provider and model
         provider = data.provider?.toLowerCase() || config.providers.default;
-        model = data.model || '';
+        model = data.model || "";
 
-        global.logger.debug('WebSocket message received', {
+        global.logger.debug("WebSocket message received", {
           clientIp,
           messageCount: messages?.length,
           provider,
@@ -126,36 +126,36 @@ const chatController = {
 
         if (!messages || !Array.isArray(messages)) {
           return ws.send(
-              JSON.stringify({
-                type: 'error',
-                error: 'Messages are required and must be an array',
-              }),
+            JSON.stringify({
+              type: "error",
+              error: "Messages are required and must be an array",
+            }),
           );
         }
 
         // Start the message
-        ws.send(JSON.stringify({ type: 'start' }));
+        ws.send(JSON.stringify({ type: "start" }));
 
         const chatModel = ChatModelFactory.createModel(provider);
 
         if (stream) {
           // Stream the response
           const response = await chatModel.streamChat(
-              messages,
-              (content) => {
-                ws.send(JSON.stringify({ type: 'stream', content }));
-              },
-              { model, temperature },
+            messages,
+            (content) => {
+              ws.send(JSON.stringify({ type: "stream", content }));
+            },
+            { model, temperature },
           );
 
           // End the message with the complete response text
           ws.send(
-              JSON.stringify({
-                type: 'end',
-                content: response.message,
-              }),
+            JSON.stringify({
+              type: "end",
+              content: response.message,
+            }),
           );
-          global.logger.info('WebSocket stream completed', {
+          global.logger.info("WebSocket stream completed", {
             clientIp,
             provider,
             model,
@@ -167,18 +167,18 @@ const chatController = {
             temperature,
           });
           ws.send(
-              JSON.stringify({
-                type: 'stream',
-                content: response.message,
-              }),
+            JSON.stringify({
+              type: "stream",
+              content: response.message,
+            }),
           );
           ws.send(
-              JSON.stringify({
-                type: 'end',
-                content: response.message,
-              }),
+            JSON.stringify({
+              type: "end",
+              content: response.message,
+            }),
           );
-          global.logger.info('WebSocket non-streaming response completed', {
+          global.logger.info("WebSocket non-streaming response completed", {
             clientIp,
             provider,
             model,
@@ -187,7 +187,7 @@ const chatController = {
         }
       } catch (error) {
         // Log the error with available context
-        global.logger.error('WebSocket chat request failed', {
+        global.logger.error("WebSocket chat request failed", {
           error: error.message,
           stack: error.stack,
           clientIp: req.socket.remoteAddress,
@@ -198,20 +198,20 @@ const chatController = {
 
         // Send error response to client
         ws.send(
-            JSON.stringify({
-              type: 'error',
-              error: error.message || 'Failed to process chat request',
-            }),
+          JSON.stringify({
+            type: "error",
+            error: error.message || "Failed to process chat request",
+          }),
         );
       }
     });
 
     // Handle connection opened
     ws.send(
-        JSON.stringify({
-          type: 'info',
-          message: 'Chat WebSocket connection established',
-        }),
+      JSON.stringify({
+        type: "info",
+        message: "Chat WebSocket connection established",
+      }),
     );
   },
 
@@ -242,13 +242,13 @@ const chatController = {
 
       return res.json(frontendConfig);
     } catch (error) {
-      global.logger.error('Error getting provider config', {
+      global.logger.error("Error getting provider config", {
         error: error.message,
         stack: error.stack,
       });
 
       return res.status(500).json({
-        error: 'Failed to retrieve provider configuration',
+        error: "Failed to retrieve provider configuration",
         message: error.message,
       });
     }

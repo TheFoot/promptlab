@@ -1,6 +1,6 @@
-import { OpenAI } from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
-import config from '../config/index.js';
+import { OpenAI } from "openai";
+import Anthropic from "@anthropic-ai/sdk";
+import config from "../config/index.js";
 
 // Base class for all chat models
 class ChatModelBase {
@@ -10,11 +10,11 @@ class ChatModelBase {
 
   /* eslint-disable no-unused-vars */
   async chat(messages) {
-    throw new Error('Not implemented');
+    throw new Error("Not implemented");
   }
 
   async streamChat(messages, onChunk) {
-    throw new Error('Not implemented');
+    throw new Error("Not implemented");
   }
   /* eslint-enable no-unused-vars */
 }
@@ -28,8 +28,8 @@ class OpenAIModel extends ChatModelBase {
 
     // Check for API key
     if (!openaiConfig.api.key) {
-      global.logger.warn('OPENAI_API_KEY environment variable is not set', {
-        note: 'Chat features will not work without a valid API key',
+      global.logger.warn("OPENAI_API_KEY environment variable is not set", {
+        note: "Chat features will not work without a valid API key",
       });
     }
 
@@ -47,12 +47,12 @@ class OpenAIModel extends ChatModelBase {
   async chat(messages, options = {}) {
     const model = options.model || this.defaultModel;
     const temperature =
-      options.temperature !== undefined ?
-        options.temperature :
-        this.defaults.temperature;
+      options.temperature !== undefined
+        ? options.temperature
+        : this.defaults.temperature;
 
     try {
-      global.logger.debug('Sending request to OpenAI API', {
+      global.logger.debug("Sending request to OpenAI API", {
         model,
         temperature,
         messageCount: messages.length,
@@ -64,7 +64,7 @@ class OpenAIModel extends ChatModelBase {
         temperature,
       });
 
-      global.logger.debug('Received response from OpenAI API', {
+      global.logger.debug("Received response from OpenAI API", {
         model,
         tokens: response.usage,
         responseChoices: response.choices.length,
@@ -75,7 +75,7 @@ class OpenAIModel extends ChatModelBase {
         usage: response.usage,
       };
     } catch (error) {
-      global.logger.error('OpenAI API request failed', {
+      global.logger.error("OpenAI API request failed", {
         error: error.message,
         stack: error.stack,
         model,
@@ -89,12 +89,12 @@ class OpenAIModel extends ChatModelBase {
   async streamChat(messages, onChunk, options = {}) {
     const model = options.model || this.defaultModel;
     const temperature =
-      options.temperature !== undefined ?
-        options.temperature :
-        this.defaults.temperature;
+      options.temperature !== undefined
+        ? options.temperature
+        : this.defaults.temperature;
 
     try {
-      global.logger.debug('Starting streaming request to OpenAI API', {
+      global.logger.debug("Starting streaming request to OpenAI API", {
         model,
         temperature,
         messageCount: messages.length,
@@ -107,11 +107,11 @@ class OpenAIModel extends ChatModelBase {
         stream: true,
       });
 
-      let responseText = '';
+      let responseText = "";
       let chunkCount = 0;
 
       for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || '';
+        const content = chunk.choices[0]?.delta?.content || "";
         if (content) {
           responseText += content;
           onChunk(content);
@@ -119,7 +119,7 @@ class OpenAIModel extends ChatModelBase {
         }
       }
 
-      global.logger.debug('Completed streaming from OpenAI API', {
+      global.logger.debug("Completed streaming from OpenAI API", {
         model,
         responseLength: responseText.length,
         chunkCount,
@@ -127,7 +127,7 @@ class OpenAIModel extends ChatModelBase {
 
       return { message: responseText };
     } catch (error) {
-      global.logger.error('OpenAI API streaming request failed', {
+      global.logger.error("OpenAI API streaming request failed", {
         error: error.message,
         stack: error.stack,
         model,
@@ -148,8 +148,8 @@ class AnthropicModel extends ChatModelBase {
 
     // Check for API key
     if (!anthropicConfig.api.key) {
-      global.logger.warn('ANTHROPIC_API_KEY environment variable is not set', {
-        note: 'Claude chat features will not work without a valid API key',
+      global.logger.warn("ANTHROPIC_API_KEY environment variable is not set", {
+        note: "Claude chat features will not work without a valid API key",
       });
     }
 
@@ -157,9 +157,9 @@ class AnthropicModel extends ChatModelBase {
     this.client = new Anthropic({
       apiKey: anthropicConfig.api.key || process.env.ANTHROPIC_API_KEY,
       // Only add baseURL if it's defined
-      ...(anthropicConfig.api.baseUrl ?
-        { baseURL: anthropicConfig.api.baseUrl } :
-        {}),
+      ...(anthropicConfig.api.baseUrl
+        ? { baseURL: anthropicConfig.api.baseUrl }
+        : {}),
       ...providerConfig,
     });
 
@@ -174,7 +174,7 @@ class AnthropicModel extends ChatModelBase {
 
     // Extract system message if present
     messages.forEach((message) => {
-      if (message.role === 'system') {
+      if (message.role === "system") {
         systemMessage = message.content;
       } else {
         // Map 'user' and 'assistant' roles directly (they use the same names)
@@ -191,16 +191,16 @@ class AnthropicModel extends ChatModelBase {
   async chat(messages, options = {}) {
     const model = options.model || this.defaultModel;
     const temperature =
-      options.temperature !== undefined ?
-        options.temperature :
-        this.defaults.temperature;
+      options.temperature !== undefined
+        ? options.temperature
+        : this.defaults.temperature;
     const maxTokens = options.maxTokens || this.defaults.maxTokens;
 
     try {
       const { systemMessage, messages: convertedMessages } =
         this._convertMessages(messages);
 
-      global.logger.debug('Sending request to Anthropic API', {
+      global.logger.debug("Sending request to Anthropic API", {
         model,
         temperature,
         messageCount: messages.length,
@@ -222,20 +222,20 @@ class AnthropicModel extends ChatModelBase {
 
       const response = await this.client.messages.create(requestParams);
 
-      global.logger.debug('Received response from Anthropic API', {
+      global.logger.debug("Received response from Anthropic API", {
         model,
         usage: response.usage,
       });
 
       // Handle case where content might be undefined or empty
-      const contentText = response.content?.[0]?.text || '';
+      const contentText = response.content?.[0]?.text || "";
 
       return {
         message: contentText,
         usage: response.usage,
       };
     } catch (error) {
-      global.logger.error('Anthropic API request failed', {
+      global.logger.error("Anthropic API request failed", {
         error: error.message,
         stack: error.stack,
         model,
@@ -249,16 +249,16 @@ class AnthropicModel extends ChatModelBase {
   async streamChat(messages, onChunk, options = {}) {
     const model = options.model || this.defaultModel;
     const temperature =
-      options.temperature !== undefined ?
-        options.temperature :
-        this.defaults.temperature;
+      options.temperature !== undefined
+        ? options.temperature
+        : this.defaults.temperature;
     const maxTokens = options.maxTokens || this.defaults.maxTokens;
 
     try {
       const { systemMessage, messages: convertedMessages } =
         this._convertMessages(messages);
 
-      global.logger.debug('Starting streaming request to Anthropic API', {
+      global.logger.debug("Starting streaming request to Anthropic API", {
         model,
         temperature,
         messageCount: messages.length,
@@ -281,18 +281,18 @@ class AnthropicModel extends ChatModelBase {
 
       const stream = await this.client.messages.create(requestParams);
 
-      let responseText = '';
+      let responseText = "";
       let chunkCount = 0;
 
       for await (const chunk of stream) {
-        if (chunk.type === 'content_block_delta' && chunk.delta.text) {
+        if (chunk.type === "content_block_delta" && chunk.delta.text) {
           responseText += chunk.delta.text;
           onChunk(chunk.delta.text);
           chunkCount++;
         }
       }
 
-      global.logger.debug('Completed streaming from Anthropic API', {
+      global.logger.debug("Completed streaming from Anthropic API", {
         model,
         responseLength: responseText.length,
         chunkCount,
@@ -300,7 +300,7 @@ class AnthropicModel extends ChatModelBase {
 
       return { message: responseText };
     } catch (error) {
-      global.logger.error('Anthropic API streaming request failed', {
+      global.logger.error("Anthropic API streaming request failed", {
         error: error.message,
         stack: error.stack,
         model,
@@ -318,15 +318,15 @@ class ChatModelFactory {
     const normalizedProvider =
       provider?.toLowerCase() || config.providers.default;
 
-    global.logger.debug('Creating chat model', {
+    global.logger.debug("Creating chat model", {
       provider: normalizedProvider,
       config: Object.keys(providerConfig),
     });
 
     switch (normalizedProvider) {
-      case 'anthropic':
+      case "anthropic":
         return new AnthropicModel(providerConfig);
-      case 'openai':
+      case "openai":
       default:
         return new OpenAIModel(providerConfig);
     }
@@ -343,9 +343,9 @@ class ChatModelFactory {
       provider?.toLowerCase() || config.providers.default;
 
     switch (normalizedProvider) {
-      case 'anthropic':
+      case "anthropic":
         return config.anthropic.models.available;
-      case 'openai':
+      case "openai":
       default:
         return config.openai.models.available;
     }
@@ -365,9 +365,9 @@ class ChatModelFactory {
       provider?.toLowerCase() || config.providers.default;
 
     switch (normalizedProvider) {
-      case 'anthropic':
+      case "anthropic":
         return config.anthropic.models.displayNames[model] || model;
-      case 'openai':
+      case "openai":
       default:
         return config.openai.models.displayNames[model] || model;
     }

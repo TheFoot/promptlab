@@ -1,9 +1,9 @@
 /**
  * Test setup helpers for backend tests
  */
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import mongoose from 'mongoose';
-import sinon from 'sinon';
+import { MongoMemoryServer } from "mongodb-memory-server";
+import mongoose from "mongoose";
+import sinon from "sinon";
 
 // Setup in-memory MongoDB server
 export const setupInMemoryMongoDB = async () => {
@@ -50,7 +50,7 @@ export const mockExpressReqRes = (reqOverrides = {}, resOverrides = {}) => {
     body: {},
     params: {},
     query: {},
-    ip: '127.0.0.1',
+    ip: "127.0.0.1",
     ...reqOverrides,
   };
 

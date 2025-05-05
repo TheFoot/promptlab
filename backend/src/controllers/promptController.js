@@ -1,4 +1,4 @@
-import Prompt from '../models/Prompt.js';
+import Prompt from "../models/Prompt.js";
 
 /**
  * Get all prompts with optional search and tag filters
@@ -19,8 +19,8 @@ const getPrompts = async (req, res) => {
     }
 
     const prompts = await Prompt.find(query)
-        .sort({ updatedAt: -1 }) // Sort by most recently updated
-        .select('title tags updatedAt');
+      .sort({ updatedAt: -1 }) // Sort by most recently updated
+      .select("title tags updatedAt");
 
     res.json(prompts);
   } catch (error) {
@@ -35,7 +35,7 @@ const getPromptById = async (req, res) => {
   try {
     const prompt = await Prompt.findById(req.params.id);
     if (!prompt) {
-      return res.status(404).json({ message: 'Prompt not found' });
+      return res.status(404).json({ message: "Prompt not found" });
     }
     res.json(prompt);
   } catch (error) {
@@ -52,8 +52,8 @@ const createPrompt = async (req, res) => {
 
     if (!title || !content) {
       return res
-          .status(400)
-          .json({ message: 'Title and content are required' });
+        .status(400)
+        .json({ message: "Title and content are required" });
     }
 
     const newPrompt = new Prompt({
@@ -76,13 +76,13 @@ const updatePrompt = async (req, res) => {
   try {
     const { title, content, tags } = req.body;
     const updatedPrompt = await Prompt.findByIdAndUpdate(
-        req.params.id,
-        { title, content, tags },
-        { new: true, runValidators: true },
+      req.params.id,
+      { title, content, tags },
+      { new: true, runValidators: true },
     );
 
     if (!updatedPrompt) {
-      return res.status(404).json({ message: 'Prompt not found' });
+      return res.status(404).json({ message: "Prompt not found" });
     }
 
     res.json(updatedPrompt);
@@ -99,10 +99,10 @@ const deletePrompt = async (req, res) => {
     const deletedPrompt = await Prompt.findByIdAndDelete(req.params.id);
 
     if (!deletedPrompt) {
-      return res.status(404).json({ message: 'Prompt not found' });
+      return res.status(404).json({ message: "Prompt not found" });
     }
 
-    res.json({ message: 'Prompt deleted successfully' });
+    res.json({ message: "Prompt deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
