@@ -24,6 +24,10 @@
 - **Naming:** Use camelCase for variables/functions, PascalCase for components
 - **State Management:** Use Pinia for global state, component refs for local state
 - **API Endpoints:** Follow REST conventions with proper HTTP verbs
+- **Variable Declarations:** Don't initialize variables with `undefined` - it's redundant
+- **Nullish Handling:** Use optional chaining (`?.`) and nullish coalescing (`||`) for concise null checks
+- **Promise Handling:** Never use Promise objects directly in boolean conditions; check against `null` or use appropriate methods
+- **Accessibility:** Always associate form labels with controls using the `for` attribute that matches an `id` on the control
 
 ## Project Structure
 - **Frontend:** Vue 3 SPA with Vite, Vue Router and Pinia

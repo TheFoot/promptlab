@@ -17,7 +17,7 @@ class ModelConfigService {
 
   async loadConfig() {
     // Only load config once or return existing promise if already loading
-    if (this.loadPromise) {
+    if (this.loadPromise !== null) {
       return this.loadPromise;
     }
 

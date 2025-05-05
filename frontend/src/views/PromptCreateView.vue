@@ -26,16 +26,17 @@
         </div>
 
         <div class="form-group mb-3">
-          <label>Tags</label>
-          <TagInput v-model="prompt.tags" />
+          <label for="tags-input">Tags</label>
+          <TagInput id="tags-input" v-model="prompt.tags" />
         </div>
 
         <div class="prompt-content">
           <div class="editor-container">
             <div class="editor-header">
-              Content
+              <label for="content-editor">Content</label>
             </div>
             <textarea
+              id="content-editor"
               v-model="prompt.content"
               class="content-editor"
               placeholder="Write your prompt here using markdown..."
