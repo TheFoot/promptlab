@@ -10,8 +10,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "node --test",
-    "test:coverage": "node --test --experimental-test-coverage",
-    "nyc:report": "nyc report --reporter=lcov --temp-dir=coverage"
+    "test:coverage": "nyc --reporter=lcov node --test",
+    "nyc:report": "echo 'Coverage already generated with lcov reporter'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
@@ -31,6 +31,7 @@
     "mock-socket": "^9.3.1",
     "mongodb-memory-server": "^10.1.4",
     "nodemon": "^3.0.1",
+    "nyc": "^17.1.0",
     "prettier": "^3.0.3",
     "sinon": "^20.0.0",
     "supertest": "^7.1.0"
