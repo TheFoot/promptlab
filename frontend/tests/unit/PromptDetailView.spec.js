@@ -114,6 +114,7 @@ const MockPromptDetailView = {
         this.uiStore.setEditMode(false);
         alertService.showAlert("Prompt updated successfully", "success");
       } catch (error) {
+        console.error("Failed to update prompt:", error.message);
         alertService.showAlert("Failed to update prompt", "error");
       }
     },
@@ -131,6 +132,7 @@ const MockPromptDetailView = {
           // Simulate navigation
           console.log("Navigate to home");
         } catch (error) {
+          console.error("Failed to delete prompt:", error.message);
           alertService.showAlert("Failed to delete prompt", "error");
         }
       }

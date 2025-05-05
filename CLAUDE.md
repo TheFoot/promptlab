@@ -28,6 +28,7 @@
 - **Nullish Handling:** Use optional chaining (`?.`) and nullish coalescing (`||`) for concise null checks
 - **Promise Handling:** Never use Promise objects directly in boolean conditions; check against `null` or use appropriate methods
 - **Accessibility:** Always associate form labels with controls using the `for` attribute that matches an `id` on the control
+- **Error Handling:** Never use empty catch blocks. Always log errors with `console.error()` or handle them appropriately
 
 ## Project Structure
 - **Frontend:** Vue 3 SPA with Vite, Vue Router and Pinia

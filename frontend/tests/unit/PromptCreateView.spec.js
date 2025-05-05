@@ -76,6 +76,7 @@ const MockPromptCreateView = {
         // Simulate router push (we can't actually navigate in a test)
         console.log("Navigating to:", result._id);
       } catch (error) {
+        console.error("Failed to create prompt:", error.message);
         alertService.showAlert("Failed to create prompt", "error");
       }
     },
