@@ -67,6 +67,22 @@ const chatController = {
       clientIp,
       userAgent: req.headers['user-agent'],
     });
+    
+    // Handle WebSocket errors
+    ws.on('error', (error) => {
+      global.logger.error('WebSocket error', {
+        error: error.message,
+        stack: error.stack,
+        clientIp,
+      });
+    });
+    
+    // Handle WebSocket closing
+    ws.on('close', () => {
+      global.logger.info('WebSocket connection closed', {
+        clientIp,
+      });
+    });
 
     ws.on('message', async (message) => {
       // Store provider and model outside try/catch for error handling access
@@ -76,9 +92,23 @@ const chatController = {
 
       try {
         // Parse the incoming data
-        const data = JSON.parse(message);
+        let data;
+        try {
+          data = JSON.parse(message);
+        } catch (parseError) {
+          // Handle JSON parsing errors
+          ws.send(JSON.stringify({
+            type: 'error',
+            error: `Invalid JSON: ${parseError.message}`
+          }));
+          return;
+        }
+        
         clientRequestData = data;
-        const { messages, temperature, stream = true } = data;
+        // Extract with explicit check for undefined to differentiate between missing and false
+        const { messages, temperature } = data;
+        // Only default to true if stream is completely missing from the data
+        const stream = 'stream' in data ? data.stream : false;
 
         // Extract and normalize provider and model
         provider = data.provider?.toLowerCase() || config.providers.default;
@@ -108,7 +138,7 @@ const chatController = {
 
         if (stream) {
           // Stream the response
-          await chatModel.streamChat(
+          const response = await chatModel.streamChat(
               messages,
               (content) => {
                 ws.send(JSON.stringify({ type: 'stream', content }));
@@ -116,8 +146,11 @@ const chatController = {
               { model, temperature },
           );
 
-          // End the message
-          ws.send(JSON.stringify({ type: 'end' }));
+          // End the message with the complete response text
+          ws.send(JSON.stringify({ 
+            type: 'end',
+            content: response.message
+          }));
           global.logger.info('WebSocket stream completed', {
             clientIp,
             provider,
@@ -135,7 +168,10 @@ const chatController = {
                 content: response.message,
               }),
           );
-          ws.send(JSON.stringify({ type: 'end' }));
+          ws.send(JSON.stringify({ 
+            type: 'end',
+            content: response.message
+          }));
           global.logger.info('WebSocket non-streaming response completed', {
             clientIp,
             provider,
