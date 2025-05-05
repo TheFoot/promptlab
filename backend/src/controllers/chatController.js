@@ -67,7 +67,7 @@ const chatController = {
       clientIp,
       userAgent: req.headers['user-agent'],
     });
-    
+
     // Handle WebSocket errors
     ws.on('error', (error) => {
       global.logger.error('WebSocket error', {
@@ -76,7 +76,7 @@ const chatController = {
         clientIp,
       });
     });
-    
+
     // Handle WebSocket closing
     ws.on('close', () => {
       global.logger.info('WebSocket connection closed', {
@@ -97,13 +97,15 @@ const chatController = {
           data = JSON.parse(message);
         } catch (parseError) {
           // Handle JSON parsing errors
-          ws.send(JSON.stringify({
-            type: 'error',
-            error: `Invalid JSON: ${parseError.message}`
-          }));
+          ws.send(
+              JSON.stringify({
+                type: 'error',
+                error: `Invalid JSON: ${parseError.message}`,
+              }),
+          );
           return;
         }
-        
+
         clientRequestData = data;
         // Extract with explicit check for undefined to differentiate between missing and false
         const { messages, temperature } = data;
@@ -147,10 +149,12 @@ const chatController = {
           );
 
           // End the message with the complete response text
-          ws.send(JSON.stringify({ 
-            type: 'end',
-            content: response.message
-          }));
+          ws.send(
+              JSON.stringify({
+                type: 'end',
+                content: response.message,
+              }),
+          );
           global.logger.info('WebSocket stream completed', {
             clientIp,
             provider,
@@ -168,10 +172,12 @@ const chatController = {
                 content: response.message,
               }),
           );
-          ws.send(JSON.stringify({ 
-            type: 'end',
-            content: response.message
-          }));
+          ws.send(
+              JSON.stringify({
+                type: 'end',
+                content: response.message,
+              }),
+          );
           global.logger.info('WebSocket non-streaming response completed', {
             clientIp,
             provider,

@@ -167,7 +167,7 @@ class AnthropicModel extends ChatModelBase {
 
   // Convert OpenAI format messages to Anthropic format
   _convertMessages(messages) {
-    let systemMessage = undefined;
+    let systemMessage;
     const convertedMessages = [];
 
     // Extract system message if present
@@ -226,9 +226,7 @@ class AnthropicModel extends ChatModelBase {
       });
 
       // Handle case where content might be undefined or empty
-      const contentText = response.content && response.content[0] && response.content[0].text 
-        ? response.content[0].text 
-        : '';
+      const contentText = response.content?.[0]?.text || '';
 
       return {
         message: contentText,

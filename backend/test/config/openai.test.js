@@ -12,7 +12,7 @@ describe('OpenAI Configuration', async () => {
   before(() => {
     // Setup mock logger to prevent test logs
     restoreLogger = setupLoggerMock();
-    
+
     // Save original environment variables
     originalEnv = { ...process.env };
   });
@@ -20,10 +20,10 @@ describe('OpenAI Configuration', async () => {
   after(() => {
     // Restore original logger
     restoreLogger();
-    
+
     // Restore original environment variables
     process.env = originalEnv;
-    
+
     // Restore sinon stubs
     sinon.restore();
   });
@@ -41,19 +41,24 @@ describe('OpenAI Configuration', async () => {
   it('should include default configuration values', () => {
     // Assert default values
     assert.strictEqual(typeof openaiConfig.defaults.temperature, 'number');
-    assert.ok(openaiConfig.defaults.temperature >= 0 && openaiConfig.defaults.temperature <= 1);
+    assert.ok(
+        openaiConfig.defaults.temperature >= 0 &&
+        openaiConfig.defaults.temperature <= 1,
+    );
     assert.strictEqual(typeof openaiConfig.defaults.maxTokens, 'number');
     assert.ok(openaiConfig.defaults.maxTokens > 0);
   });
 
   it('should include default model', () => {
     // Assert default model is in available models
-    assert.ok(openaiConfig.models.available.includes(openaiConfig.models.default));
+    assert.ok(
+        openaiConfig.models.available.includes(openaiConfig.models.default),
+    );
   });
 
   it('should have display names for all available models', () => {
     // Assert all available models have display names
-    openaiConfig.models.available.forEach(model => {
+    openaiConfig.models.available.forEach((model) => {
       assert.ok(openaiConfig.models.displayNames[model]);
     });
   });
@@ -62,7 +67,7 @@ describe('OpenAI Configuration', async () => {
     // Arrange
     const testApiKey = 'test-openai-api-key';
     process.env.OPENAI_API_KEY = testApiKey;
-    
+
     // Act & Assert
     // Need to re-create config object to reflect current env vars
     const freshConfig = {
@@ -70,16 +75,16 @@ describe('OpenAI Configuration', async () => {
         key: process.env.OPENAI_API_KEY || '',
         baseUrl: process.env.OPENAI_API_BASE_URL || 'https://api.openai.com/v1',
         organization: process.env.OPENAI_ORGANIZATION || '',
-      }
+      },
     };
-    
+
     assert.strictEqual(freshConfig.api.key, testApiKey);
   });
 
   it('should use default base URL if not specified in environment', () => {
     // Arrange - no base URL specified
     delete process.env.OPENAI_API_BASE_URL;
-    
+
     // Act & Assert
     // Need to re-create config object to reflect current env vars
     const freshConfig = {
@@ -87,24 +92,24 @@ describe('OpenAI Configuration', async () => {
         key: process.env.OPENAI_API_KEY || '',
         baseUrl: process.env.OPENAI_API_BASE_URL || 'https://api.openai.com/v1',
         organization: process.env.OPENAI_ORGANIZATION || '',
-      }
+      },
     };
-    
+
     assert.strictEqual(freshConfig.api.baseUrl, 'https://api.openai.com/v1');
-    
+
     // Arrange - with base URL specified
     const testBaseUrl = 'https://test-api.openai.com';
     process.env.OPENAI_API_BASE_URL = testBaseUrl;
-    
+
     // Act & Assert
     const freshConfigWithBase = {
       api: {
         key: process.env.OPENAI_API_KEY || '',
         baseUrl: process.env.OPENAI_API_BASE_URL || 'https://api.openai.com/v1',
         organization: process.env.OPENAI_ORGANIZATION || '',
-      }
+      },
     };
-    
+
     assert.strictEqual(freshConfigWithBase.api.baseUrl, testBaseUrl);
   });
 
@@ -112,7 +117,7 @@ describe('OpenAI Configuration', async () => {
     // Arrange
     const testOrg = 'test-openai-org';
     process.env.OPENAI_ORGANIZATION = testOrg;
-    
+
     // Act & Assert
     // Need to re-create config object to reflect current env vars
     const freshConfig = {
@@ -120,9 +125,9 @@ describe('OpenAI Configuration', async () => {
         key: process.env.OPENAI_API_KEY || '',
         baseUrl: process.env.OPENAI_API_BASE_URL || 'https://api.openai.com/v1',
         organization: process.env.OPENAI_ORGANIZATION || '',
-      }
+      },
     };
-    
+
     assert.strictEqual(freshConfig.api.organization, testOrg);
   });
 });

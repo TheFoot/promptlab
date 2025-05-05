@@ -4,9 +4,7 @@ import sinon from 'sinon';
 
 import chatController from '../../src/controllers/chatController.js';
 import ChatModelFactory from '../../src/services/chatService.js';
-import {
-  setupLoggerMock,
-} from '../helpers/testSetup.js';
+import { setupLoggerMock } from '../helpers/testSetup.js';
 
 describe('WebSocket Chat Controller', async () => {
   let restoreLogger;
@@ -18,7 +16,7 @@ describe('WebSocket Chat Controller', async () => {
   before(() => {
     // Setup mock logger to prevent test logs
     restoreLogger = setupLoggerMock();
-    
+
     // Create mock chat model with all required methods
     mockChatModel = {
       chat: sinon.stub(),
@@ -39,8 +37,8 @@ describe('WebSocket Chat Controller', async () => {
 
     // Create stub for ChatModelFactory
     chatModelStub = sinon
-      .stub(ChatModelFactory, 'createModel')
-      .returns(mockChatModel);
+        .stub(ChatModelFactory, 'createModel')
+        .returns(mockChatModel);
 
     // Create a WebSocket mock
     ws = {
@@ -59,7 +57,7 @@ describe('WebSocket Chat Controller', async () => {
   after(() => {
     // Restore original logger
     restoreLogger();
-    
+
     // Restore all stubs
     sinon.restore();
   });
@@ -75,18 +73,18 @@ describe('WebSocket Chat Controller', async () => {
 
     // Act
     chatController.handleWebSocket(ws, req);
-    
+
     // Assert that close handler was registered
     assert.ok(closeHandler);
-    
+
     // Simulate close event
     closeHandler();
-    
+
     // Verify cleanup was handled properly
     assert.ok(global.logger.info.called);
-    const logCall = global.logger.info.getCalls().find(
-      call => call.args[0] === 'WebSocket connection closed'
-    );
+    const logCall = global.logger.info
+        .getCalls()
+        .find((call) => call.args[0] === 'WebSocket connection closed');
     assert.ok(logCall);
   });
 
@@ -94,7 +92,7 @@ describe('WebSocket Chat Controller', async () => {
     // Reset stubs
     ws.on.resetHistory();
     global.logger.error.resetHistory();
-    
+
     // Arrange
     let errorHandler;
     ws.on.callsFake((event, handler) => {
@@ -105,19 +103,19 @@ describe('WebSocket Chat Controller', async () => {
 
     // Act
     chatController.handleWebSocket(ws, req);
-    
+
     // Assert that error handler was registered
     assert.ok(errorHandler);
-    
+
     // Simulate error event
     const testError = new Error('Test WebSocket error');
     errorHandler(testError);
-    
+
     // Verify error was logged
     assert.ok(global.logger.error.called);
-    const logCall = global.logger.error.getCalls().find(
-      call => call.args[0] === 'WebSocket error'
-    );
+    const logCall = global.logger.error
+        .getCalls()
+        .find((call) => call.args[0] === 'WebSocket error');
     assert.ok(logCall);
     assert.strictEqual(logCall.args[1].error, 'Test WebSocket error');
   });
@@ -126,7 +124,7 @@ describe('WebSocket Chat Controller', async () => {
     // Reset stubs
     ws.on.resetHistory();
     ws.send.resetHistory();
-    
+
     // Arrange
     let messageHandler;
     ws.on.callsFake((event, handler) => {
@@ -137,13 +135,13 @@ describe('WebSocket Chat Controller', async () => {
 
     // Act
     chatController.handleWebSocket(ws, req);
-    
+
     // Assert message handler was registered
     assert.ok(messageHandler);
-    
+
     // Simulate receiving invalid JSON
     await messageHandler('this is not valid JSON');
-    
+
     // Check that error was sent back to client
     assert.ok(ws.send.called);
     const lastCall = ws.send.lastCall.args[0];
@@ -157,7 +155,7 @@ describe('WebSocket Chat Controller', async () => {
     ws.on.resetHistory();
     ws.send.resetHistory();
     mockChatModel.streamChat.resetHistory();
-    
+
     // Arrange
     let messageHandler;
     ws.on.callsFake((event, handler) => {
@@ -165,17 +163,17 @@ describe('WebSocket Chat Controller', async () => {
         messageHandler = handler;
       }
     });
-    
+
     // Setup streaming response with multiple chunks
     const chunks = ['Chunk 1', 'Chunk 2', 'Chunk 3'];
     mockChatModel.streamChat.callsFake(async (messages, callback, options) => {
-      chunks.forEach(chunk => callback(chunk));
+      chunks.forEach((chunk) => callback(chunk));
       return { message: chunks.join('') };
     });
 
     // Act
     chatController.handleWebSocket(ws, req);
-    
+
     // Simulate receiving message that requests streaming
     const message = JSON.stringify({
       messages: [{ role: 'user', content: 'Hello' }],
@@ -183,23 +181,23 @@ describe('WebSocket Chat Controller', async () => {
       model: 'gpt-4',
       stream: true,
     });
-    
+
     await messageHandler(message);
-    
+
     // Assert
     assert.equal(mockChatModel.streamChat.calledOnce, true);
-    
+
     // Verify all chunks were sent
     // First message is always the info message
     assert.equal(ws.send.callCount, chunks.length + 3); // info + start + chunks + end
-    
+
     // Check content of each chunk message
     for (let i = 0; i < chunks.length; i++) {
       const chunkMessage = JSON.parse(ws.send.getCall(i + 2).args[0]);
       assert.equal(chunkMessage.type, 'stream');
       assert.equal(chunkMessage.content, chunks[i]);
     }
-    
+
     // Verify end message was sent
     const endMessage = JSON.parse(ws.send.lastCall.args[0]);
     assert.equal(endMessage.type, 'end');
@@ -211,7 +209,7 @@ describe('WebSocket Chat Controller', async () => {
     ws.on.resetHistory();
     ws.send.resetHistory();
     chatModelStub.resetHistory();
-    
+
     // Arrange
     let messageHandler;
     ws.on.callsFake((event, handler) => {
@@ -219,27 +217,27 @@ describe('WebSocket Chat Controller', async () => {
         messageHandler = handler;
       }
     });
-    
+
     // Force model creation to fail
     chatModelStub.throws(new Error('Model not available'));
 
     // Act
     chatController.handleWebSocket(ws, req);
-    
+
     // Simulate receiving a message
     const message = JSON.stringify({
       messages: [{ role: 'user', content: 'Hello' }],
       provider: 'invalid-provider',
       model: 'invalid-model',
     });
-    
+
     await messageHandler(message);
-    
+
     // Assert error was sent to client
     const errorMessage = JSON.parse(ws.send.lastCall.args[0]);
     assert.equal(errorMessage.type, 'error');
     assert.ok(errorMessage.error.includes('Model not available'));
-    
+
     // Reset stub for subsequent tests
     chatModelStub.reset();
     chatModelStub.returns(mockChatModel);
@@ -251,11 +249,11 @@ describe('WebSocket Chat Controller', async () => {
     ws.send.resetHistory();
     mockChatModel.chat.resetHistory();
     mockChatModel.streamChat.resetHistory();
-    
+
     // Restore original chatModelStub behavior
     chatModelStub.resetBehavior();
     chatModelStub.returns(mockChatModel);
-    
+
     // Arrange
     let messageHandler;
     ws.on.callsFake((event, handler) => {
@@ -266,7 +264,7 @@ describe('WebSocket Chat Controller', async () => {
 
     // Act
     chatController.handleWebSocket(ws, req);
-    
+
     // Simulate receiving a message without stream option
     const message = JSON.stringify({
       messages: [{ role: 'user', content: 'Hello' }],
@@ -274,9 +272,9 @@ describe('WebSocket Chat Controller', async () => {
       model: 'gpt-4',
       // No stream option
     });
-    
+
     await messageHandler(message);
-    
+
     // Assert regular (non-streaming) chat was used
     assert.equal(mockChatModel.chat.calledOnce, true);
     assert.equal(mockChatModel.streamChat.called, false);
@@ -288,7 +286,7 @@ describe('WebSocket Chat Controller', async () => {
     ws.send.resetHistory();
     mockChatModel.chat.resetHistory();
     mockChatModel.streamChat.resetHistory();
-    
+
     // Arrange
     let messageHandler;
     ws.on.callsFake((event, handler) => {
@@ -299,7 +297,7 @@ describe('WebSocket Chat Controller', async () => {
 
     // Act
     chatController.handleWebSocket(ws, req);
-    
+
     // Simulate receiving a message with stream: false
     const message = JSON.stringify({
       messages: [{ role: 'user', content: 'Hello' }],
@@ -307,9 +305,9 @@ describe('WebSocket Chat Controller', async () => {
       model: 'gpt-4',
       stream: false,
     });
-    
+
     await messageHandler(message);
-    
+
     // Assert regular (non-streaming) chat was used
     assert.equal(mockChatModel.chat.calledOnce, true);
     assert.equal(mockChatModel.streamChat.called, false);
