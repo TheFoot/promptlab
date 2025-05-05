@@ -27,7 +27,10 @@
 
         <div class="form-group mb-3">
           <label for="tags-input">Tags</label>
-          <TagInput id="tags-input" v-model="prompt.tags" />
+          <TagInput
+            id="tags-input"
+            v-model="prompt.tags"
+          />
         </div>
 
         <div class="prompt-content">
