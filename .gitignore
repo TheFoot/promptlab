@@ -968,3 +968,7 @@ coverage/
 backend/documents/
 
 backend/bin/
+
+# Exclude task-tracking and specs
+docs/task-tracking/
+docs/specs/
