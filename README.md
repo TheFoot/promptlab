@@ -1,163 +1,165 @@
 # PromptLab
 
-A full-stack application for managing, editing, and filtering LLM prompts with tag support.
+> A full-stack application for managing, editing, and testing LLM prompts with tag support
 
-## Features
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![GitHub Issues](https://img.shields.io/github/issues/TheFoot/promptlab)
+![GitHub Stars](https://img.shields.io/github/stars/TheFoot/promptlab)
 
-- Create, edit, and delete LLM prompts
-- Add and manage tags for each prompt
-- Filter prompts by tags
-- Search prompts with free-text search
-- Split-view interface with markdown editor and preview
-- Dark/light mode theming
-- Integrated chat sidebar for testing prompts with:
-  - OpenAI and Anthropic Claude API integrations
-  - Streaming responses via WebSockets
-  - Configurable models and temperature
-  - Multiple model options (GPT-3.5, GPT-4, Claude 3 Opus, Sonnet, Haiku)
-  - Syntax highlighting for code blocks
+## 📋 Table of Contents
+- [About](#about)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
 
-## Tech Stack
+## 📖 About
+PromptLab is a comprehensive tool designed to help developers, researchers, and AI enthusiasts manage and test their LLM prompts efficiently. It provides a centralized workspace for creating, organizing, and experimenting with prompts for large language models like GPT and Claude.
 
-**Backend:**
-- Node.js v22
-- Express.js
-- MongoDB
-- ESM modules
+The application addresses the challenge of maintaining a growing collection of prompts by providing powerful organization features, real-time preview capabilities, and direct integration with LLM APIs for immediate testing and iteration.
 
-**Frontend:**
-- Vue 3
-- Vite
-- Vue Router
-- Pinia
-- SCSS
+### Built With
+- [Node.js](https://nodejs.org/) - Backend runtime
+- [Express](https://expressjs.com/) - Backend framework
+- [MongoDB](https://www.mongodb.com/) - Database
+- [Vue 3](https://vuejs.org/) - Frontend framework
+- [Vite](https://vitejs.dev/) - Frontend build tool
 
-## Getting Started
+## ✨ Features
+- 🔍 **Prompt Management**: Create, edit, and delete LLM prompts with a rich text editor
+- 🏷️ **Tag System**: Organize prompts with customizable tags for easy filtering and searching
+- 🔄 **Split-View Interface**: Edit and preview prompts with real-time markdown rendering
+- 🌗 **Theme Support**: Toggle between dark and light modes for comfortable viewing
+- 🤖 **API Integration**: Test prompts directly with OpenAI and Anthropic Claude models
+- 📊 **Response Streaming**: Receive real-time streaming responses via WebSockets
+- 📱 **Responsive Design**: Use on desktop or mobile with an adaptive interface
+- 🧩 **Model Configuration**: Adjust temperature and other parameters for testing
+
+## 🚀 Quick Start
+```bash
+# Clone the repository
+git clone https://github.com/TheFoot/promptlab.git
+
+# Navigate to the project directory
+cd promptlab
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp backend/.env.example backend/.env
+# Edit .env with your API keys
+
+# Start development servers
+npm run dev
+```
+
+## 💻 Installation
 
 ### Prerequisites
-
 - Node.js v22+
 - MongoDB (or Docker for containerized setup)
-- OpenAI API key for testing prompts with GPT models
-- Anthropic API key for testing prompts with Claude models (optional)
+- OpenAI API key for testing with GPT models
+- Anthropic API key for testing with Claude models (optional)
 
-### Development Setup
-
+### Step-by-step Installation
 1. Clone the repository
-2. Install dependencies:
-   ```
-   npm install
-   cd backend && npm install
-   cd frontend && npm install
-   ```
-3. Create an `.env` file in the backend directory (copy from `.env.example`):
-   ```
-   cp backend/.env.example backend/.env
-   ```
-4. Add your API keys to the backend `.env` file:
-   - Add your OpenAI API key for GPT models
-   - Add your Anthropic API key for Claude models (optional)
-5. Start the development servers:
-   ```
-   npm run dev
-   ```
-
-### Docker Setup
-
-To run the application using Docker:
-
+```bash
+git clone https://github.com/TheFoot/promptlab.git
 ```
+
+2. Install dependencies
+```bash
+npm install
+cd backend && npm install
+cd frontend && npm install
+```
+
+3. Configure environment variables
+```bash
+cp backend/.env.example backend/.env
+# Edit .env with your API keys
+```
+
+4. Start the application
+```bash
+# Development mode
+npm run dev
+
+# Or using Docker
 docker-compose up -d
 ```
 
-## Documentation Structure
+## 📚 Usage
 
-This project uses a comprehensive documentation system with README files in each major directory:
+### Basic Usage
+1. **Creating Prompts**:
+   - Click the "New Prompt" button
+   - Enter a title, content, and optional tags
+   - Save your prompt
 
-- [Frontend Documentation](./frontend/README.md) - Vue 3 frontend details
-  - [Components](./frontend/src/components/README.md) - UI component documentation
-  - [Views](./frontend/src/views/README.md) - Page components
-  - [Stores](./frontend/src/stores/README.md) - State management
-  - [Router](./frontend/src/router/README.md) - Routing configuration
-  - [Styles](./frontend/src/styles/README.md) - Styling guidelines
+2. **Testing Prompts**:
+   - Open the chat sidebar
+   - Select a model (GPT-3.5, GPT-4, Claude, etc.)
+   - Adjust temperature if needed
+   - Send your prompt to see the response
 
-- [Backend Documentation](./backend/README.md) - Express.js backend details
-  - [Models](./backend/src/models/README.md) - Database schema definitions
-  - [Controllers](./backend/src/controllers/README.md) - Request handlers
-  - [Routes](./backend/src/routes/README.md) - API endpoint definitions
-  - [Services](./backend/src/services/README.md) - Business logic
-  - [Config](./backend/src/config/README.md) - Configuration management
-  - [Modules](./backend/src/modules/README.md) - Utility modules
+3. **Managing Prompts**:
+   - Filter prompts by tags
+   - Use search to find specific prompts
+   - Edit or delete prompts as needed
 
-- [Docs](./docs/README.md) - Additional project documentation
-  - [Specs](./docs/specs/README.md) - Technical specifications
+### Advanced Usage
+For detailed documentation on all features, see the [Documentation](docs/README.md) directory.
 
-## Project Structure
-
-```
-promptlab/
-├── .env                     # Environment variables
-├── docker-compose.yml       # Docker configuration
-├── package.json             # Root package.json for project management
-├── README.md                # Project documentation
-├── CLAUDE.md                # Claude AI assistant guide
-├── backend/                 # Backend application
-│   ├── src/
-│   │   ├── index.js         # Entry point
-│   │   ├── config/          # Configuration management
-│   │   ├── controllers/     # Request handlers
-│   │   ├── models/          # Database models
-│   │   ├── modules/         # Utility modules
-│   │   ├── routes/          # API routes
-│   │   └── services/        # Business logic
-│   ├── test/                # Backend tests
-│   └── package.json         # Backend dependencies
-├── docs/                    # Additional documentation
-│   └── specs/               # Technical specifications
-└── frontend/                # Frontend application
-    ├── index.html           # HTML entry
-    ├── vite.config.js       # Vite configuration
-    ├── vitest.config.js     # Vitest configuration
-    ├── package.json         # Frontend dependencies
-    ├── public/              # Static assets
-    ├── src/
-    │   ├── main.js          # Entry point
-    │   ├── App.vue          # Root component
-    │   ├── assets/          # Assets (images, fonts)
-    │   ├── components/      # Vue components
-    │   ├── router/          # Vue Router configuration
-    │   ├── stores/          # Pinia stores
-    │   ├── styles/          # Global styles
-    │   └── views/           # Page components
-    └── tests/               # Frontend tests
-        └── unit/            # Unit tests for components
-```
-
-## Development Commands
-
-See [CLAUDE.md](./CLAUDE.md) for detailed development commands and workflow guidelines.
-
-## Testing
-
-This project uses:
-- **Frontend**: Vitest with Vue Test Utils for component testing
-- **Backend**: Node.js built-in test runner
+## 🛠️ Development
 
 ### Running Tests
-```
+```bash
 # Run all tests
 npm test
 
 # Run only frontend tests
 npm run test:frontend
 
-# Run only backend tests  
+# Run only backend tests
 npm run test:backend
 
 # Generate test coverage reports
 npm run test:coverage
 ```
 
-Coverage reports are generated in:
-- Frontend: `frontend/coverage/`
-- Backend: Coverage summary printed to console
+### Build
+```bash
+# Build for production
+npm run build
+```
+
+## 🤝 Contributing
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### How to Contribute
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 🔒 Security
+If you discover a security vulnerability, please send an email to security@thefootonline.com. All security vulnerabilities will be promptly addressed.
+
+## 📝 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📞 Contact
+TheFoot - support@thefootonline.com
+
+Project Link: [https://github.com/TheFoot/promptlab](https://github.com/TheFoot/promptlab)
+
+## 🙏 Acknowledgments
+- All the amazing contributors to this project
+- The Vue.js and Express.js communities
+- OpenAI and Anthropic for their powerful LLM APIs
