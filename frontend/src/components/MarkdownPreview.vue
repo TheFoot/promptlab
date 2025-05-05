@@ -30,7 +30,9 @@ const props = defineProps({
 });
 
 // Configure marked options with code highlighting
-marked.setOptions({
+// In marked v15, the setOptions method has been deprecated
+// This uses the new configuration pattern
+const markedOptions = {
   highlight: function (code, lang) {
     if (lang && highlightjs.getLanguage(lang)) {
       return highlightjs.highlight(code, { language: lang }).value;
@@ -39,7 +41,7 @@ marked.setOptions({
   },
   breaks: true,
   gfm: true,
-});
+};
 
 // Custom renderer for better code blocks
 const getRenderedMarkdown = () => {
@@ -93,10 +95,11 @@ const getRenderedMarkdown = () => {
     return originalParagraph.call(this, text);
   };
 
-  // Set the custom renderer
-  marked.setOptions({ renderer });
-
-  return marked(props.content);
+  // Create a marked instance with our options and custom renderer
+  const options = { ...markedOptions, renderer };
+  
+  // In v15, we use the parse method on Marked instance
+  return marked.parse(props.content, options);
 };
 
 // Render markdown content

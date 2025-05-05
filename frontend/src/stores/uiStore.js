@@ -1,13 +1,18 @@
 import { defineStore } from "pinia";
+import { ref } from "vue";
 
-export const useUiStore = defineStore("ui", {
-  state: () => ({
-    isEditingPrompt: false,
-  }),
+// In Pinia v3, we prefer the setup style for defining stores
+export const useUiStore = defineStore("ui", () => {
+  // State
+  const isEditingPrompt = ref(false);
 
-  actions: {
-    setEditMode(isEditing) {
-      this.isEditingPrompt = isEditing;
-    },
-  },
+  // Actions
+  function setEditMode(isEditing) {
+    isEditingPrompt.value = isEditing;
+  }
+
+  return {
+    isEditingPrompt,
+    setEditMode,
+  };
 });

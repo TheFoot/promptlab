@@ -1,180 +1,204 @@
 import { defineStore } from "pinia";
+import { ref, computed } from "vue";
 import axios from "axios";
 
-export const usePromptStore = defineStore("prompt", {
-  state: () => ({
-    prompts: [],
-    currentPrompt: null,
-    tags: [],
-    loading: false,
-    error: null,
-    searchQuery: "",
-    selectedTag: "",
-  }),
+// In Pinia v3, we use the setup function syntax for stores
+export const usePromptStore = defineStore("prompt", () => {
+  // State
+  const prompts = ref([]);
+  const currentPrompt = ref(null);
+  const tags = ref([]);
+  const loading = ref(false);
+  const error = ref(null);
+  const searchQuery = ref("");
+  const selectedTag = ref("");
 
-  getters: {
-    filteredPrompts: (state) => {
-      return state.prompts;
-    },
-  },
+  // Getters
+  const filteredPrompts = computed(() => {
+    return prompts.value;
+  });
 
-  actions: {
-    // Fetch all prompts with optional search and tag filters
-    async fetchPrompts() {
-      this.loading = true;
-      try {
-        const params = {};
-        if (this.searchQuery) params.search = this.searchQuery;
-        if (this.selectedTag) params.tag = this.selectedTag;
+  // Actions
+  // Fetch all prompts with optional search and tag filters
+  async function fetchPrompts() {
+    loading.value = true;
+    try {
+      const params = {};
+      if (searchQuery.value) params.search = searchQuery.value;
+      if (selectedTag.value) params.tag = selectedTag.value;
 
-        const response = await axios.get("/api/prompts", { params });
-        this.prompts = response.data;
-        this.error = null;
-      } catch (error) {
-        this.error = error.response?.data?.message || "Failed to fetch prompts";
-        console.error("Error fetching prompts:", error);
-      } finally {
-        this.loading = false;
+      const response = await axios.get("/api/prompts", { params });
+      prompts.value = response.data;
+      error.value = null;
+    } catch (err) {
+      error.value = err.response?.data?.message || "Failed to fetch prompts";
+      console.error("Error fetching prompts:", err);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Fetch a single prompt by ID
+  async function fetchPromptById(id) {
+    loading.value = true;
+    try {
+      const response = await axios.get(`/api/prompts/${id}`);
+      currentPrompt.value = response.data;
+      error.value = null;
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || "Failed to fetch prompt";
+      console.error("Error fetching prompt:", err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Create a new prompt
+  async function createPrompt(promptData) {
+    loading.value = true;
+    try {
+      const response = await axios.post("/api/prompts", promptData);
+
+      // Set as current prompt
+      currentPrompt.value = response.data;
+
+      // Add to prompts array if it exists
+      if (prompts.value.length) {
+        prompts.value.unshift(response.data);
       }
-    },
 
-    // Fetch a single prompt by ID
-    async fetchPromptById(id) {
-      this.loading = true;
-      try {
-        const response = await axios.get(`/api/prompts/${id}`);
-        this.currentPrompt = response.data;
-        this.error = null;
-        return response.data;
-      } catch (error) {
-        this.error = error.response?.data?.message || "Failed to fetch prompt";
-        console.error("Error fetching prompt:", error);
-        throw error;
-      } finally {
-        this.loading = false;
+      error.value = null;
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || "Failed to create prompt";
+      console.error("Error creating prompt:", err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  // Update an existing prompt
+  async function updatePrompt(id, promptData) {
+    loading.value = true;
+    try {
+      const response = await axios.put(`/api/prompts/${id}`, promptData);
+
+      // Update current prompt if it matches
+      if (currentPrompt.value && currentPrompt.value._id === id) {
+        currentPrompt.value = response.data;
       }
-    },
 
-    // Create a new prompt
-    async createPrompt(promptData) {
-      this.loading = true;
-      try {
-        const response = await axios.post("/api/prompts", promptData);
-
-        // Set as current prompt
-        this.currentPrompt = response.data;
-
-        // Add to prompts array if it exists
-        if (this.prompts.length) {
-          this.prompts.unshift(response.data);
-        }
-
-        this.error = null;
-        return response.data;
-      } catch (error) {
-        this.error = error.response?.data?.message || "Failed to create prompt";
-        console.error("Error creating prompt:", error);
-        throw error;
-      } finally {
-        this.loading = false;
+      // Update in prompts array if it exists
+      const index = prompts.value.findIndex((p) => p._id === id);
+      if (index !== -1) {
+        prompts.value[index] = {
+          ...prompts.value[index],
+          ...response.data,
+        };
       }
-    },
 
-    // Update an existing prompt
-    async updatePrompt(id, promptData) {
-      this.loading = true;
-      try {
-        const response = await axios.put(`/api/prompts/${id}`, promptData);
+      error.value = null;
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || "Failed to update prompt";
+      console.error("Error updating prompt:", err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
 
-        // Update current prompt if it matches
-        if (this.currentPrompt && this.currentPrompt._id === id) {
-          this.currentPrompt = response.data;
-        }
+  // Delete a prompt
+  async function deletePrompt(id) {
+    loading.value = true;
+    try {
+      await axios.delete(`/api/prompts/${id}`);
 
-        // Update in prompts array if it exists
-        const index = this.prompts.findIndex((p) => p._id === id);
-        if (index !== -1) {
-          this.prompts[index] = {
-            ...this.prompts[index],
-            ...response.data,
-          };
-        }
+      // Remove from prompts array
+      prompts.value = prompts.value.filter((p) => p._id !== id);
 
-        this.error = null;
-        return response.data;
-      } catch (error) {
-        this.error = error.response?.data?.message || "Failed to update prompt";
-        console.error("Error updating prompt:", error);
-        throw error;
-      } finally {
-        this.loading = false;
+      // Clear current prompt if it matches
+      if (currentPrompt.value && currentPrompt.value._id === id) {
+        currentPrompt.value = null;
       }
-    },
 
-    // Delete a prompt
-    async deletePrompt(id) {
-      this.loading = true;
-      try {
-        await axios.delete(`/api/prompts/${id}`);
+      error.value = null;
+    } catch (err) {
+      error.value = err.response?.data?.message || "Failed to delete prompt";
+      console.error("Error deleting prompt:", err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
 
-        // Remove from prompts array
-        this.prompts = this.prompts.filter((p) => p._id !== id);
+  // Fetch all unique tags
+  async function fetchTags() {
+    try {
+      const response = await axios.get("/api/tags");
+      tags.value = response.data;
+      return response.data;
+    } catch (err) {
+      console.error("Error fetching tags:", err);
+      return [];
+    }
+  }
 
-        // Clear current prompt if it matches
-        if (this.currentPrompt && this.currentPrompt._id === id) {
-          this.currentPrompt = null;
-        }
+  // Set search query and refresh prompts
+  function setSearchQuery(query) {
+    // Only fetch if query actually changed
+    if (searchQuery.value !== query) {
+      searchQuery.value = query;
+      fetchPrompts();
+    }
+  }
 
-        this.error = null;
-      } catch (error) {
-        this.error = error.response?.data?.message || "Failed to delete prompt";
-        console.error("Error deleting prompt:", error);
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
+  // Set selected tag and refresh prompts
+  function setSelectedTag(tag) {
+    // Only fetch if tag actually changed
+    if (selectedTag.value !== tag) {
+      selectedTag.value = tag;
+      fetchPrompts();
+    }
+  }
 
-    // Fetch all unique tags
-    async fetchTags() {
-      try {
-        const response = await axios.get("/api/tags");
-        this.tags = response.data;
-        return response.data;
-      } catch (error) {
-        console.error("Error fetching tags:", error);
-        return [];
-      }
-    },
+  // Clear filters
+  function clearFilters() {
+    const hadFilters = searchQuery.value !== "" || selectedTag.value !== "";
+    searchQuery.value = "";
+    selectedTag.value = "";
 
-    // Set search query and refresh prompts
-    setSearchQuery(query) {
-      // Only fetch if query actually changed
-      if (this.searchQuery !== query) {
-        this.searchQuery = query;
-        this.fetchPrompts();
-      }
-    },
+    // Only fetch if there were filters before
+    if (hadFilters) {
+      fetchPrompts();
+    }
+  }
 
-    // Set selected tag and refresh prompts
-    setSelectedTag(tag) {
-      // Only fetch if tag actually changed
-      if (this.selectedTag !== tag) {
-        this.selectedTag = tag;
-        this.fetchPrompts();
-      }
-    },
-
-    // Clear filters
-    clearFilters() {
-      const hadFilters = this.searchQuery !== "" || this.selectedTag !== "";
-      this.searchQuery = "";
-      this.selectedTag = "";
-
-      // Only fetch if there were filters before
-      if (hadFilters) {
-        this.fetchPrompts();
-      }
-    },
-  },
+  return {
+    // State
+    prompts,
+    currentPrompt,
+    tags,
+    loading,
+    error,
+    searchQuery,
+    selectedTag,
+    
+    // Getters
+    filteredPrompts,
+    
+    // Actions
+    fetchPrompts,
+    fetchPromptById,
+    createPrompt,
+    updatePrompt,
+    deletePrompt,
+    fetchTags,
+    setSearchQuery,
+    setSelectedTag,
+    clearFilters
+  };
 });
