@@ -3,7 +3,7 @@ import promptRoutes from './promptRoutes.js';
 import tagRoutes from './tagRoutes.js';
 import chatRoutes from './chatRoutes.js';
 
-const router = Router();
+const router = new Router();
 
 // API routes
 router.use('/prompts', promptRoutes);

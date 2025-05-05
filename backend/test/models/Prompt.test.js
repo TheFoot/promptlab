@@ -1,7 +1,6 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 
 import Prompt from '../../src/models/Prompt.js';
 import { setupInMemoryMongoDB, closeDatabase } from '../helpers/testSetup.js';
@@ -25,7 +24,7 @@ describe('Prompt Model', async () => {
     const promptData = {
       title: 'Test Prompt',
       content: 'This is a test prompt content.',
-      tags: ['test', 'prompt', 'example']
+      tags: ['test', 'prompt', 'example'],
     };
 
     // Act
@@ -45,7 +44,7 @@ describe('Prompt Model', async () => {
     // Arrange
     const promptData = {
       content: 'This is a test prompt content without a title.',
-      tags: ['test']
+      tags: ['test'],
     };
 
     // Act & Assert
@@ -63,7 +62,7 @@ describe('Prompt Model', async () => {
     // Arrange
     const promptData = {
       title: 'Test Prompt Without Content',
-      tags: ['test']
+      tags: ['test'],
     };
 
     // Act & Assert
@@ -81,7 +80,7 @@ describe('Prompt Model', async () => {
     // Arrange
     const promptData = {
       title: 'Test Prompt Without Tags',
-      content: 'This is a test prompt content without tags.'
+      content: 'This is a test prompt content without tags.',
     };
 
     // Act
@@ -100,7 +99,7 @@ describe('Prompt Model', async () => {
     const promptData = {
       title: '  Trimmed Title  ',
       content: 'This is a test prompt for trimming.',
-      tags: ['  tag1  ', ' tag2 ']
+      tags: ['  tag1  ', ' tag2 '],
     };
 
     // Act
@@ -116,23 +115,26 @@ describe('Prompt Model', async () => {
     // Arrange
     const promptData = {
       title: 'Original Title',
-      content: 'Original content'
+      content: 'Original content',
     };
 
     // Act - Create prompt
     const prompt = new Prompt(promptData);
     const savedPrompt = await prompt.save();
     const originalUpdatedAt = savedPrompt.updatedAt;
-    
+
     // Wait a moment to ensure timestamp would change
-    await new Promise(resolve => setTimeout(resolve, 10));
-    
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     // Act - Update prompt
     savedPrompt.title = 'Updated Title';
     const updatedPrompt = await savedPrompt.save();
 
     // Assert
-    assert.notEqual(updatedPrompt.updatedAt.getTime(), originalUpdatedAt.getTime());
+    assert.notEqual(
+        updatedPrompt.updatedAt.getTime(),
+        originalUpdatedAt.getTime(),
+    );
     assert.equal(updatedPrompt.title, 'Updated Title');
   });
 });

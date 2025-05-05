@@ -7,7 +7,7 @@ import {
   deletePrompt,
 } from '../controllers/promptController.js';
 
-const router = Router();
+const router = new Router();
 
 // Get all prompts with optional filtering
 router.get('/', getPrompts);

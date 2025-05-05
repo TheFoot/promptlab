@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getAllTags } from '../controllers/tagController.js';
 
-const router = Router();
+const router = new Router();
 
 // Get all unique tags
 router.get('/', getAllTags);

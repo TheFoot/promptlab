@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import chatController from '../controllers/chatController.js';
 
-const router = Router();
+const router = new Router();
 
 // POST endpoint for chat requests
 router.post('/', chatController.sendMessage);
