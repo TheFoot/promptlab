@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "node --test",
-    "test:coverage": "nyc --reporter=lcov node --test",
+    "test:coverage": "nyc --all --include=\"src/**/*.js\" --exclude=\"node_modules/**\" --reporter=lcov node --test",
     "nyc:report": "echo 'Coverage already generated with lcov reporter'"
   },
   "dependencies": {
