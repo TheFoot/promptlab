@@ -37,6 +37,7 @@ pip-selfcheck.json
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
+.idea/sonarlint.xml
 
 # Gradle
 .idea/**/gradle.xml
@@ -972,4 +973,4 @@ backend/bin/
 
 # Exclude task-tracking and specs
 docs/task-tracking/
-docs/specs/.idea/sonarlint.xml
+docs/specs/
