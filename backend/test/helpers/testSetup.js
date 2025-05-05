@@ -10,10 +10,7 @@ export const setupInMemoryMongoDB = async () => {
   const mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
 
-  await mongoose.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+  await mongoose.connect(uri);
 
   return { mongod, uri };
 };

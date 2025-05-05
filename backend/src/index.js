@@ -58,10 +58,7 @@ const __dirname = path.dirname(__filename);
     // Connect to MongoDB
     global.logger.info('Connecting to MongoDB', { uri: config.mongodbUri });
     try {
-      await mongoose.connect(config.mongodbUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
+      await mongoose.connect(config.mongodbUri);
       global.logger.info('MongoDB connected successfully');
     } catch (dbError) {
       global.logger.error('Failed to connect to MongoDB', {
