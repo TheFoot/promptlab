@@ -10,8 +10,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "node --test",
-    "test:coverage": "c8 node --test",
-    "nyc:report": "echo 'Coverage generated at ./coverage/lcov.info'"
+    "test:coverage": "c8 node --test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
