@@ -29,42 +29,158 @@ const props = defineProps({
   },
 });
 
-// Create a new marked instance with our options
+// Helper function to escape HTML for safe display
+function escapeHtml(unsafe) {
+  if (typeof unsafe !== 'string') {
+    return '';
+  }
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/**
+ * Deep content extractor - Robustly handles various content formats and edge cases
+ * 
+ * @param {*} input - The input content which could be anything (string, object, null, etc.)
+ * @returns {string} - The extracted content as a string
+ */
+function extractRealContent(input) {
+  // Case 1: Handle null/undefined
+  if (input === null || input === undefined) {
+    return '';
+  }
+  
+  // Case 2: Input is already a string
+  if (typeof input === 'string') {
+    // Check if it's a stringified JSON that needs parsing
+    try {
+      if ((input.trim().startsWith('{') && input.trim().endsWith('}')) || 
+          (input.trim().startsWith('[') && input.trim().endsWith(']'))) {
+        const parsed = JSON.parse(input);
+        // Recursively extract from the parsed object
+        return extractRealContent(parsed);
+      }
+    } catch (e) {
+      // Not valid JSON, just return the string
+    }
+    return input;
+  }
+  
+  // Case 3: Input is an object
+  if (typeof input === 'object') {
+    // Special handling for token objects with raw markdown
+    if (input.type === 'code') {
+      // If we have text content, just return it directly (don't add markdown fence)
+      if (input.text && typeof input.text === 'string') {
+        return input.text;
+      }
+    }
+    
+    // Priority property checking - check most likely properties first
+    const props = ['text', 'content', 'raw', 'value', 'markdown', 'md'];
+    for (const prop of props) {
+      if (input[prop] && typeof input[prop] === 'string') {
+        return input[prop];
+      }
+    }
+    
+    // Check if object has a reasonable toString implementation
+    if (input.toString && typeof input.toString === 'function') {
+      const str = input.toString();
+      if (str !== '[object Object]') {
+        return str;
+      }
+    }
+    
+    // Last resort: stringify the object
+    try {
+      return JSON.stringify(input, null, 2);
+    } catch (e) {
+      return '[Object]';
+    }
+  }
+  
+  // Case 4: Any other type - convert to string
+  return String(input);
+}
+
+// Create a new Marked instance with our options
 const marked = new Marked({
   breaks: true,
   gfm: true,
   async: false,
-  hooks: {
-    preprocess(markdown) {
-      return markdown;
-    },
-    postprocess(html) {
-      return html;
-    }
-  },
-});
-
-// Configure the renderer for code highlighting
-marked.use({
+  // Add custom renderer for code blocks
   renderer: {
     code(code, language) {
-      // Default highlightjs code rendering
-      const highlightedCode =
-        language && highlightjs.getLanguage(language)
-          ? highlightjs.highlight(code, { language }).value
-          : highlightjs.highlightAuto(code).value;
-
-      // Create a timestamp-based filename with proper extension
+      let codeContent;
+      let codeLanguage = language || '';
+      
+      // Check for markdown code fences first and strip them if present
+      if (typeof code === 'string' && code.trim().startsWith('```')) {
+        const match = /^```([^\n]*)\n([\s\S]*?)```\s*$/g.exec(code);
+        if (match) {
+          if (match[1]) codeLanguage = match[1].trim();
+          codeContent = match[2];
+        } else {
+          codeContent = code;
+        }
+      }
+      // Handle case where code is a token object
+      else if (typeof code === 'object' && code !== null) {
+        // Extract language from token if available
+        if (code.lang) {
+          codeLanguage = code.lang;
+        }
+        
+        // Extract code content from token
+        codeContent = extractRealContent(code);
+        
+        // Check if the extracted content still has code fences
+        if (typeof codeContent === 'string' && codeContent.trim().startsWith('```')) {
+          const match = /^```([^\n]*)\n([\s\S]*?)```\s*$/g.exec(codeContent);
+          if (match) {
+            if (match[1]) codeLanguage = match[1].trim();
+            codeContent = match[2];
+          }
+        }
+      } else {
+        // Direct content - just make sure it's a string
+        codeContent = String(code || '');
+      }
+      
+      // Highlight the code
+      let highlightedCode;
+      try {
+        if (codeLanguage && highlightjs.getLanguage(codeLanguage)) {
+          highlightedCode = highlightjs.highlight(codeContent, { language: codeLanguage }).value;
+        } else {
+          highlightedCode = escapeHtml(codeContent);
+        }
+      } catch (error) {
+        console.error("Error highlighting code:", error);
+        highlightedCode = escapeHtml(codeContent);
+      }
+      
+      // Format display language name
+      const displayLanguage = codeLanguage 
+        ? codeLanguage.charAt(0).toUpperCase() + codeLanguage.slice(1)
+        : "Plain text";
+      
+      // Create filename for download
       const timestamp = new Date().getTime();
-      const extension = language || "txt";
+      const extension = codeLanguage || "txt";
       const filename = `code-${timestamp}.${extension}`;
-
-      // Return code block with download button
+      
+      // Return custom code block with download button
       return `
         <div class="code-block-wrapper">
           <div class="code-header">
-            <span class="code-language">${language || "plain text"}</span>
-            <button class="code-download-btn" title="Download code" data-code="${encodeURIComponent(code)}" data-filename="${filename}" onclick="window.downloadCodeBlock(this)">
+            <span class="code-language">${displayLanguage}</span>
+            <button class="code-download-btn" title="Download code" data-code="${encodeURIComponent(codeContent)}" data-filename="${filename}" onclick="window.downloadCodeBlock(this)">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
@@ -72,43 +188,70 @@ marked.use({
               </svg>
             </button>
           </div>
-          <pre><code class="hljs ${language}">${highlightedCode}</code></pre>
+          <pre><code class="hljs ${codeLanguage || ''}">${highlightedCode}</code></pre>
         </div>
       `;
-    },
-    paragraph(text) {
-      // If paragraph contains only a code block, don't wrap in <p> tags
-      if (
-        text.trim().startsWith('<div class="code-block-wrapper">') &&
-        text.trim().endsWith("</div>")
-      ) {
-        return text;
-      }
-
-      // Otherwise use the default paragraph renderer
-      return `<p>${text}</p>`;
     }
-  },
-  highlight: function (code, lang) {
-    if (lang && highlightjs.getLanguage(lang)) {
-      return highlightjs.highlight(code, { language: lang }).value;
-    }
-    return highlightjs.highlightAuto(code).value;
   }
 });
 
+// Helper function to detect and fix code blocks in content prior to parsing
+function preprocessMarkdown(content) {
+  // Standard extraction first to handle nested objects
+  const extractedContent = extractRealContent(content);
+  
+  // Handle the case where the entire content is a stringified code token
+  if (typeof extractedContent === 'string' && 
+      extractedContent.trim().startsWith('{') && 
+      extractedContent.trim().endsWith('}')) {
+    try {
+      const possibleToken = JSON.parse(extractedContent);
+      if (possibleToken.type === 'code' && possibleToken.text) {
+        // Extract actual content and language for the renderer to handle
+        return possibleToken.text;
+      }
+    } catch (e) {
+      // Not a valid JSON token object, continue with regular content
+    }
+  }
+  
+  // Clean any triple backtick fences that might be in the extracted content
+  if (typeof extractedContent === 'string') {
+    // Remove markdown code block syntax if the entire content is a code block
+    const codeBlockMatch = /^\s*```([^\n]*)\n([\s\S]*?)```\s*$/g.exec(extractedContent);
+    if (codeBlockMatch && codeBlockMatch[2]) {
+      // The content is a code block; let the renderer handle it as regular code
+      return codeBlockMatch[2];
+    }
+  }
+  
+  return extractedContent;
+}
+
 // Function to render markdown content
 const getRenderedMarkdown = () => {
-  if (!props.content) return "";
   try {
-    return marked.parse(props.content);
+    if (!props.content) return '';
+    
+    // Pre-process to handle complex content structures
+    const processedContent = preprocessMarkdown(props.content);
+    
+    // Parse the markdown with our configured marked instance
+    return marked.parse(processedContent);
   } catch (error) {
     console.error("Error parsing markdown:", error);
-    return `<p class="error">Error rendering markdown: ${error.message}</p>`;
+    
+    // Show error message, but also attempt to render the raw content
+    const rawContent = typeof props.content === 'string' 
+      ? props.content 
+      : JSON.stringify(props.content, null, 2);
+      
+    return `<p class="error">Error rendering markdown: ${error.message}</p>
+            <pre>${escapeHtml(rawContent)}</pre>`;
   }
 };
 
-// Render markdown content
+// Compute the rendered markdown
 const renderedMarkdown = computed(() => getRenderedMarkdown());
 
 // Function to download code blocks
@@ -117,18 +260,15 @@ const downloadCodeBlock = (button) => {
     const code = decodeURIComponent(button.getAttribute("data-code"));
     const filename = button.getAttribute("data-filename");
 
-    // Create blob with code content
     const blob = new Blob([code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
 
-    // Create temporary link element to trigger download
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
 
-    // Clean up
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
@@ -140,12 +280,12 @@ const downloadCodeBlock = (button) => {
 };
 
 onMounted(() => {
-  // Add download function to window object for code download buttons
+  // Add download function to window object
   window.downloadCodeBlock = window.downloadCodeBlock || downloadCodeBlock;
 });
 
 onUnmounted(() => {
-  // Do not remove the window function if it might be used by other components
+  // We don't remove the function as it might be used by other instances
 });
 </script>
 
@@ -240,6 +380,14 @@ onUnmounted(() => {
     &:hover {
       text-decoration: underline;
     }
+  }
+  
+  :deep(.error) {
+    color: var(--error-color);
+    padding: 1rem;
+    background-color: rgba(220, 53, 69, 0.05);
+    border-radius: 4px;
+    margin-bottom: 1rem;
   }
 }
 </style>
