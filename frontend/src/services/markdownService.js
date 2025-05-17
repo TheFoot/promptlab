@@ -5,8 +5,8 @@ import highlightjs from "highlight.js";
  * Helper function to escape HTML for safety
  */
 export function escapeHtml(unsafe) {
-  if (typeof unsafe !== 'string') {
-    return '';
+  if (typeof unsafe !== "string") {
+    return "";
   }
   return unsafe
     .replace(/&/g, "&amp;")
@@ -17,68 +17,85 @@ export function escapeHtml(unsafe) {
 }
 
 /**
+ * Handle string input content
+ * @param {string} input - String input to process
+ * @returns {string} - Processed string content
+ */
+function handleStringInput(input) {
+  // Check if it's a stringified JSON that needs parsing
+  try {
+    const trimmed = input.trim();
+    const isJsonObject = trimmed.startsWith("{") && trimmed.endsWith("}");
+    const isJsonArray = trimmed.startsWith("[") && trimmed.endsWith("]");
+
+    if (isJsonObject || isJsonArray) {
+      const parsed = JSON.parse(input);
+      // Recursively extract from the parsed object
+      return extractRealContent(parsed);
+    }
+  } catch {
+    // Not valid JSON, just return the string
+  }
+  return input;
+}
+
+/**
+ * Extract string content from an object
+ * @param {object} input - Object to extract content from
+ * @returns {string} - Extracted string content
+ */
+function extractFromObject(input) {
+  // Special handling for token objects with raw markdown
+  if (input.type === "code" && input.text && typeof input.text === "string") {
+    return input.text;
+  }
+
+  // Priority property checking - check most likely properties first
+  const props = ["text", "content", "raw", "value", "markdown", "md"];
+  for (const prop of props) {
+    if (input[prop] && typeof input[prop] === "string") {
+      return input[prop];
+    }
+  }
+
+  // Check if object has a reasonable toString implementation
+  if (input.toString && typeof input.toString === "function") {
+    const str = input.toString();
+    if (str !== "[object Object]") {
+      return str;
+    }
+  }
+
+  // Last resort: stringify the object
+  try {
+    return JSON.stringify(input, null, 2);
+  } catch {
+    return "[Object]";
+  }
+}
+
+/**
  * Deep content extractor - Robustly handles various content formats and edge cases
- * 
+ *
  * @param {*} input - The input content which could be anything (string, object, null, etc.)
  * @returns {string} - The extracted content as a string
  */
 export function extractRealContent(input) {
-  // Case 1: Handle null/undefined
+  // Handle null/undefined
   if (input === null || input === undefined) {
-    return '';
+    return "";
   }
-  
-  // Case 2: Input is already a string
-  if (typeof input === 'string') {
-    // Check if it's a stringified JSON that needs parsing
-    try {
-      if ((input.trim().startsWith('{') && input.trim().endsWith('}')) || 
-          (input.trim().startsWith('[') && input.trim().endsWith(']'))) {
-        const parsed = JSON.parse(input);
-        // Recursively extract from the parsed object
-        return extractRealContent(parsed);
-      }
-    } catch (e) {
-      // Not valid JSON, just return the string
-    }
-    return input;
+
+  // Handle different types
+  if (typeof input === "string") {
+    return handleStringInput(input);
   }
-  
-  // Case 3: Input is an object
-  if (typeof input === 'object') {
-    // Special handling for token objects with raw markdown
-    if (input.type === 'code') {
-      // If we have text content, just return it directly (don't add markdown fence)
-      if (input.text && typeof input.text === 'string') {
-        return input.text;
-      }
-    }
-    
-    // Priority property checking - check most likely properties first
-    const props = ['text', 'content', 'raw', 'value', 'markdown', 'md'];
-    for (const prop of props) {
-      if (input[prop] && typeof input[prop] === 'string') {
-        return input[prop];
-      }
-    }
-    
-    // Check if object has a reasonable toString implementation
-    if (input.toString && typeof input.toString === 'function') {
-      const str = input.toString();
-      if (str !== '[object Object]') {
-        return str;
-      }
-    }
-    
-    // Last resort: stringify the object
-    try {
-      return JSON.stringify(input, null, 2);
-    } catch (e) {
-      return '[Object]';
-    }
+
+  if (typeof input === "object") {
+    return extractFromObject(input);
   }
-  
-  // Case 4: Any other type - convert to string
+
+  // Any other type - convert to string
   return String(input);
 }
 
@@ -88,32 +105,36 @@ export function extractRealContent(input) {
 export function preprocessMarkdown(content) {
   // Standard extraction first to handle nested objects
   const extractedContent = extractRealContent(content);
-  
+
   // Handle the case where the entire content is a stringified code token
-  if (typeof extractedContent === 'string' && 
-      extractedContent.trim().startsWith('{') && 
-      extractedContent.trim().endsWith('}')) {
+  if (
+    typeof extractedContent === "string" &&
+    extractedContent.trim().startsWith("{") &&
+    extractedContent.trim().endsWith("}")
+  ) {
     try {
       const possibleToken = JSON.parse(extractedContent);
-      if (possibleToken.type === 'code' && possibleToken.text) {
+      if (possibleToken.type === "code" && possibleToken.text) {
         // Extract actual content and language for the renderer to handle
         return possibleToken.text;
       }
-    } catch (e) {
+    } catch {
       // Not a valid JSON token object, continue with regular content
     }
   }
-  
+
   // Clean any triple backtick fences that might be in the extracted content
-  if (typeof extractedContent === 'string') {
+  if (typeof extractedContent === "string") {
     // Remove markdown code block syntax if the entire content is a code block
-    const codeBlockMatch = /^\s*```([^\n]*)\n([\s\S]*?)```\s*$/g.exec(extractedContent);
-    if (codeBlockMatch && codeBlockMatch[2]) {
+    const codeBlockMatch = /^\s*```([^\n]*)\n([\s\S]*?)```\s*$/g.exec(
+      extractedContent,
+    );
+    if (codeBlockMatch?.[2]) {
       // The content is a code block; let the renderer handle it as regular code
       return codeBlockMatch[2];
     }
   }
-  
+
   return extractedContent;
 }
 
@@ -132,17 +153,17 @@ export function createMarkedInstance(options = {}) {
       },
       postprocess(html) {
         return html;
-      }
+      },
     },
-    ...options
+    ...options,
   });
 
   // Create the default renderer for code blocks
   const codeRenderer = (token) => {
     // Extract code and language from token
-    const codeStr = token.text || '';
-    const language = token.lang || '';
-    
+    const codeStr = token.text || "";
+    const language = token.lang || "";
+
     // Default highlightjs code rendering
     let highlightedCode;
     try {
@@ -182,8 +203,8 @@ export function createMarkedInstance(options = {}) {
   // Create paragraph renderer that properly handles token objects
   const paragraphRenderer = (token) => {
     // Extract text from token
-    const text = token.text || '';
-    
+    const text = token.text || "";
+
     // If paragraph contains only a code block, don't wrap in <p> tags
     if (
       text.trim().startsWith('<div class="code-block-wrapper">') &&
@@ -200,8 +221,8 @@ export function createMarkedInstance(options = {}) {
   markedInstance.use({
     renderer: {
       code: codeRenderer,
-      paragraph: paragraphRenderer
-    }
+      paragraph: paragraphRenderer,
+    },
   });
 
   return markedInstance;
@@ -209,28 +230,29 @@ export function createMarkedInstance(options = {}) {
 
 /**
  * Render markdown content to HTML
+ * @returns {string} HTML content as a string
  */
 export function renderMarkdown(content) {
   try {
     // Don't try to render empty content
-    if (!content) return '';
-    
+    if (!content) return "";
+
     // Get a fresh marked instance with our default configuration
     const markedInstance = createMarkedInstance();
-    
+
     // Pre-process to handle complex content structures
     const processedContent = preprocessMarkdown(content);
-    
+
     // Parse the markdown
-    return markedInstance.parse(processedContent);
+    const result = markedInstance.parse(processedContent);
+    return result || ""; // Ensure we always return a string
   } catch (error) {
     console.error("Error rendering markdown:", error);
-    
+
     // Show error message, but also attempt to render the raw content
-    const rawContent = typeof content === 'string' 
-      ? content 
-      : JSON.stringify(content, null, 2);
-      
+    const rawContent =
+      typeof content === "string" ? content : JSON.stringify(content, null, 2);
+
     return `<p class="error">Error rendering markdown: ${error.message}</p>
             <pre>${escapeHtml(rawContent)}</pre>`;
   }

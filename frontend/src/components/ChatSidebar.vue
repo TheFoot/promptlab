@@ -409,7 +409,6 @@ const formatMessage = (content) => {
   return renderMarkdown(content);
 };
 
-
 // Send message function
 const sendMessage = async () => {
   if (!newMessage.value.trim() || isLoading.value) return;
@@ -444,8 +443,7 @@ const sendMessage = async () => {
           ? [{ role: "system", content: currentPrompt.value.content }]
           : []),
         // Add all user and assistant messages
-        ...messages.value
-          .filter((m) => m.role !== "system"),
+        ...messages.value.filter((m) => m.role !== "system"),
       ],
       provider: modelConfig.provider,
       model: modelConfig.model,
@@ -480,10 +478,11 @@ const sendMessage = async () => {
       }
 
       const data = await response.json();
-      const messageContent = typeof data.message === 'string' 
-        ? data.message 
-        : String(data.message || '');
-      
+      const messageContent =
+        typeof data.message === "string"
+          ? data.message
+          : String(data.message || "");
+
       messages.value.push({
         role: "assistant",
         content: messageContent,
@@ -547,9 +546,10 @@ const setupWebSocket = () => {
         const contentChunk = data.content;
 
         // Update the reference message content
-        currentAssistantMessage.content = typeof currentAssistantMessage.content === 'string'
-          ? currentAssistantMessage.content + contentChunk
-          : contentChunk;
+        currentAssistantMessage.content =
+          typeof currentAssistantMessage.content === "string"
+            ? currentAssistantMessage.content + contentChunk
+            : contentChunk;
 
         // Update the last message in the array with current content
         const lastIndex = messages.value.length - 1;
@@ -557,15 +557,18 @@ const setupWebSocket = () => {
           // Create a completely new object reference
           messages.value[lastIndex] = {
             role: "assistant",
-            content: typeof currentAssistantMessage.content === 'string'
-              ? currentAssistantMessage.content
-              : String(currentAssistantMessage.content)
+            content:
+              typeof currentAssistantMessage.content === "string"
+                ? currentAssistantMessage.content
+                : String(currentAssistantMessage.content),
           };
 
           // Debug log the updated message
-          console.log("Updated message structure:",
+          console.log(
+            "Updated message structure:",
             typeof messages.value[lastIndex].content,
-            messages.value[lastIndex].content.substring(0, 20) + "...");
+            messages.value[lastIndex].content.substring(0, 20) + "...",
+          );
         }
 
         // Force reactive update by creating a new array reference

@@ -31,7 +31,7 @@ const props = defineProps({
 // Compute the rendered markdown
 const renderedMarkdown = computed(() => {
   const html = renderMarkdown(props.content);
-  return html || '';
+  return html || "";
 });
 
 // Handle download code blocks
@@ -46,7 +46,8 @@ const handleDownloadCodeBlock = (button) => {
 
 onMounted(() => {
   // Add download function to window object
-  window.downloadCodeBlock = window.downloadCodeBlock || handleDownloadCodeBlock;
+  window.downloadCodeBlock =
+    window.downloadCodeBlock || handleDownloadCodeBlock;
 });
 
 onUnmounted(() => {
@@ -146,7 +147,7 @@ onUnmounted(() => {
       text-decoration: underline;
     }
   }
-  
+
   :deep(.error) {
     color: var(--error-color);
     padding: 1rem;

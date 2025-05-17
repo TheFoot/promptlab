@@ -25,10 +25,22 @@
 - **State Management:** Use Pinia for global state, component refs for local state
 - **API Endpoints:** Follow REST conventions with proper HTTP verbs
 - **Variable Declarations:** Don't initialize variables with `undefined` - it's redundant
-- **Nullish Handling:** Use optional chaining (`?.`) and nullish coalescing (`||`) for concise null checks
+- **Nullish Handling:** Use optional chaining (`?.`) and nullish coalescing (`??`) for concise null checks
+  - Prefer `obj?.prop` over `obj && obj.prop`
+  - Prefer `arr?.[index]` over `arr && arr[index]`
+  - Prefer `func?.()` over `func && func()`
 - **Promise Handling:** Never use Promise objects directly in boolean conditions; check against `null` or use appropriate methods
 - **Accessibility:** Always associate form labels with controls using the `for` attribute that matches an `id` on the control
 - **Error Handling:** Never use empty catch blocks. Always log errors with `console.error()` or handle them appropriately
+- **Try/Catch:** When the error variable is not used in the catch block, use the simplified syntax: `try { ... } catch { ... }` instead of `try { ... } catch (e) { ... }`
+- **Function Design:**
+  - **Return Type Consistency:** Ensure functions always return the same type (e.g., if a function returns a string, all return paths should return strings)
+  - **Cognitive Complexity:** Keep function complexity low by:
+    - Breaking complex functions into smaller, single-purpose helper functions
+    - Extracting conditional logic into separate functions
+    - Limiting nested conditionals to 2-3 levels deep
+    - Using early returns to handle edge cases first
+  - **Function Size:** Functions should generally be shorter than 30 lines; longer functions should be refactored
 
 ## Project Structure
 - **Frontend:** Vue 3 SPA with Vite, Vue Router and Pinia
