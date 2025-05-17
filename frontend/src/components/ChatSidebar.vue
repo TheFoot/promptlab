@@ -147,11 +147,10 @@ import {
   onUnmounted,
 } from "vue";
 import { usePromptStore } from "../stores/promptStore";
-import * as marked from "marked";
-import highlightjs from "highlight.js";
 import "highlight.js/styles/github.css";
 import alertService from "../services/alertService";
 import modelConfigService from "../services/modelConfigService";
+import { renderMarkdown, downloadCodeBlock } from "../services/markdownService";
 import "../styles/code-blocks.scss";
 
 // Props
@@ -199,18 +198,7 @@ watch(
   },
 );
 
-// Configure marked with code highlighting
-// Use modern marked API (v9+)
-const markedOptions = {
-  highlight: function (code, lang) {
-    if (lang && highlightjs.getLanguage(lang)) {
-      return highlightjs.highlight(code, { language: lang }).value;
-    }
-    return highlightjs.highlightAuto(code).value;
-  },
-  breaks: true,
-  gfm: true,
-};
+// We use the markdownService for rendering markdown content
 
 // Initialize expanded state from props
 const isExpanded = ref(props.expanded);
@@ -416,64 +404,11 @@ const copyMessageToClipboard = async (message) => {
   }
 };
 
-// Format message with markdown and syntax highlighting
+// Format message with markdown and syntax highlighting using the shared service
 const formatMessage = (content) => {
-  if (!content) return "";
-
-  // Create custom renderer
-  const renderer = {
-    code(code, language) {
-      // Default highlightjs code rendering
-      const highlightedCode =
-        language && highlightjs.getLanguage(language)
-          ? highlightjs.highlight(code, { language }).value
-          : highlightjs.highlightAuto(code).value;
-
-      // Create a timestamp-based filename with proper extension
-      const timestamp = new Date().getTime();
-      const extension = language || "txt";
-      const filename = `code-${timestamp}.${extension}`;
-
-      // Return code block with download button using an icon
-      return `
-        <div class="code-block-wrapper">
-          <div class="code-header">
-            <span class="code-language">${language || "plain text"}</span>
-            <button class="code-download-btn" title="Download code" data-code="${encodeURIComponent(code)}" data-filename="${filename}" onclick="window.downloadCodeBlock(this)">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-            </button>
-          </div>
-          <pre><code class="hljs ${language}">${highlightedCode}</code></pre>
-        </div>
-      `;
-    },
-
-    paragraph(text) {
-      // If paragraph contains only a code block, don't wrap in <p> tags
-      if (
-        text.trim().startsWith('<div class="code-block-wrapper">') &&
-        text.trim().endsWith("</div>")
-      ) {
-        return text;
-      }
-
-      // Otherwise use the normal paragraph formatting
-      return `<p>${text}</p>`;
-    },
-  };
-
-  // Use modern marked API with options including custom renderer
-  const options = {
-    ...markedOptions,
-    renderer,
-  };
-
-  return marked.parse(content, options);
+  return renderMarkdown(content);
 };
+
 
 // Send message function
 const sendMessage = async () => {
@@ -509,7 +444,8 @@ const sendMessage = async () => {
           ? [{ role: "system", content: currentPrompt.value.content }]
           : []),
         // Add all user and assistant messages
-        ...messages.value.filter((m) => m.role !== "system"),
+        ...messages.value
+          .filter((m) => m.role !== "system"),
       ],
       provider: modelConfig.provider,
       model: modelConfig.model,
@@ -544,9 +480,13 @@ const sendMessage = async () => {
       }
 
       const data = await response.json();
+      const messageContent = typeof data.message === 'string' 
+        ? data.message 
+        : String(data.message || '');
+      
       messages.value.push({
         role: "assistant",
-        content: data.message,
+        content: messageContent,
       });
     }
   } catch (error) {
@@ -595,12 +535,39 @@ const setupWebSocket = () => {
       if (data.type === "start") {
         // Start of a new message
         console.log("Starting new assistant message");
+        // Make sure the message content starts as an empty string
         currentAssistantMessage = { role: "assistant", content: "" };
-        messages.value.push(currentAssistantMessage);
+        // Add message to the messages array - create a new object rather than pushing the reference
+        messages.value.push({ role: "assistant", content: "" });
       } else if (data.type === "stream" && currentAssistantMessage) {
         // Continuation of a message
         console.log("Received content chunk:", data.content);
-        currentAssistantMessage.content += data.content;
+
+        // Get the content chunk from the data
+        const contentChunk = data.content;
+
+        // Update the reference message content
+        currentAssistantMessage.content = typeof currentAssistantMessage.content === 'string'
+          ? currentAssistantMessage.content + contentChunk
+          : contentChunk;
+
+        // Update the last message in the array with current content
+        const lastIndex = messages.value.length - 1;
+        if (lastIndex >= 0) {
+          // Create a completely new object reference
+          messages.value[lastIndex] = {
+            role: "assistant",
+            content: typeof currentAssistantMessage.content === 'string'
+              ? currentAssistantMessage.content
+              : String(currentAssistantMessage.content)
+          };
+
+          // Debug log the updated message
+          console.log("Updated message structure:",
+            typeof messages.value[lastIndex].content,
+            messages.value[lastIndex].content.substring(0, 20) + "...");
+        }
+
         // Force reactive update by creating a new array reference
         messages.value = [...messages.value];
         scrollToBottom();
@@ -659,30 +626,12 @@ const saveSidebarWidth = (width) => {
   localStorage.setItem("chat-sidebar-width", width.toString());
 };
 
-// Function to download code blocks
-const downloadCodeBlock = (button) => {
-  try {
-    const code = decodeURIComponent(button.getAttribute("data-code"));
-    const filename = button.getAttribute("data-filename");
-
-    // Create blob with code content
-    const blob = new Blob([code], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-
-    // Create temporary link element to trigger download
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-
-    // Clean up
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    alertService.showAlert(`Downloading ${filename}`, "success", 3000);
-  } catch (error) {
-    console.error("Error downloading code:", error);
+// Function to handle downloading code blocks using the shared service
+const handleDownloadCodeBlock = (button) => {
+  const result = downloadCodeBlock(button);
+  if (result.success) {
+    alertService.showAlert(`Downloading ${result.filename}`, "success", 3000);
+  } else {
     alertService.showAlert("Failed to download code", "error", 3000);
   }
 };
@@ -720,7 +669,7 @@ onMounted(async () => {
   });
 
   // Add download function to window object for code download buttons
-  window.downloadCodeBlock = downloadCodeBlock;
+  window.downloadCodeBlock = handleDownloadCodeBlock;
 });
 
 onUnmounted(() => {
@@ -731,7 +680,7 @@ onUnmounted(() => {
   }
 
   // Remove downloadCodeBlock function from window object
-  if (window.downloadCodeBlock === downloadCodeBlock) {
+  if (window.downloadCodeBlock === handleDownloadCodeBlock) {
     window.downloadCodeBlock = undefined;
   }
 });
