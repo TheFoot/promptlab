@@ -9,9 +9,9 @@ COPY backend/package*.json ./backend/
 COPY frontend/package*.json ./frontend/
 
 # Install dependencies with layer caching - use ci for more reliable builds
-RUN npm ci && \
-    cd backend && npm ci && \
-    cd ../frontend && npm ci
+RUN npm ci --ignore-scripts && \
+    cd backend && npm ci --ignore-scripts && \
+    cd ../frontend && npm ci --ignore-scripts
 
 # Copy source code
 COPY . .
@@ -29,8 +29,8 @@ COPY package*.json ./
 COPY backend/package*.json ./backend/
 
 # Install only production dependencies
-RUN npm ci --omit=dev && \
-    cd backend && npm ci --omit=dev
+RUN npm ci --ignore-scripts --omit=dev && \
+    cd backend && npm ci --ignore-scripts --omit=dev
 
 # Copy built frontend from builder stage
 COPY --from=builder /app/frontend/dist ./frontend/dist
