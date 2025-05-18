@@ -27,9 +27,19 @@ const validVersionTypes = [
   'custom'
 ];
 
+// Separate regular and prerelease version types
+const regularVersionTypes = ['major', 'minor', 'patch'];
+const prereleaseVersionTypes = ['premajor', 'preminor', 'prepatch', 'prerelease'];
+
 if (!validVersionTypes.includes(versionType)) {
   console.error(`Invalid version type. Use one of: ${validVersionTypes.join(', ')}`);
   process.exit(1);
+}
+
+// Validate inputs based on version type
+if (regularVersionTypes.includes(versionType) && 
+    (prereleaseId !== 'alpha' || customId.trim() !== '')) {
+  console.log('Note: Prerelease identifiers are ignored for regular version types (major, minor, patch)');
 }
 
 // Find all package.json files
@@ -52,8 +62,8 @@ if (versionType === 'custom') {
     process.exit(1);
   }
   newVersion = customVersion;
-} else if (['premajor', 'preminor', 'prepatch', 'prerelease'].includes(versionType)) {
-  // Handle prerelease identifiers
+} else if (prereleaseVersionTypes.includes(versionType)) {
+  // Handle prerelease identifiers for prerelease version types only
   const identifier = prereleaseId === 'custom' ? customId : prereleaseId;
   
   if (prereleaseId === 'custom' && (!customId || customId.trim() === '')) {
@@ -63,7 +73,7 @@ if (versionType === 'custom') {
   
   newVersion = semver.inc(currentVersion, versionType, identifier);
 } else {
-  // Standard version increment
+  // Standard version increment - ignore any prerelease identifiers
   newVersion = semver.inc(currentVersion, versionType);
 }
 
