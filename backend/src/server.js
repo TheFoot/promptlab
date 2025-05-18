@@ -5,11 +5,16 @@ import morgan from "morgan";
 import path from "path";
 import http from "http";
 import { WebSocketServer } from "ws";
+import { fileURLToPath } from "url";
 
 import config from "./config/index.js";
 import apiRoutes from "./routes/index.js";
 import chatController from "./controllers/chatController.js";
 // serverLogger is imported in index.js where it's used to initialize the global logger
+
+// Set up __dirname equivalent for ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Set up exception handlers
 export function setupExceptionHandlers() {
