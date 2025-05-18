@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: 'Version bump type'
+        description: 'Version bump type (major/minor/patch for regular releases, pre* for prereleases)'
         required: true
         default: 'patch'
         type: choice
@@ -18,7 +18,7 @@ on:
           - prerelease
           - custom
       prerelease_identifier:
-        description: 'Prerelease identifier (alpha, beta, rc, etc.)'
+        description: 'Prerelease identifier (only needed for pre* version types)'
         required: false
         default: 'alpha'
         type: choice
@@ -28,11 +28,11 @@ on:
           - rc
           - custom
       custom_identifier:
-        description: 'Custom prerelease identifier (if custom selected)'
+        description: 'Custom prerelease identifier (only needed if prerelease_identifier is set to custom)'
         required: false
         type: string
       custom_version:
-        description: 'Custom version (if custom type selected)'
+        description: 'Custom version (only needed if version_type is set to custom)'
         required: false
         type: string
 
