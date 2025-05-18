@@ -5,11 +5,16 @@ import morgan from "morgan";
 import path from "path";
 import http from "http";
 import { WebSocketServer } from "ws";
+import { fileURLToPath } from "url";
 
 import config from "./config/index.js";
 import apiRoutes from "./routes/index.js";
 import chatController from "./controllers/chatController.js";
 // serverLogger is imported in index.js where it's used to initialize the global logger
+
+// Set up __dirname equivalent for ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Set up exception handlers
 export function setupExceptionHandlers() {
@@ -84,7 +89,8 @@ export async function initializeApp() {
     app.use("/api", apiRoutes);
 
     // Add error handling middleware
-    app.use((err, req, res) => {
+    // eslint-disable-next-line no-unused-vars
+    app.use((err, req, res, next) => {
       global.logger.error("Express error handler caught an error", {
         error: err.message,
         stack: err.stack,
@@ -176,7 +182,7 @@ export async function setupStaticFileServing(app) {
 
     app.use(express.static(frontendBuildPath));
 
-    app.get("*", (req, res) => {
+    app.get("/{*splat}", (req, res) => {
       res.sendFile(path.join(frontendBuildPath, "index.html"));
     });
   }

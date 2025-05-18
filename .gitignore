@@ -956,9 +956,7 @@ dmypy.json
 cython_debug/
 tmp/
 
-# For now - once we get to CI then..?
-sonar-project.properties
-sonar-scanner.sh
+# Removed sonar-project.properties from gitignore as it's needed for SonarCloud integration
 
 # Test coverage reports
 coverage/
@@ -974,3 +972,5 @@ backend/bin/
 # Exclude task-tracking and specs
 docs/task-tracking/
 docs/specs/
+
+**/.claude/settings.local.json

@@ -1,7 +1,6 @@
 import { describe, it, before, after, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
 import sinon from "sinon";
-import { WebSocketServer } from "ws";
 
 // Import the module we're testing
 import * as serverModule from "../src/server.js";
