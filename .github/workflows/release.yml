@@ -1,5 +1,10 @@
 name: Create Release
 
+# Set default permissions for all jobs in the workflow
+permissions:
+  contents: write
+  packages: write
+  
 on:
   workflow_dispatch:
     inputs:
