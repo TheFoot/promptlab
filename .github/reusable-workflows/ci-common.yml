@@ -1,0 +1,254 @@
+name: Common CI Steps
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: '20'
+      run-dependency-check:
+        required: false
+        type: boolean
+        default: true
+      run-frontend-tests:
+        required: false
+        type: boolean
+        default: true
+      run-backend-tests:
+        required: false
+        type: boolean
+        default: true
+      run-lint:
+        required: false
+        type: boolean
+        default: true
+      run-build:
+        required: false
+        type: boolean
+        default: true
+      run-docker-build:
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  install-dependencies:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci
+        
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+        
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+        
+      - name: Cache Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ inputs.node-version }}-
+
+  dependency-check:
+    name: Check Dependencies
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    if: ${{ inputs.run-dependency-check }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          
+      - name: Restore Dependencies Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Check Root Outdated Dependencies
+        run: npm outdated || true
+        
+      - name: Check Frontend Outdated Dependencies
+        working-directory: ./frontend
+        run: npm outdated || true
+        
+      - name: Check Backend Outdated Dependencies
+        working-directory: ./backend
+        run: npm outdated || true
+
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    if: ${{ inputs.run-frontend-tests }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          
+      - name: Restore Dependencies Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run Frontend Tests
+        working-directory: ./frontend
+        run: npm run test
+        
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-test-results
+          path: frontend/tests/results
+          retention-days: 7
+
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    if: ${{ inputs.run-backend-tests }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          
+      - name: Restore Dependencies Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run Backend Tests
+        working-directory: ./backend
+        run: npm run test
+        
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: backend/test/results
+          retention-days: 7
+
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    if: ${{ inputs.run-lint }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          
+      - name: Restore Dependencies Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run Lint
+        run: npm run lint
+
+  build:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    if: ${{ inputs.run-build }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          
+      - name: Restore Dependencies Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-node-${{ inputs.node-version }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Build Frontend
+        run: npm run build
+        
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
+          retention-days: 1
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [frontend-tests, backend-tests, lint, build]
+    if: ${{ inputs.run-docker-build }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: promptlab:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

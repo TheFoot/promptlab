@@ -1,0 +1,44 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - 'LICENCE'
+      - '.gitignore'
+
+jobs:
+  ci:
+    name: Run CI Checks
+    uses: ./.github/reusable-workflows/ci-common.yml
+    with:
+      node-version: '22'
+      run-dependency-check: true
+      run-frontend-tests: true
+      run-backend-tests: true
+      run-lint: true
+      run-build: true
+      run-docker-build: true
+
+  # This job is a placeholder for future quality gates like SonarCloud
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: ci
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper analysis
+
+      # Add SonarCloud or other code quality tools here
+      - name: Quality Gate Status
+        run: echo "Quality Gate placeholder - Ready for integrating SonarCloud or similar tools"
