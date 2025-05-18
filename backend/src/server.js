@@ -89,7 +89,8 @@ export async function initializeApp() {
     app.use("/api", apiRoutes);
 
     // Add error handling middleware
-    app.use((err, req, res) => {
+    // eslint-disable-next-line no-unused-vars
+    app.use((err, req, res, next) => {
       global.logger.error("Express error handler caught an error", {
         error: err.message,
         stack: err.stack,
