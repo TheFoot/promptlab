@@ -28,14 +28,13 @@ jobs:
       run-build: true
       run-docker-build: true
 
-  # Quality Gate with SonarCloud analysis
-  quality-gate:
-    name: SonarCloud Analysis
+  # Quality Gate with SonarQube analysis
+  sonarqube:
+    name: SonarQube
     runs-on: ubuntu-latest
     needs: ci
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       
@@ -46,9 +45,8 @@ jobs:
           name: test-coverage
           path: ./
       
-      # SonarCloud Scan
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
