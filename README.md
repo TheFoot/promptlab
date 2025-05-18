@@ -5,6 +5,12 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![GitHub Issues](https://img.shields.io/github/issues/TheFoot/promptlab)
 ![GitHub Stars](https://img.shields.io/github/stars/TheFoot/promptlab)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=TheFoot_promptlab&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=TheFoot_promptlab)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=TheFoot_promptlab&metric=coverage)](https://sonarcloud.io/summary/new_code?id=TheFoot_promptlab)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=TheFoot_promptlab&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=TheFoot_promptlab)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=TheFoot_promptlab&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=TheFoot_promptlab)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=TheFoot_promptlab&metric=bugs)](https://sonarcloud.io/summary/new_code?id=TheFoot_promptlab)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=TheFoot_promptlab&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=TheFoot_promptlab)
 
 ## 📋 Table of Contents
 - [About](#about)
