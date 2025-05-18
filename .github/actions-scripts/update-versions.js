@@ -10,9 +10,9 @@
  * - Custom version specification
  */
 
-const fs = require('fs');
-const { execSync } = require('child_process');
-const semver = require('semver');
+import fs from 'fs';
+import { execSync } from 'child_process';
+import semver from 'semver';
 
 // Get params from args
 const versionType = process.argv[2];
