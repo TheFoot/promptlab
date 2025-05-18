@@ -1,7 +1,7 @@
 {
   "name": "promptlab-frontend",
   "private": true,
-  "version": "0.9.0-beta",
+  "version": "0.9.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
