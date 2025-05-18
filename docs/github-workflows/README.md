@@ -33,14 +33,14 @@ All workflows use a common reusable workflow for standard CI steps to maintain c
 │ ┌─────────────────────┐ ┌───────────────┐ │ └────────┬────────┘
 │ │Check Dependencies   │ │Docker Build   │ │          │
 │ └─────────────────────┘ └───────────────┘ │          ▼
-└─────────────────────────────────────────────┘ ┌─────────────────┐
-                                                │GitHub Release   │
-                                                └────────┬────────┘
-                                                         │
-                                                         ▼
-                                                ┌─────────────────┐
-                                                │Docker Build/Push│
-                                                └─────────────────┘
+└───────────────────┬─────────────────────────┘ ┌─────────────────┐
+                    │                           │GitHub Release   │
+                    ▼                           └────────┬────────┘
+         ┌────────────────────┐                         │
+         │SonarQube Analysis  │                         ▼
+         └────────────────────┘                ┌─────────────────┐
+                                               │Docker Build/Push│
+                                               └─────────────────┘
 ```
 
 ## Reusable Workflow: workflows/ci-common.yml
@@ -72,7 +72,7 @@ Triggered when pull requests are created or updated that target the main branch.
 
 Key features:
 - Runs the same checks as the CI workflow
-- Includes a placeholder for future quality gates (e.g., SonarCloud integration)
+- Includes SonarQube analysis as a quality gate to ensure code quality standards
 - Ensures merged code meets quality standards
 
 ## Release Workflow: release.yml
@@ -150,31 +150,42 @@ jobs:
       run-security-scan: true
 ```
 
-### Adding SonarCloud Integration
+### SonarQube Integration
 
-The PR workflow includes a placeholder for SonarCloud integration. To implement it:
+The PR workflow includes SonarQube integration for code quality analysis. The implementation uses the following configuration:
 
-1. Sign up for SonarCloud and connect your repository
-2. Add the required secrets (see Secrets section below)
-3. Update the `quality-gate` job in `.github/workflows/pr.yml`:
+1. The `sonarqube` job in the PR workflow runs after the CI checks are complete
+2. It uses the SonarSource/sonarqube-scan-action to run the analysis
+3. Requires the SONAR_TOKEN secret to be configured in GitHub repository settings
 
 ```yaml
-quality-gate:
-  name: SonarCloud Analysis
+sonarqube:
+  name: SonarQube
   runs-on: ubuntu-latest
   needs: ci
   steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
     
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@master
+    # Download test artifacts from previous jobs
+    - name: Download test artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: test-coverage
+        path: ./
+    
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v5
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 ```
+
+The repository also includes a `sonar-project.properties` file that configures the SonarQube analysis with the following settings:
+- Project key and organization for SonarCloud integration
+- Source and test directories
+- Test coverage report paths
+- Exclusions for node_modules and test files
 
 ### Modifying the Release Process
 

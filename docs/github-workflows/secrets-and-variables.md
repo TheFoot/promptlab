@@ -9,11 +9,17 @@ This document lists all the secrets and variables required for the GitHub Action
 | `DOCKERHUB_USERNAME` | Your Docker Hub username | Your Docker Hub account name | `release.yml` workflow for publishing Docker images |
 | `DOCKERHUB_TOKEN` | Access token for Docker Hub | 1. Go to [Docker Hub Account Settings](https://hub.docker.com/settings/security)<br>2. Click "New Access Token"<br>3. Give it a name and set appropriate permissions (Read, Write, Delete) | `release.yml` workflow for authenticating with Docker Hub |
 
+## Required Secrets for Quality Gates
+
+| Secret Name | Description | How to Obtain | Used In |
+|-------------|-------------|--------------|---------|
+| `SONAR_TOKEN` | API token for SonarQube/SonarCloud integration | 1. Sign up for [SonarCloud](https://sonarcloud.io)<br>2. Set up your organization and project<br>3. Go to Account → Security → Generate Tokens | `pr.yml` for SonarQube code quality analysis |
+| `SONAR_HOST_URL` | The URL of your SonarQube instance (not needed for SonarCloud) | Your SonarQube server URL (e.g., https://sonarqube.yourdomain.com) | Optional for self-hosted SonarQube instances |
+
 ## Optional Secrets (For Future Extensions)
 
 | Secret Name | Description | How to Obtain | Used In |
 |-------------|-------------|--------------|---------|
-| `SONAR_TOKEN` | API token for SonarCloud integration | 1. Sign up for [SonarCloud](https://sonarcloud.io)<br>2. Set up your organization and project<br>3. Go to Account → Security → Generate Tokens | Placeholder in `pr.yml` for future SonarCloud integration |
 | `NPM_TOKEN` | Access token for publishing to npm | 1. Go to [npm Access Tokens](https://www.npmjs.com/settings/tokens)<br>2. Click "Generate New Token"<br>3. Select "Automation" token type | Can be added to release workflow if publishing npm packages |
 
 ## Built-in Secrets

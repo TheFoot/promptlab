@@ -4,23 +4,18 @@ This document outlines potential future enhancements for the GitHub Actions work
 
 ## Code Quality & Security
 
-### SonarCloud Integration
+### SonarQube Integration (Implemented)
 
-The PR workflow already includes a placeholder for SonarCloud integration. To implement:
+SonarQube integration has been implemented in the PR workflow using the SonarSource/sonarqube-scan-action. The implementation includes:
 
-1. Add the following to the `quality-gate` job in `pr.yml`:
-    ```yaml
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      with:
-        args: >
-          -Dsonar.projectKey=your-org_promptlab
-          -Dsonar.organization=your-org
-    ```
-2. Create a `sonar-project.properties` file in the repository root
+1. A `sonarqube` job in the PR workflow that runs after CI checks complete
+2. Configuration for downloading and using test coverage results
+3. A `sonar-project.properties` file with project configuration
+
+Additional improvements to consider:
+1. Adding SonarQube Quality Gate status checks to PR requirements
+2. Implementing automated code smell fixing for common issues
+3. Creating custom quality profiles for different parts of the codebase
 
 ### Dependency Scanning
 
@@ -274,7 +269,7 @@ When implementing these extensions:
 
 ## Prioritized Implementation Order
 
-1. SonarCloud Integration
+1. ✅ SonarQube Integration (Implemented)
 2. Automated Dependency Updates
 3. Slack/Discord Notifications
 4. Deployment Workflows
