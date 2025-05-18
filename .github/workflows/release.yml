@@ -4,7 +4,7 @@ name: Create Release
 permissions:
   contents: write
   packages: write
-  
+
 on:
   workflow_dispatch:
     inputs:
@@ -57,15 +57,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          
+          node-version: '22'
+
       - name: Install Dependencies
         run: npm ci
-        
+
       - name: Update Version In All Package Files
         id: bump-version
         run: |
-          npm install -g semver
+          npm install --no-save semver
           chmod +x .github/actions-scripts/update-versions.js
           node .github/actions-scripts/update-versions.js \
             "${{ github.event.inputs.version_type }}" \
@@ -77,7 +77,7 @@ jobs:
           NEW_VERSION=$(grep "^Version change:" version_output.txt | sed 's/.*→ \(.*\)/\1/')
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version extracted: $NEW_VERSION"
-          
+
       - name: Generate Release Notes
         id: generate-notes
         run: |
@@ -92,7 +92,7 @@ jobs:
           echo "changes<<EOF" >> $GITHUB_OUTPUT
           cat release_notes.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          
+
       - name: Commit Version Changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -103,13 +103,13 @@ jobs:
           NEW_VERSION="${{ steps.bump-version.outputs.new_version }}"
           echo "Using version: $NEW_VERSION for commit"
           git commit -m "chore: bump version to v$NEW_VERSION"
-          
+
       - name: Create Tag
         run: |
           NEW_VERSION="${{ steps.bump-version.outputs.new_version }}"
           echo "Creating tag v$NEW_VERSION"
           git tag v$NEW_VERSION
-          
+
       - name: Push Changes and Tags
         uses: ad-m/github-push-action@master
         with:
@@ -127,7 +127,7 @@ jobs:
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
-          
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -147,13 +147,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: v${{ needs.prepare-release.outputs.new_version }}
-          
+
       # Make sure dependencies are in sync before building
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
+
       - name: Update package-lock.json
         run: |
           echo "Updating package-lock.json to include all dependencies"
@@ -162,16 +162,16 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add package-lock.json
           git commit -m "chore: update package-lock.json for Docker build" || echo "No changes to commit"
-          
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          
+
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
