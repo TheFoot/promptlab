@@ -182,7 +182,7 @@ export async function setupStaticFileServing(app) {
 
     app.use(express.static(frontendBuildPath));
 
-    app.get("*", (req, res) => {
+    app.get("/{*splat}", (req, res) => {
       res.sendFile(path.join(frontendBuildPath, "index.html"));
     });
   }
