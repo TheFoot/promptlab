@@ -129,12 +129,18 @@ jobs:
         working-directory: ./frontend
         run: npm run test
         
+      - name: Create Results Directory
+        run: mkdir -p frontend/coverage
+        
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: frontend-test-results
-          path: frontend/tests/results
+          path: |
+            frontend/coverage
+            frontend/tests/unit/results
+          if-no-files-found: ignore
           retention-days: 7
 
   backend-tests:
@@ -164,12 +170,18 @@ jobs:
         working-directory: ./backend
         run: npm run test
         
+      - name: Create Results Directory
+        run: mkdir -p backend/coverage
+        
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: backend-test-results
-          path: backend/test/results
+          path: |
+            backend/coverage
+            backend/test/results
+          if-no-files-found: ignore
           retention-days: 7
 
   lint:
