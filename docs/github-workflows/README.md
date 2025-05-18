@@ -43,7 +43,7 @@ All workflows use a common reusable workflow for standard CI steps to maintain c
                                                 └─────────────────┘
 ```
 
-## Reusable Workflow: ci-common.yml
+## Reusable Workflow: workflows/ci-common.yml
 
 This workflow contains the common CI steps used by both the CI and PR workflows:
 
@@ -93,7 +93,7 @@ The workflow performs these steps in sequence, with each step dependent on the s
 
 To add new CI steps to the reusable workflow:
 
-1. Edit `.github/reusable-workflows/ci-common.yml`
+1. Edit `.github/workflows/ci-common.yml`
 2. Add a new job or add steps to an existing job
 3. Consider adding an input parameter to control when the step runs
 
