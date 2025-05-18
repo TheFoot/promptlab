@@ -62,7 +62,7 @@ jobs:
         run: |
           npm install semver
           chmod +x .github/actions-scripts/update-versions.js
-          .github/actions-scripts/update-versions.js \
+          node .github/actions-scripts/update-versions.js \
             "${{ github.event.inputs.version_type }}" \
             "${{ github.event.inputs.prerelease_identifier }}" \
             "${{ github.event.inputs.custom_identifier }}" \
