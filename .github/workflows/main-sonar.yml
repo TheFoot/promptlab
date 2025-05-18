@@ -1,0 +1,74 @@
+name: Main Branch Analysis
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - 'LICENCE'
+      - '.gitignore'
+
+jobs:
+  # Run tests with coverage first
+  tests:
+    name: Run Tests with Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          cd frontend && npm ci
+          cd ../backend && npm ci
+
+      - name: Run Frontend Tests with Coverage
+        working-directory: ./frontend
+        run: npm run test:coverage
+
+      - name: Run Backend Tests with Coverage
+        working-directory: ./backend
+        run: npm run test:coverage
+
+      - name: Upload Coverage Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage
+          path: |
+            frontend/coverage
+            backend/coverage
+          retention-days: 1
+
+  # Quality Gate with SonarQube analysis
+  sonarqube:
+    name: SonarQube
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - name: Increase Node.js memory
+        run: export NODE_OPTIONS="--max-old-space-size=8192"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      # Download test artifacts from previous job
+      - name: Download test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test-coverage
+          path: ./
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
