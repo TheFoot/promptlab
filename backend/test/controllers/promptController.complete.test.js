@@ -13,6 +13,24 @@ import {
 import Prompt from "../../src/models/Prompt.js";
 import { mockExpressReqRes } from "../helpers/testSetup.js";
 
+// Helper functions to reduce duplication
+const setupPromptQueryMock = (results) => {
+  const mockQuery = {
+    sort: sinon.stub().returnsThis(),
+    select: sinon.stub().resolves(results),
+  };
+  sinon.stub(Prompt, "find").returns(mockQuery);
+  return mockQuery;
+};
+
+const assertErrorHandling = (res, statusCode, errorMessage) => {
+  assert.ok(res.status.calledWith(statusCode), `Should return ${statusCode} status code`);
+  assert.ok(
+    res.json.calledWith({ message: errorMessage }),
+    "Should return correct error message"
+  );
+};
+
 describe("Prompt Controller", () => {
   beforeEach(() => {
     // Reset any stubs/mocks before each test
@@ -24,73 +42,47 @@ describe("Prompt Controller", () => {
   });
 
   describe("getPrompts", () => {
-    it("should return all prompts when no filters are provided", async () => {
+    const runGetPromptsTest = async (queryParams, mockPrompts, expectedFilter) => {
       // Arrange
+      const mockPromptQuery = setupPromptQueryMock(mockPrompts);
+      const { req, res } = mockExpressReqRes({ query: queryParams });
+
+      // Act
+      await getPrompts(req, res);
+
+      // Assert
+      assert.ok(Prompt.find.calledWith(expectedFilter), "Should query with correct filter");
+      assert.ok(
+        mockPromptQuery.sort.calledWith({ updatedAt: -1 }),
+        "Should sort by updatedAt descending"
+      );
+      assert.ok(
+        mockPromptQuery.select.calledWith("title tags updatedAt"),
+        "Should select specific fields"
+      );
+      assert.ok(res.json.calledWith(mockPrompts), "Should return prompts list");
+    };
+
+    it("should return all prompts when no filters are provided", async () => {
       const mockPrompts = [
         { _id: "1", title: "Prompt 1", tags: ["tag1"], updatedAt: new Date() },
         { _id: "2", title: "Prompt 2", tags: ["tag2"], updatedAt: new Date() },
       ];
-
-      const mockPromptQuery = {
-        sort: sinon.stub().returnsThis(),
-        select: sinon.stub().resolves(mockPrompts),
-      };
-
-      sinon.stub(Prompt, "find").returns(mockPromptQuery);
-
-      const { req, res } = mockExpressReqRes({
-        query: {}, // No search or tag filters
-      });
-
-      // Act
-      await getPrompts(req, res);
-
-      // Assert
-      assert.ok(Prompt.find.calledWith({}), "Should query with empty filter");
-      assert.ok(
-        mockPromptQuery.sort.calledWith({ updatedAt: -1 }),
-        "Should sort by updatedAt descending",
-      );
-      assert.ok(
-        mockPromptQuery.select.calledWith("title tags updatedAt"),
-        "Should select specific fields",
-      );
-      assert.ok(res.json.calledWith(mockPrompts), "Should return prompts list");
+      await runGetPromptsTest({}, mockPrompts, {});
     });
 
     it("should apply text search filter when search param is provided", async () => {
-      // Arrange
       const mockPrompts = [
         { _id: "1", title: "Test Prompt", tags: [], updatedAt: new Date() },
       ];
-
-      const mockPromptQuery = {
-        sort: sinon.stub().returnsThis(),
-        select: sinon.stub().resolves(mockPrompts),
-      };
-
-      sinon.stub(Prompt, "find").returns(mockPromptQuery);
-
-      const { req, res } = mockExpressReqRes({
-        query: { search: "test query" },
-      });
-
-      // Act
-      await getPrompts(req, res);
-
-      // Assert
-      assert.ok(
-        Prompt.find.calledWith({ $text: { $search: "test query" } }),
-        "Should apply text search filter",
-      );
-      assert.ok(
-        res.json.calledWith(mockPrompts),
-        "Should return filtered prompts",
+      await runGetPromptsTest(
+        { search: "test query" },
+        mockPrompts,
+        { $text: { $search: "test query" } }
       );
     });
 
     it("should apply tag filter when tag param is provided", async () => {
-      // Arrange
       const mockPrompts = [
         {
           _id: "1",
@@ -99,34 +91,14 @@ describe("Prompt Controller", () => {
           updatedAt: new Date(),
         },
       ];
-
-      const mockPromptQuery = {
-        sort: sinon.stub().returnsThis(),
-        select: sinon.stub().resolves(mockPrompts),
-      };
-
-      sinon.stub(Prompt, "find").returns(mockPromptQuery);
-
-      const { req, res } = mockExpressReqRes({
-        query: { tag: "test-tag" },
-      });
-
-      // Act
-      await getPrompts(req, res);
-
-      // Assert
-      assert.ok(
-        Prompt.find.calledWith({ tags: "test-tag" }),
-        "Should apply tag filter",
-      );
-      assert.ok(
-        res.json.calledWith(mockPrompts),
-        "Should return tagged prompts",
+      await runGetPromptsTest(
+        { tag: "test-tag" },
+        mockPrompts,
+        { tags: "test-tag" }
       );
     });
 
     it("should apply both search and tag filters when both are provided", async () => {
-      // Arrange
       const mockPrompts = [
         {
           _id: "1",
@@ -135,32 +107,10 @@ describe("Prompt Controller", () => {
           updatedAt: new Date(),
         },
       ];
-
-      const mockPromptQuery = {
-        sort: sinon.stub().returnsThis(),
-        select: sinon.stub().resolves(mockPrompts),
-      };
-
-      sinon.stub(Prompt, "find").returns(mockPromptQuery);
-
-      const { req, res } = mockExpressReqRes({
-        query: { search: "filter", tag: "filter-tag" },
-      });
-
-      // Act
-      await getPrompts(req, res);
-
-      // Assert
-      assert.ok(
-        Prompt.find.calledWith({
-          $text: { $search: "filter" },
-          tags: "filter-tag",
-        }),
-        "Should apply both search and tag filters",
-      );
-      assert.ok(
-        res.json.calledWith(mockPrompts),
-        "Should return filtered prompts",
+      await runGetPromptsTest(
+        { search: "filter", tag: "filter-tag" },
+        mockPrompts,
+        { $text: { $search: "filter" }, tags: "filter-tag" }
       );
     });
 
@@ -175,15 +125,17 @@ describe("Prompt Controller", () => {
       await getPrompts(req, res);
 
       // Assert
-      assert.ok(res.status.calledWith(500), "Should return 500 status code");
-      assert.ok(
-        res.json.calledWith({ message: dbError.message }),
-        "Should return error message",
-      );
+      assertErrorHandling(res, 500, dbError.message);
     });
   });
 
   describe("getPromptById", () => {
+    const setupGetByIdTest = (mockResult) => {
+      sinon.stub(Prompt, "findById").resolves(mockResult);
+      const promptId = mockResult?._id || "nonexistent-id";
+      return mockExpressReqRes({ params: { id: promptId } });
+    };
+
     it("should return a prompt when valid ID is provided", async () => {
       // Arrange
       const mockPrompt = {
@@ -192,12 +144,7 @@ describe("Prompt Controller", () => {
         content: "Test content",
         tags: ["test"],
       };
-
-      sinon.stub(Prompt, "findById").resolves(mockPrompt);
-
-      const { req, res } = mockExpressReqRes({
-        params: { id: "valid-id" },
-      });
+      const { req, res } = setupGetByIdTest(mockPrompt);
 
       // Act
       await getPromptById(req, res);
@@ -205,28 +152,20 @@ describe("Prompt Controller", () => {
       // Assert
       assert.ok(
         Prompt.findById.calledWith("valid-id"),
-        "Should query with correct ID",
+        "Should query with correct ID"
       );
       assert.ok(res.json.calledWith(mockPrompt), "Should return the prompt");
     });
 
     it("should return 404 when prompt is not found", async () => {
       // Arrange
-      sinon.stub(Prompt, "findById").resolves(null);
-
-      const { req, res } = mockExpressReqRes({
-        params: { id: "nonexistent-id" },
-      });
+      const { req, res } = setupGetByIdTest(null);
 
       // Act
       await getPromptById(req, res);
 
       // Assert
-      assert.ok(res.status.calledWith(404), "Should return 404 status code");
-      assert.ok(
-        res.json.calledWith({ message: "Prompt not found" }),
-        "Should return not found message",
-      );
+      assertErrorHandling(res, 404, "Prompt not found");
     });
 
     it("should handle database errors properly", async () => {
@@ -242,122 +181,90 @@ describe("Prompt Controller", () => {
       await getPromptById(req, res);
 
       // Assert
-      assert.ok(res.status.calledWith(500), "Should return 500 status code");
-      assert.ok(
-        res.json.calledWith({ message: dbError.message }),
-        "Should return error message",
-      );
+      assertErrorHandling(res, 500, dbError.message);
     });
   });
 
   describe("createPrompt", () => {
-    it("should create a prompt with valid data", async () => {
+    const setupCreateTest = (promptData, savedPrompt) => {
+      if (savedPrompt) {
+        const saveStub = sinon.stub().resolves(savedPrompt);
+        sinon.stub(Prompt.prototype, "save").callsFake(saveStub);
+      }
+      return mockExpressReqRes({ body: promptData });
+    };
+
+    const testSuccessfulCreate = async (promptData, savedPrompt) => {
       // Arrange
+      const { req, res } = setupCreateTest(promptData, savedPrompt);
+
+      // Act
+      await createPrompt(req, res);
+
+      // Assert
+      assert.ok(res.status.calledWith(201), "Should return 201 status code");
+      assert.ok(
+        res.json.calledWith(savedPrompt),
+        "Should return created prompt"
+      );
+    };
+
+    it("should create a prompt with valid data", async () => {
       const promptData = {
         title: "New Prompt",
         content: "New content",
         tags: ["new", "test"],
       };
-
+      
       const savedPrompt = {
         _id: "new-id",
         ...promptData,
       };
-
-      const saveStub = sinon.stub().resolves(savedPrompt);
-      sinon.stub(Prompt.prototype, "save").callsFake(saveStub);
-
-      const { req, res } = mockExpressReqRes({
-        body: promptData,
-      });
-
-      // Act
-      await createPrompt(req, res);
-
-      // Assert
-      assert.ok(res.status.calledWith(201), "Should return 201 status code");
-      assert.ok(
-        res.json.calledWith(savedPrompt),
-        "Should return created prompt",
-      );
+      
+      await testSuccessfulCreate(promptData, savedPrompt);
     });
 
     it("should create a prompt with empty tags when tags are not provided", async () => {
-      // Arrange
       const promptData = {
         title: "New Prompt",
         content: "New content",
         // No tags
       };
-
+      
       const savedPrompt = {
         _id: "new-id",
         ...promptData,
         tags: [], // Empty tags array
       };
+      
+      await testSuccessfulCreate(promptData, savedPrompt);
+    });
 
-      const saveStub = sinon.stub().resolves(savedPrompt);
-      sinon.stub(Prompt.prototype, "save").callsFake(saveStub);
-
-      const { req, res } = mockExpressReqRes({
-        body: promptData,
-      });
+    const testValidationFailure = async (promptData) => {
+      // Arrange
+      const { req, res } = setupCreateTest(promptData);
 
       // Act
       await createPrompt(req, res);
 
       // Assert
-      assert.ok(res.status.calledWith(201), "Should return 201 status code");
-      assert.ok(
-        res.json.calledWith(savedPrompt),
-        "Should return created prompt with empty tags",
-      );
-    });
+      assertErrorHandling(res, 400, "Title and content are required");
+    };
 
     it("should return 400 when title is missing", async () => {
-      // Arrange
-      const promptData = {
+      await testValidationFailure({
         // Missing title
         content: "Content without title",
         tags: ["test"],
-      };
-
-      const { req, res } = mockExpressReqRes({
-        body: promptData,
       });
-
-      // Act
-      await createPrompt(req, res);
-
-      // Assert
-      assert.ok(res.status.calledWith(400), "Should return 400 status code");
-      assert.ok(
-        res.json.calledWith({ message: "Title and content are required" }),
-        "Should return validation error message",
-      );
     });
 
     it("should return 400 when content is missing", async () => {
-      // Arrange
-      const promptData = {
+      await testValidationFailure({
         title: "Title without content",
         // Missing content
         tags: ["test"],
-      };
-
-      const { req, res } = mockExpressReqRes({
-        body: promptData,
       });
-
-      // Act
-      await createPrompt(req, res);
-
-      // Assert
-      assert.ok(res.status.calledWith(400), "Should return 400 status code");
-      assert.ok(
-        res.json.calledWith({ message: "Title and content are required" }),
-        "Should return validation error message",
-      );
     });
 
     it("should handle database errors properly", async () => {
@@ -379,15 +286,19 @@ describe("Prompt Controller", () => {
       await createPrompt(req, res);
 
       // Assert
-      assert.ok(res.status.calledWith(500), "Should return 500 status code");
-      assert.ok(
-        res.json.calledWith({ message: dbError.message }),
-        "Should return error message",
-      );
+      assertErrorHandling(res, 500, dbError.message);
     });
   });
 
   describe("updatePrompt", () => {
+    const setupUpdateTest = (promptId, updateData, result) => {
+      sinon.stub(Prompt, "findByIdAndUpdate").resolves(result);
+      return mockExpressReqRes({
+        params: { id: promptId },
+        body: updateData,
+      });
+    };
+
     it("should update a prompt with valid data", async () => {
       // Arrange
       const promptId = "update-id";
@@ -402,12 +313,7 @@ describe("Prompt Controller", () => {
         ...updateData,
       };
 
-      sinon.stub(Prompt, "findByIdAndUpdate").resolves(updatedPrompt);
-
-      const { req, res } = mockExpressReqRes({
-        params: { id: promptId },
-        body: updateData,
-      });
+      const { req, res } = setupUpdateTest(promptId, updateData, updatedPrompt);
 
       // Act
       await updatePrompt(req, res);
@@ -418,36 +324,30 @@ describe("Prompt Controller", () => {
           new: true,
           runValidators: true,
         }),
-        "Should call findByIdAndUpdate with correct arguments",
+        "Should call findByIdAndUpdate with correct arguments"
       );
       assert.ok(
         res.json.calledWith(updatedPrompt),
-        "Should return updated prompt",
+        "Should return updated prompt"
       );
     });
 
     it("should return 404 when prompt is not found", async () => {
       // Arrange
-      sinon.stub(Prompt, "findByIdAndUpdate").resolves(null);
+      const promptId = "nonexistent-id";
+      const updateData = {
+        title: "Won't Update",
+        content: "This prompt doesn't exist",
+        tags: [],
+      };
 
-      const { req, res } = mockExpressReqRes({
-        params: { id: "nonexistent-id" },
-        body: {
-          title: "Won't Update",
-          content: "This prompt doesn't exist",
-          tags: [],
-        },
-      });
+      const { req, res } = setupUpdateTest(promptId, updateData, null);
 
       // Act
       await updatePrompt(req, res);
 
       // Assert
-      assert.ok(res.status.calledWith(404), "Should return 404 status code");
-      assert.ok(
-        res.json.calledWith({ message: "Prompt not found" }),
-        "Should return not found message",
-      );
+      assertErrorHandling(res, 404, "Prompt not found");
     });
 
     it("should handle database errors properly", async () => {
@@ -468,15 +368,18 @@ describe("Prompt Controller", () => {
       await updatePrompt(req, res);
 
       // Assert
-      assert.ok(res.status.calledWith(500), "Should return 500 status code");
-      assert.ok(
-        res.json.calledWith({ message: dbError.message }),
-        "Should return error message",
-      );
+      assertErrorHandling(res, 500, dbError.message);
     });
   });
 
   describe("deletePrompt", () => {
+    const setupDeleteTest = (promptId, result) => {
+      sinon.stub(Prompt, "findByIdAndDelete").resolves(result);
+      return mockExpressReqRes({
+        params: { id: promptId },
+      });
+    };
+
     it("should delete a prompt when valid ID is provided", async () => {
       // Arrange
       const promptId = "delete-id";
@@ -485,11 +388,7 @@ describe("Prompt Controller", () => {
         title: "Deleted Prompt",
       };
 
-      sinon.stub(Prompt, "findByIdAndDelete").resolves(deletedPrompt);
-
-      const { req, res } = mockExpressReqRes({
-        params: { id: promptId },
-      });
+      const { req, res } = setupDeleteTest(promptId, deletedPrompt);
 
       // Act
       await deletePrompt(req, res);
@@ -497,31 +396,23 @@ describe("Prompt Controller", () => {
       // Assert
       assert.ok(
         Prompt.findByIdAndDelete.calledWith(promptId),
-        "Should call findByIdAndDelete with correct ID",
+        "Should call findByIdAndDelete with correct ID"
       );
       assert.ok(
         res.json.calledWith({ message: "Prompt deleted successfully" }),
-        "Should return success message",
+        "Should return success message"
       );
     });
 
     it("should return 404 when prompt is not found", async () => {
       // Arrange
-      sinon.stub(Prompt, "findByIdAndDelete").resolves(null);
-
-      const { req, res } = mockExpressReqRes({
-        params: { id: "nonexistent-id" },
-      });
+      const { req, res } = setupDeleteTest("nonexistent-id", null);
 
       // Act
       await deletePrompt(req, res);
 
       // Assert
-      assert.ok(res.status.calledWith(404), "Should return 404 status code");
-      assert.ok(
-        res.json.calledWith({ message: "Prompt not found" }),
-        "Should return not found message",
-      );
+      assertErrorHandling(res, 404, "Prompt not found");
     });
 
     it("should handle database errors properly", async () => {
@@ -537,11 +428,7 @@ describe("Prompt Controller", () => {
       await deletePrompt(req, res);
 
       // Assert
-      assert.ok(res.status.calledWith(500), "Should return 500 status code");
-      assert.ok(
-        res.json.calledWith({ message: dbError.message }),
-        "Should return error message",
-      );
+      assertErrorHandling(res, 500, dbError.message);
     });
   });
 });
