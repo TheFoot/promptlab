@@ -18,7 +18,7 @@ on:
 jobs:
   ci:
     name: Run CI Checks
-    uses: ./.github/reusable-workflows/ci-common.yml@${{ github.sha }}
+    uses: ./.github/workflows/ci-common.yml
     with:
       node-version: '22'
       run-dependency-check: true
