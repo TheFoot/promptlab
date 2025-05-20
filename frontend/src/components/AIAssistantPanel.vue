@@ -9,7 +9,7 @@
           @click="analyzePrompt"
         >
           <i class="fas fa-magic" />
-          <span>{{ isAnalyzing ? 'Analyzing...' : 'Analyze Prompt' }}</span>
+          <span>{{ isAnalyzing ? "Analyzing..." : "Analyze Prompt" }}</span>
         </button>
       </div>
     </div>
@@ -30,9 +30,12 @@
         class="empty-state"
       >
         <i class="fas fa-robot empty-state-icon" />
-        <p>Enter a prompt in the editor to get AI-powered suggestions and improvements.</p>
+        <p>
+          Enter a prompt in the editor to get AI-powered suggestions and
+          improvements.
+        </p>
       </div>
-      
+
       <!-- Error state -->
       <div
         v-else-if="analysisError"
@@ -75,7 +78,9 @@
         <div class="suggestions-section">
           <h4>Suggested Improvements</h4>
           <div
-            v-if="analysisResults.suggestions && analysisResults.suggestions.length"
+            v-if="
+              analysisResults.suggestions && analysisResults.suggestions.length
+            "
             class="suggestions-list"
           >
             <AISuggestionComponent
@@ -121,27 +126,30 @@
         class="initial-state"
       >
         <i class="fas fa-lightbulb initial-state-icon" />
-        <p>Click "Analyze Prompt" to get AI-powered suggestions for improving your prompt.</p>
+        <p>
+          Click "Analyze Prompt" to get AI-powered suggestions for improving
+          your prompt.
+        </p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { usePromptStore } from '../stores/promptStore';
-import AISuggestionComponent from './AISuggestionComponent.vue';
+import { ref, computed, onMounted, watch } from "vue";
+import { usePromptStore } from "../stores/promptStore";
+import AISuggestionComponent from "./AISuggestionComponent.vue";
 
 // Props
 const props = defineProps({
   promptContent: {
     type: String,
-    default: ''
-  }
+    default: "",
+  },
 });
 
 // Emits
-const emit = defineEmits(['update:promptContent']);
+const emit = defineEmits(["update:promptContent"]);
 
 // Store access
 const promptStore = usePromptStore();
@@ -153,33 +161,35 @@ const analysisError = ref(null);
 const feedbackProvided = ref(false);
 
 // Computed properties
-const hasPromptContent = computed(() => props.promptContent && props.promptContent.trim().length > 0);
+const hasPromptContent = computed(
+  () => props.promptContent && props.promptContent.trim().length > 0,
+);
 
 const scoreClass = computed(() => {
-  if (!analysisResults.value) return '';
+  if (!analysisResults.value) return "";
   const score = analysisResults.value.overallScore;
-  
-  if (score >= 80) return 'score-excellent';
-  if (score >= 60) return 'score-good';
-  if (score >= 40) return 'score-fair';
-  return 'score-needs-work';
+
+  if (score >= 80) return "score-excellent";
+  if (score >= 60) return "score-good";
+  if (score >= 40) return "score-fair";
+  return "score-needs-work";
 });
 
 // Methods
 const analyzePrompt = async () => {
   if (!hasPromptContent.value) return;
-  
+
   isAnalyzing.value = true;
   analysisError.value = null;
-  
+
   try {
     // This will be replaced with an actual service call
     // to the backend API that handles prompt analysis
     const result = await promptStore.analyzePrompt(props.promptContent);
     analysisResults.value = result;
   } catch (error) {
-    console.error('Error analyzing prompt:', error);
-    analysisError.value = 'Failed to analyze prompt. Please try again.';
+    console.error("Error analyzing prompt:", error);
+    analysisError.value = "Failed to analyze prompt. Please try again.";
   } finally {
     isAnalyzing.value = false;
   }
@@ -191,36 +201,39 @@ const applySuggestion = (suggestion) => {
   // 1. A direct replacement
   // 2. An insertion at a specific position
   // 3. A smart merge of the suggestion with the current content
-  
+
   // For now, we'll implement a simple replacement
   // A more sophisticated implementation would use the suggestion.type
   // to determine how to apply the change
   if (suggestion.replacementText) {
-    emit('update:promptContent', suggestion.replacementText);
+    emit("update:promptContent", suggestion.replacementText);
   }
 };
 
 const provideFeedback = (feedbackType) => {
   if (feedbackProvided.value) return;
-  
+
   // In a real implementation, this would send feedback to the backend
   console.log(`User provided feedback: ${feedbackType}`);
   feedbackProvided.value = true;
-  
+
   // Show a brief feedback acknowledgment
   // This could be handled via a notification system
   alert(`Thank you for your feedback!`);
 };
 
 // Watchers
-watch(() => props.promptContent, () => {
-  // Reset analysis when prompt content changes
-  if (analysisResults.value) {
-    analysisResults.value = null;
-    analysisError.value = null;
-    feedbackProvided.value = false;
-  }
-});
+watch(
+  () => props.promptContent,
+  () => {
+    // Reset analysis when prompt content changes
+    if (analysisResults.value) {
+      analysisResults.value = null;
+      analysisError.value = null;
+      feedbackProvided.value = false;
+    }
+  },
+);
 
 // Lifecycle hooks
 onMounted(() => {
@@ -431,19 +444,19 @@ onMounted(() => {
         font-weight: bold;
         color: white;
         margin-bottom: 8px;
-        
+
         &.score-excellent {
           background-color: var(--success-color, #4caf50);
         }
-        
+
         &.score-good {
           background-color: var(--info-color, #2196f3);
         }
-        
+
         &.score-fair {
           background-color: var(--warning-color, #ff9800);
         }
-        
+
         &.score-needs-work {
           background-color: var(--error-color, #f44336);
         }
@@ -526,7 +539,9 @@ onMounted(() => {
 
 // Animations
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // Media queries for responsiveness
@@ -536,10 +551,10 @@ onMounted(() => {
       flex-direction: column;
       align-items: flex-start;
       gap: 8px;
-      
+
       .header-actions {
         width: 100%;
-        
+
         .analyze-button {
           flex: 1;
           justify-content: center;
@@ -549,7 +564,7 @@ onMounted(() => {
 
     .score-section {
       flex-direction: column;
-      
+
       .score-display {
         margin-bottom: 12px;
       }

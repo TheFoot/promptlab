@@ -74,60 +74,68 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import ModeSelectorComponent from './ModeSelectorComponent.vue';
-import { useContextPanelStore } from '../stores/contextPanelStore';
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import ModeSelectorComponent from "./ModeSelectorComponent.vue";
+import { useContextPanelStore } from "../stores/contextPanelStore";
 
 // Props
 const props = defineProps({
   panelTitle: {
     type: String,
-    default: 'Context Panel'
+    default: "Context Panel",
   },
   showCloseButton: {
     type: Boolean,
-    default: true
+    default: true,
   },
   initialMode: {
     type: String,
-    default: 'edit',
-    validator: (value) => ['edit', 'preview', 'chat', 'design'].includes(value)
+    default: "edit",
+    validator: (value) => ["edit", "preview", "chat", "design"].includes(value),
   },
   availableModes: {
     type: Array,
     default: () => [
-      { value: 'edit', label: 'Edit', icon: 'fas fa-edit' },
-      { value: 'preview', label: 'Preview', icon: 'fas fa-eye' },
-      { value: 'chat', label: 'Chat', icon: 'fas fa-comment' },
-      { value: 'design', label: 'Design', icon: 'fas fa-palette' }
-    ]
+      { value: "edit", label: "Edit", icon: "fas fa-edit" },
+      { value: "preview", label: "Preview", icon: "fas fa-eye" },
+      { value: "chat", label: "Chat", icon: "fas fa-comment" },
+      { value: "design", label: "Design", icon: "fas fa-palette" },
+    ],
   },
   // Control panel expanded state from parent
   expanded: {
     type: Boolean,
-    default: undefined
-  }
+    default: undefined,
+  },
 });
 
 // Set up store access
 const contextPanelStore = useContextPanelStore();
 
 // Set up emits
-const emit = defineEmits(['close', 'resize', 'mode-changed', 'update:expanded']);
+const emit = defineEmits([
+  "close",
+  "resize",
+  "mode-changed",
+  "update:expanded",
+]);
 
 // Local refs and computed properties
 const currentMode = ref(props.initialMode);
 
 // Use store state if not controlled by props
 const isExpanded = computed({
-  get: () => props.expanded !== undefined ? props.expanded : contextPanelStore.isExpanded,
+  get: () =>
+    props.expanded !== undefined
+      ? props.expanded
+      : contextPanelStore.isExpanded,
   set: (value) => {
     if (props.expanded !== undefined) {
-      emit('update:expanded', value);
+      emit("update:expanded", value);
     } else {
       contextPanelStore.setExpanded(value);
     }
-  }
+  },
 });
 
 const panelWidth = computed(() => contextPanelStore.panelWidth);
@@ -138,7 +146,7 @@ watch(
   (newMode) => {
     currentMode.value = newMode;
     contextPanelStore.setActiveMode(newMode);
-  }
+  },
 );
 
 // Watch for prop-controlled expanded state
@@ -148,62 +156,62 @@ watch(
     if (newValue !== undefined) {
       contextPanelStore.setExpanded(newValue);
     }
-  }
+  },
 );
 
 // Methods
 const closePanel = () => {
   isExpanded.value = false;
-  emit('close');
+  emit("close");
 };
 
 const handleModeChange = (mode) => {
   contextPanelStore.setActiveMode(mode);
-  emit('mode-changed', mode);
-  
+  emit("mode-changed", mode);
+
   // Save mode to localStorage for persistence
-  localStorage.setItem('context-panel-mode', mode);
+  localStorage.setItem("context-panel-mode", mode);
 };
 
 // Resize functionality
 const startResize = (e) => {
   e.preventDefault();
-  document.body.style.cursor = 'ew-resize';
+  document.body.style.cursor = "ew-resize";
 
   const initialX = e.clientX;
   const initialWidth = panelWidth.value;
 
   // Send initial resize event
-  emit('resize', initialWidth);
+  emit("resize", initialWidth);
 
   const handleMouseMove = (e) => {
     const newWidth = initialWidth - (e.clientX - initialX);
     if (newWidth > 250 && newWidth < 600) {
       contextPanelStore.setPanelWidth(newWidth);
-      
+
       // Emit resize event with new width
-      emit('resize', newWidth);
+      emit("resize", newWidth);
     }
   };
 
   const handleMouseUp = () => {
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-    document.body.style.cursor = '';
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+    document.body.style.cursor = "";
 
     // Send one final resize event
-    emit('resize', panelWidth.value);
+    emit("resize", panelWidth.value);
   };
 
-  document.addEventListener('mousemove', handleMouseMove);
-  document.addEventListener('mouseup', handleMouseUp);
+  document.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("mouseup", handleMouseUp);
 };
 
 // Lifecycle hooks
 onMounted(() => {
   // Initialize from localStorage
   contextPanelStore.initializeFromStorage();
-  
+
   // Sync local mode with store on mount
   if (contextPanelStore.activeMode !== currentMode.value) {
     currentMode.value = contextPanelStore.activeMode;
@@ -310,7 +318,7 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
   }
-  
+
   // Mode-specific styling can be added here
   .edit-mode-content,
   .preview-mode-content,

@@ -13,7 +13,9 @@ export const useContextPanelStore = defineStore("contextPanel", () => {
     if (["edit", "preview", "chat", "design"].includes(mode)) {
       activeMode.value = mode;
     } else {
-      console.error(`Invalid mode: ${mode}. Must be one of: edit, preview, chat, design`);
+      console.error(
+        `Invalid mode: ${mode}. Must be one of: edit, preview, chat, design`,
+      );
     }
   }
 
@@ -45,7 +47,10 @@ export const useContextPanelStore = defineStore("contextPanel", () => {
     }
 
     const savedMode = localStorage.getItem("context-panel-mode");
-    if (savedMode && ["edit", "preview", "chat", "design"].includes(savedMode)) {
+    if (
+      savedMode &&
+      ["edit", "preview", "chat", "design"].includes(savedMode)
+    ) {
       activeMode.value = savedMode;
     }
   }

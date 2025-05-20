@@ -20,32 +20,33 @@
         </button>
       </div>
     </div>
-    
+
     <div class="variations-list">
       <div
         v-if="!variations.length"
         class="no-variations"
       >
-        No variations created yet. Create a variation to compare different versions of your prompt.
+        No variations created yet. Create a variation to compare different
+        versions of your prompt.
       </div>
-      
-      <div 
-        v-for="(variation, index) in variations" 
+
+      <div
+        v-for="(variation, index) in variations"
         :key="index"
         class="variation-item"
         :class="{ 'is-selected': selectedVariations.includes(index) }"
       >
         <div class="variation-item-header">
           <div class="variation-checkbox">
-            <input 
-              :id="`variation-${index}`" 
-              type="checkbox" 
+            <input
+              :id="`variation-${index}`"
+              type="checkbox"
               :checked="selectedVariations.includes(index)"
               @change="toggleVariationSelection(index)"
             >
             <label :for="`variation-${index}`">Variation {{ index + 1 }}</label>
           </div>
-          
+
           <div class="variation-controls">
             <button
               class="btn-test"
@@ -70,34 +71,38 @@
             </button>
           </div>
         </div>
-        
+
         <div class="variation-content">
           <textarea
             v-model="variations[index].content"
             @change="updateVariation(index)"
           />
         </div>
-        
+
         <div
           v-if="variation.metrics"
           class="variation-metrics"
         >
           <div class="metric">
             <span class="metric-label">Response Time:</span>
-            <span class="metric-value">{{ formatMetric(variation.metrics.responseTime, 'ms') }}</span>
+            <span class="metric-value">{{
+              formatMetric(variation.metrics.responseTime, "ms")
+            }}</span>
           </div>
           <div class="metric">
             <span class="metric-label">Tokens:</span>
-            <span class="metric-value">{{ formatMetric(variation.metrics.tokenCount) }}</span>
+            <span class="metric-value">{{
+              formatMetric(variation.metrics.tokenCount)
+            }}</span>
           </div>
           <div class="metric">
             <span class="metric-label">Cost:</span>
-            <span class="metric-value">${{ formatMetric(variation.metrics.estimatedCost, '', 4) }}</span>
+            <span class="metric-value">${{ formatMetric(variation.metrics.estimatedCost, "", 4) }}</span>
           </div>
         </div>
       </div>
     </div>
-    
+
     <!-- Variation Creation Dialog -->
     <div
       v-if="showCreationDialog"
@@ -148,7 +153,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Results Comparison Modal -->
     <div
       v-if="showComparisonModal"
@@ -178,7 +183,7 @@
                 Variation {{ index + 1 }}
               </div>
             </div>
-            
+
             <div class="comparison-row">
               <div class="comparison-label">
                 Prompt
@@ -193,7 +198,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="comparison-row">
               <div class="comparison-label">
                 Response Time
@@ -203,10 +208,12 @@
                 :key="`time-${index}`"
                 class="comparison-cell"
               >
-                {{ formatMetric(variations[index].metrics?.responseTime, 'ms') }}
+                {{
+                  formatMetric(variations[index].metrics?.responseTime, "ms")
+                }}
               </div>
             </div>
-            
+
             <div class="comparison-row">
               <div class="comparison-label">
                 Token Count
@@ -219,7 +226,7 @@
                 {{ formatMetric(variations[index].metrics?.tokenCount) }}
               </div>
             </div>
-            
+
             <div class="comparison-row">
               <div class="comparison-label">
                 Cost
@@ -229,7 +236,9 @@
                 :key="`cost-${index}`"
                 class="comparison-cell"
               >
-                ${{ formatMetric(variations[index].metrics?.estimatedCost, '', 4) }}
+                ${{
+                  formatMetric(variations[index].metrics?.estimatedCost, "", 4)
+                }}
               </div>
             </div>
           </div>
@@ -240,26 +249,30 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch } from "vue";
 
 // Define props
 const props = defineProps({
   // The current prompt object with id and content
   prompt: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 // Define emits
-const emit = defineEmits(['select-variation', 'test-variation', 'update-variation']);
+const emit = defineEmits([
+  "select-variation",
+  "test-variation",
+  "update-variation",
+]);
 
 // Reactive state
 const variations = ref([]);
 const selectedVariations = ref([]);
 const showCreationDialog = ref(false);
-const newVariationBase = ref('current');
-const newVariationDescription = ref('');
+const newVariationBase = ref("current");
+const newVariationDescription = ref("");
 const showComparisonModal = ref(false);
 
 // Computed properties
@@ -268,13 +281,17 @@ const selectedVariationsForComparison = computed(() => {
 });
 
 // Watch for prompt changes to reset variations if prompt id changes
-watch(() => props.prompt?.id, (newId, oldId) => {
-  if (newId !== oldId) {
-    // Reset variations if prompt changes
-    variations.value = [];
-    selectedVariations.value = [];
-  }
-}, { immediate: true });
+watch(
+  () => props.prompt?.id,
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      // Reset variations if prompt changes
+      variations.value = [];
+      selectedVariations.value = [];
+    }
+  },
+  { immediate: true },
+);
 
 // Methods
 function createNewVariation() {
@@ -283,15 +300,15 @@ function createNewVariation() {
 
 function cancelVariationCreation() {
   showCreationDialog.value = false;
-  newVariationBase.value = 'current';
-  newVariationDescription.value = '';
+  newVariationBase.value = "current";
+  newVariationDescription.value = "";
 }
 
 function confirmVariationCreation() {
   // Determine base content for the new variation
-  let baseContent = '';
-  
-  if (newVariationBase.value === 'current') {
+  let baseContent = "";
+
+  if (newVariationBase.value === "current") {
     baseContent = props.prompt.content;
   } else {
     const baseIndex = parseInt(newVariationBase.value);
@@ -301,24 +318,24 @@ function confirmVariationCreation() {
       baseContent = props.prompt.content;
     }
   }
-  
+
   // Create the new variation
   variations.value.push({
     content: baseContent,
     description: newVariationDescription.value,
     created: new Date().toISOString(),
-    metrics: null
+    metrics: null,
   });
-  
+
   // Close the dialog
   showCreationDialog.value = false;
-  newVariationBase.value = 'current';
-  newVariationDescription.value = '';
+  newVariationBase.value = "current";
+  newVariationDescription.value = "";
 }
 
 function toggleVariationSelection(index) {
   const selectionIndex = selectedVariations.value.indexOf(index);
-  
+
   if (selectionIndex >= 0) {
     // Remove from selection
     selectedVariations.value.splice(selectionIndex, 1);
@@ -329,22 +346,22 @@ function toggleVariationSelection(index) {
 }
 
 function updateVariation(index) {
-  emit('update-variation', {
+  emit("update-variation", {
     index,
-    variation: variations.value[index]
+    variation: variations.value[index],
   });
 }
 
 function testVariation(index) {
-  emit('test-variation', {
+  emit("test-variation", {
     index,
-    variation: variations.value[index]
+    variation: variations.value[index],
   });
 }
 
 function applyVariation(index) {
   if (index >= 0 && index < variations.value.length) {
-    emit('select-variation', variations.value[index]);
+    emit("select-variation", variations.value[index]);
   }
 }
 
@@ -355,15 +372,15 @@ function deleteVariation(index) {
     if (selectionIndex >= 0) {
       selectedVariations.value.splice(selectionIndex, 1);
     }
-    
+
     // Update indexes of other selected variations
-    selectedVariations.value = selectedVariations.value.map(selectedIndex => {
+    selectedVariations.value = selectedVariations.value.map((selectedIndex) => {
       if (selectedIndex > index) {
         return selectedIndex - 1;
       }
       return selectedIndex;
     });
-    
+
     // Remove the variation
     variations.value.splice(index, 1);
   }
@@ -380,22 +397,21 @@ function closeComparisonModal() {
 }
 
 // Helper functions
-function formatMetric(value, unit = '', decimals = 0) {
+function formatMetric(value, unit = "", decimals = 0) {
   if (value === undefined || value === null) {
-    return '--';
+    return "--";
   }
-  
-  const formatted = decimals > 0 
-    ? value.toFixed(decimals)
-    : Math.round(value).toString();
-    
-  return `${formatted}${unit ? ' ' + unit : ''}`;
+
+  const formatted =
+    decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString();
+
+  return `${formatted}${unit ? " " + unit : ""}`;
 }
 
 function truncateText(text, maxLength) {
-  if (!text) return '';
+  if (!text) return "";
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
+  return text.substring(0, maxLength) + "...";
 }
 
 // Methods to expose for the parent to call
@@ -404,7 +420,7 @@ function addVariation(variationContent, metrics = null) {
   variations.value.push({
     content: variationContent,
     created: new Date().toISOString(),
-    metrics
+    metrics,
   });
   return variations.value.length - 1; // Return the index of the new variation
 }
@@ -424,7 +440,7 @@ function clearVariations() {
 defineExpose({
   addVariation,
   updateVariationMetrics,
-  clearVariations
+  clearVariations,
 });
 </script>
 
@@ -441,16 +457,16 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-  
+
   h3 {
     margin: 0;
     font-size: 1.1rem;
   }
-  
+
   .variation-actions {
     display: flex;
     gap: 8px;
-    
+
     button {
       display: flex;
       align-items: center;
@@ -460,19 +476,19 @@ defineExpose({
       border: none;
       cursor: pointer;
       font-size: 0.9rem;
-      
+
       i {
         font-size: 0.9rem;
       }
-      
+
       &.btn-create {
         background-color: var(--color-primary);
         color: white;
       }
-      
+
       &.btn-compare {
         background-color: var(--color-background-mute);
-        
+
         &:disabled {
           opacity: 0.6;
           cursor: not-allowed;
@@ -486,7 +502,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 15px;
-  
+
   .no-variations {
     padding: 20px;
     text-align: center;
@@ -503,11 +519,11 @@ defineExpose({
   border: 1px solid var(--color-border);
   overflow: hidden;
   transition: border-color 0.2s;
-  
+
   &.is-selected {
     border-color: var(--color-primary);
   }
-  
+
   .variation-item-header {
     display: flex;
     justify-content: space-between;
@@ -515,25 +531,25 @@ defineExpose({
     padding: 8px 10px;
     background-color: var(--color-background-mute);
     border-bottom: 1px solid var(--color-border);
-    
+
     .variation-checkbox {
       display: flex;
       align-items: center;
       gap: 5px;
-      
+
       input[type="checkbox"] {
         margin: 0;
       }
-      
+
       label {
         font-weight: 500;
       }
     }
-    
+
     .variation-controls {
       display: flex;
       gap: 5px;
-      
+
       button {
         background: none;
         border: none;
@@ -542,25 +558,25 @@ defineExpose({
         width: 28px;
         height: 28px;
         border-radius: 4px;
-        
+
         &:hover {
           background-color: var(--color-background-soft);
         }
-        
+
         &.btn-apply {
           color: var(--color-success);
         }
-        
+
         &.btn-delete {
           color: var(--color-danger);
         }
       }
     }
   }
-  
+
   .variation-content {
     padding: 10px;
-    
+
     textarea {
       width: 100%;
       min-height: 80px;
@@ -571,7 +587,7 @@ defineExpose({
       font-family: monospace;
     }
   }
-  
+
   .variation-metrics {
     display: flex;
     justify-content: space-around;
@@ -579,17 +595,17 @@ defineExpose({
     background-color: var(--color-background-mute);
     border-top: 1px solid var(--color-border);
     font-size: 0.9rem;
-    
+
     .metric {
       display: flex;
       flex-direction: column;
       align-items: center;
-      
+
       .metric-label {
         font-size: 0.8rem;
         color: var(--color-text-light);
       }
-      
+
       .metric-value {
         font-weight: 500;
       }
@@ -609,50 +625,51 @@ defineExpose({
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  
+
   .dialog-content {
     background-color: var(--color-background);
     border-radius: 8px;
     padding: 20px;
     width: 400px;
     max-width: 90%;
-    
+
     h3 {
       margin-top: 0;
     }
-    
+
     .form-group {
       margin-bottom: 15px;
-      
+
       label {
         display: block;
         margin-bottom: 5px;
       }
-      
-      input, select {
+
+      input,
+      select {
         width: 100%;
         padding: 8px;
         border: 1px solid var(--color-border);
         border-radius: 4px;
       }
     }
-    
+
     .form-action-buttons {
       display: flex;
       justify-content: flex-end;
       gap: 10px;
       margin-top: 20px;
-      
+
       button {
         padding: 8px 15px;
         border-radius: 4px;
         border: none;
         cursor: pointer;
-        
+
         &.btn-cancel {
           background-color: var(--color-background-mute);
         }
-        
+
         &.btn-create {
           background-color: var(--color-primary);
           color: white;
@@ -674,7 +691,7 @@ defineExpose({
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  
+
   .modal-content {
     background-color: var(--color-background);
     border-radius: 8px;
@@ -683,18 +700,18 @@ defineExpose({
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    
+
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 15px 20px;
       border-bottom: 1px solid var(--color-border);
-      
+
       h3 {
         margin: 0;
       }
-      
+
       .btn-close {
         background: none;
         border: none;
@@ -702,38 +719,38 @@ defineExpose({
         cursor: pointer;
       }
     }
-    
+
     .modal-body {
       padding: 20px;
       overflow-y: auto;
       flex: 1;
     }
   }
-  
+
   .comparison-grid {
     display: table;
     width: 100%;
     border-collapse: collapse;
-    
+
     .comparison-header {
       display: table-row;
       background-color: var(--color-background-soft);
       font-weight: bold;
-      
+
       .comparison-cell {
         display: table-cell;
         padding: 10px;
         border: 1px solid var(--color-border);
       }
     }
-    
+
     .comparison-row {
       display: table-row;
-      
+
       &:nth-child(even) {
         background-color: var(--color-background-mute);
       }
-      
+
       .comparison-label {
         display: table-cell;
         font-weight: bold;
@@ -741,12 +758,12 @@ defineExpose({
         border: 1px solid var(--color-border);
         width: 120px;
       }
-      
+
       .comparison-cell {
         display: table-cell;
         padding: 10px;
         border: 1px solid var(--color-border);
-        
+
         .prompt-preview {
           font-family: monospace;
           font-size: 0.9rem;

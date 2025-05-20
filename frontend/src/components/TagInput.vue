@@ -132,7 +132,10 @@ const onKeydown = (event) => {
 .tag-remove {
   background: none;
   border: none;
-  color: var(--tag-remove-color, #444); /* Darker color for better readability */
+  color: var(
+    --tag-remove-color,
+    #444
+  ); /* Darker color for better readability */
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;

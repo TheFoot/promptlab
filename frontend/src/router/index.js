@@ -12,8 +12,8 @@ const routes = [
     name: "home",
     component: HomeView,
     meta: {
-      clearPrompt: true
-    }
+      clearPrompt: true,
+    },
   },
   {
     path: "/prompts/new",

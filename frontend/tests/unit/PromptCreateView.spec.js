@@ -108,7 +108,7 @@ describe("PromptCreateView", () => {
         },
       },
     });
-    
+
     // Toggle to classic mode for tests
     wrapper.vm.useClassicMode = true;
   });

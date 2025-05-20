@@ -72,8 +72,8 @@
           <button
             v-if="!editMode"
             class="btn btn-outline-secondary"
-            @click="navigateToHome"
             title="Close prompt and return to dashboard"
+            @click="navigateToHome"
           >
             Close
           </button>
@@ -187,7 +187,7 @@ const enableEditMode = () => {
 };
 
 const navigateToHome = () => {
-  router.push('/');
+  router.push("/");
 };
 
 const cancelEdit = async () => {
@@ -378,16 +378,16 @@ onMounted(async () => {
   .header-actions {
     display: flex;
     gap: 0.5rem;
-    
+
     .mr-2 {
       margin-right: 0.5rem;
     }
-    
+
     .btn-outline-secondary {
       background-color: transparent;
       border: 1px solid var(--secondary-color);
       color: var(--secondary-color);
-      
+
       &:hover {
         background-color: var(--secondary-color);
         color: white;

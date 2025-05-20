@@ -35,9 +35,15 @@
             class="header-button chat-toggle-button"
             :class="{ active: isChatExpanded, disabled: isChatDisabled }"
             aria-label="Toggle chat"
-            :title="isChatDisabled ? 'Chat unavailable while editing' : (isChatExpanded ? 'Close chat' : 'Open test chat')"
-            @click="toggleChat"
+            :title="
+              isChatDisabled
+                ? 'Chat unavailable while editing'
+                : isChatExpanded
+                  ? 'Close chat'
+                  : 'Open test chat'
+            "
             :disabled="isChatDisabled"
+            @click="toggleChat"
           >
             <!-- Use same icon but with green indicator dot when active -->
             💬
@@ -288,7 +294,7 @@ watch(
     &.active:after {
       opacity: 1;
     }
-    
+
     &.disabled {
       opacity: 0.5;
       cursor: not-allowed;

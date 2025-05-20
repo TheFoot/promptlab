@@ -11,8 +11,8 @@
         <div class="header-content">
           <h2>Create New Prompt</h2>
           <div class="header-actions">
-            <button 
-              class="mode-switch-btn" 
+            <button
+              class="mode-switch-btn"
               title="Switch to Enhanced Prompt Creator"
               @click="toggleCreatorMode"
             >
@@ -94,8 +94,8 @@
         <div class="creator-header">
           <h2>Create New Prompt</h2>
           <div class="header-actions">
-            <button 
-              class="mode-switch-btn classic-mode-btn" 
+            <button
+              class="mode-switch-btn classic-mode-btn"
               title="Switch to Classic Prompt Creator"
               @click="toggleCreatorMode"
             >
@@ -175,7 +175,7 @@ const handlePromptCreated = (newPromptId) => {
   if (newPromptId) {
     router.push(`/prompts/${newPromptId}`);
   } else {
-    router.push('/');
+    router.push("/");
   }
 };
 
@@ -240,7 +240,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  
+
   h2 {
     margin: 0;
     font-size: 1.5rem;
@@ -279,7 +279,7 @@ onUnmounted(() => {
     background-color: #f8f9fa;
     border-color: #dee2e6;
     color: #495057;
-    
+
     &:hover {
       background-color: #e9ecef;
       color: #212529;
@@ -305,7 +305,7 @@ onUnmounted(() => {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
-  
+
   // Remove top border-radius if there's a header
   &:has(.creator-header) {
     border-top-left-radius: 0;

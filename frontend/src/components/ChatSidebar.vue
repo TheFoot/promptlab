@@ -16,7 +16,7 @@
     >
       <div class="chat-header">
         <div class="header-content">
-          <h3>{{ currentPrompt ? 'Test Prompt' : 'Chat Assistant' }}</h3>
+          <h3>{{ currentPrompt ? "Test Prompt" : "Chat Assistant" }}</h3>
           <button
             class="reset-button"
             title="Reset conversation"
@@ -382,7 +382,11 @@ const resetChat = (reason = "manual_reset") => {
   }
 
   // Add the prompt information if available
-  if (currentPrompt.value && reason !== "prompt_change" && reason !== "prompt_cleared") {
+  if (
+    currentPrompt.value &&
+    reason !== "prompt_change" &&
+    reason !== "prompt_cleared"
+  ) {
     resetMessage += ` Testing system prompt: ${currentPrompt.value.title}`;
   } else if (!currentPrompt.value || reason === "prompt_cleared") {
     resetMessage += " No prompt selected.";

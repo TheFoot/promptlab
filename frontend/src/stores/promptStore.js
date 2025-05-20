@@ -207,7 +207,7 @@ export const usePromptStore = defineStore("prompt", () => {
   const analysisResults = ref(null);
   const analysisLoading = ref(false);
   const analysisError = ref(null);
-  
+
   // Template and prompt generation state
   const promptTemplates = ref([]);
   const userTemplates = ref([]);
@@ -221,7 +221,7 @@ export const usePromptStore = defineStore("prompt", () => {
   async function analyzePrompt(promptText, options = {}) {
     analysisLoading.value = true;
     analysisError.value = null;
-    
+
     try {
       const result = await aiAssistService.analyzePrompt(promptText, options);
       analysisResults.value = result;
@@ -236,9 +236,17 @@ export const usePromptStore = defineStore("prompt", () => {
   }
 
   // Submit feedback on analysis results
-  async function submitAnalysisFeedback(analysisId, feedbackType, comments = '') {
+  async function submitAnalysisFeedback(
+    analysisId,
+    feedbackType,
+    comments = "",
+  ) {
     try {
-      return await aiAssistService.submitAnalysisFeedback(analysisId, feedbackType, comments);
+      return await aiAssistService.submitAnalysisFeedback(
+        analysisId,
+        feedbackType,
+        comments,
+      );
     } catch (err) {
       console.error("Error submitting analysis feedback:", err);
       throw err;
@@ -259,14 +267,17 @@ export const usePromptStore = defineStore("prompt", () => {
   async function fetchTestHistory(promptId, options = {}) {
     testHistoryLoading.value = true;
     try {
-      const result = await testHistoryService.getTestHistoryWithFallback(promptId, options);
-      
+      const result = await testHistoryService.getTestHistoryWithFallback(
+        promptId,
+        options,
+      );
+
       if (Array.isArray(result)) {
         testHistory.value = result;
       } else {
         testHistory.value = [];
       }
-      
+
       return testHistory.value;
     } catch (err) {
       console.error("Error fetching test history:", err);
@@ -280,7 +291,10 @@ export const usePromptStore = defineStore("prompt", () => {
   async function fetchTestSession(promptId, sessionId) {
     testHistoryLoading.value = true;
     try {
-      const session = await testHistoryService.getTestSession(promptId, sessionId);
+      const session = await testHistoryService.getTestSession(
+        promptId,
+        sessionId,
+      );
       currentTestSession.value = session;
       return session;
     } catch (err) {
@@ -294,28 +308,32 @@ export const usePromptStore = defineStore("prompt", () => {
   async function saveTestSession(promptId, conversation, metrics = {}) {
     testHistoryLoading.value = true;
     try {
-      const result = await testHistoryService.saveTestSession(promptId, conversation, metrics);
+      const result = await testHistoryService.saveTestSession(
+        promptId,
+        conversation,
+        metrics,
+      );
       currentTestSession.value = result;
-      
+
       // Add to test history if it exists
       if (testHistory.value.length && result) {
         testHistory.value.unshift(result);
       }
-      
+
       return result;
     } catch (err) {
       console.error("Error saving test session:", err);
       // Try local storage fallback
       const fallbackResult = testHistoryService.saveTestSessionToLocalStorage(
-        promptId, 
-        { conversation, metrics, timestamp: new Date().toISOString() }
+        promptId,
+        { conversation, metrics, timestamp: new Date().toISOString() },
       );
-      
+
       if (fallbackResult) {
         currentTestSession.value = fallbackResult;
         testHistory.value.unshift(fallbackResult);
       }
-      
+
       return fallbackResult;
     } finally {
       testHistoryLoading.value = false;
@@ -326,10 +344,12 @@ export const usePromptStore = defineStore("prompt", () => {
     testHistoryLoading.value = true;
     try {
       await testHistoryService.deleteTestSession(promptId, sessionId);
-      
+
       // Remove from test history if it exists
-      testHistory.value = testHistory.value.filter(session => session.id !== sessionId);
-      
+      testHistory.value = testHistory.value.filter(
+        (session) => session.id !== sessionId,
+      );
+
       // Clear current session if it matches
       if (currentTestSession.value?.id === sessionId) {
         currentTestSession.value = null;
@@ -348,9 +368,9 @@ export const usePromptStore = defineStore("prompt", () => {
       promptId,
       timestamp: new Date().toISOString(),
       conversation: [],
-      metrics: {}
+      metrics: {},
     };
-    
+
     return currentTestSession.value;
   }
 
@@ -358,14 +378,15 @@ export const usePromptStore = defineStore("prompt", () => {
   async function fetchPromptVersions(promptId) {
     versionsLoading.value = true;
     try {
-      const result = await promptVersionService.getVersionsWithFallback(promptId);
-      
+      const result =
+        await promptVersionService.getVersionsWithFallback(promptId);
+
       if (Array.isArray(result)) {
         promptVersions.value = result;
       } else {
         promptVersions.value = [];
       }
-      
+
       return promptVersions.value;
     } catch (err) {
       console.error("Error fetching prompt versions:", err);
@@ -376,20 +397,20 @@ export const usePromptStore = defineStore("prompt", () => {
     }
   }
 
-  async function savePromptVersion(promptId, content, description = '') {
+  async function savePromptVersion(promptId, content, description = "") {
     versionsLoading.value = true;
     try {
       const result = await promptVersionService.saveVersionWithFallback(
-        promptId, 
-        content, 
-        { description }
+        promptId,
+        content,
+        { description },
       );
-      
+
       // Add to versions list if it exists
       if (promptVersions.value.length && result) {
         promptVersions.value.unshift(result);
       }
-      
+
       return result;
     } catch (err) {
       console.error("Error saving prompt version:", err);
@@ -404,10 +425,14 @@ export const usePromptStore = defineStore("prompt", () => {
     try {
       compareVersions.value = {
         version1: version1Id,
-        version2: version2Id
+        version2: version2Id,
       };
-      
-      return await promptVersionService.compareVersions(promptId, version1Id, version2Id);
+
+      return await promptVersionService.compareVersions(
+        promptId,
+        version1Id,
+        version2Id,
+      );
     } catch (err) {
       console.error("Error comparing prompt versions:", err);
       throw err;
@@ -419,39 +444,49 @@ export const usePromptStore = defineStore("prompt", () => {
   async function restorePromptVersion(promptId, versionId) {
     versionsLoading.value = true;
     try {
-      const result = await promptVersionService.restoreVersion(promptId, versionId);
-      
+      const result = await promptVersionService.restoreVersion(
+        promptId,
+        versionId,
+      );
+
       // Update current prompt if it matches
       if (currentPrompt.value && currentPrompt.value._id === promptId) {
         currentPrompt.value = {
           ...currentPrompt.value,
-          content: result.content
+          content: result.content,
         };
       }
-      
+
       return result;
     } catch (err) {
       console.error("Error restoring prompt version:", err);
-      
+
       // Fallback to manual restoration
       try {
-        const version = await promptVersionService.getVersionFromLocalStorage(promptId, versionId) ||
-                        promptVersions.value.find(v => v.id === versionId);
-                        
-        if (version && currentPrompt.value && currentPrompt.value._id === promptId) {
+        const version =
+          (await promptVersionService.getVersionFromLocalStorage(
+            promptId,
+            versionId,
+          )) || promptVersions.value.find((v) => v.id === versionId);
+
+        if (
+          version &&
+          currentPrompt.value &&
+          currentPrompt.value._id === promptId
+        ) {
           // Manually update the prompt content
           currentPrompt.value = {
             ...currentPrompt.value,
-            content: version.content
+            content: version.content,
           };
-          
+
           // Save the changes to the server
           return await updatePrompt(promptId, { content: version.content });
         }
       } catch (fallbackErr) {
         console.error("Error in fallback version restoration:", fallbackErr);
       }
-      
+
       throw err;
     } finally {
       versionsLoading.value = false;
@@ -462,7 +497,7 @@ export const usePromptStore = defineStore("prompt", () => {
   async function fetchTemplates(filters = {}) {
     templatesLoading.value = true;
     templatesError.value = null;
-    
+
     try {
       // First try to fetch from API
       const result = await templateService.getTemplates(filters);
@@ -471,10 +506,11 @@ export const usePromptStore = defineStore("prompt", () => {
     } catch (err) {
       console.error("Error fetching templates:", err);
       templatesError.value = "Failed to fetch templates";
-      
+
       // Fallback to mock data for development
       try {
-        const fallbackResult = await templateService.getFallbackTemplates(filters);
+        const fallbackResult =
+          await templateService.getFallbackTemplates(filters);
         promptTemplates.value = fallbackResult;
         return fallbackResult;
       } catch (fallbackErr) {
@@ -485,10 +521,10 @@ export const usePromptStore = defineStore("prompt", () => {
       templatesLoading.value = false;
     }
   }
-  
+
   async function fetchUserTemplates() {
     templatesLoading.value = true;
-    
+
     try {
       const result = await templateService.getUserTemplates();
       userTemplates.value = result;
@@ -502,11 +538,11 @@ export const usePromptStore = defineStore("prompt", () => {
       templatesLoading.value = false;
     }
   }
-  
+
   async function fetchTemplateById(id) {
     templatesLoading.value = true;
     templatesError.value = null;
-    
+
     try {
       return await templateService.getTemplateById(id);
     } catch (err) {
@@ -517,19 +553,19 @@ export const usePromptStore = defineStore("prompt", () => {
       templatesLoading.value = false;
     }
   }
-  
+
   async function saveUserTemplate(template) {
     templatesLoading.value = true;
     templatesError.value = null;
-    
+
     try {
       const result = await templateService.saveUserTemplate(template);
-      
+
       // Add to user templates if they exist
       if (Array.isArray(userTemplates.value)) {
         userTemplates.value.unshift(result);
       }
-      
+
       return result;
     } catch (err) {
       console.error("Error saving user template:", err);
@@ -539,11 +575,11 @@ export const usePromptStore = defineStore("prompt", () => {
       templatesLoading.value = false;
     }
   }
-  
+
   async function applyTemplate(templateId, customizations = {}) {
     templatesLoading.value = true;
     templatesError.value = null;
-    
+
     try {
       return await templateService.applyTemplate(templateId, customizations);
     } catch (err) {
@@ -554,7 +590,7 @@ export const usePromptStore = defineStore("prompt", () => {
       templatesLoading.value = false;
     }
   }
-  
+
   async function fetchPromptTypes() {
     try {
       const result = await templateService.getTemplateTypes();
@@ -566,7 +602,7 @@ export const usePromptStore = defineStore("prompt", () => {
       return [];
     }
   }
-  
+
   async function fetchPromptPurposes() {
     try {
       const result = await templateService.getTemplatePurposes();
@@ -578,24 +614,32 @@ export const usePromptStore = defineStore("prompt", () => {
       return [];
     }
   }
-  
+
   async function generatePromptFromQuestionnaire(answers) {
     generationInProgress.value = true;
-    
+
     try {
-      console.log('promptStore: Calling generateFromQuestionnaire with answers', answers);
+      console.log(
+        "promptStore: Calling generateFromQuestionnaire with answers",
+        answers,
+      );
       // Try API first
-      const result = await promptGenerationService.generateFromQuestionnaire(answers);
-      console.log('promptStore: Received result from promptGenerationService', result);
+      const result =
+        await promptGenerationService.generateFromQuestionnaire(answers);
+      console.log(
+        "promptStore: Received result from promptGenerationService",
+        result,
+      );
       return result;
     } catch (err) {
       console.error("Error generating prompt from questionnaire:", err);
-      
+
       // Fallback to mock generation for development
       try {
-        console.log('promptStore: Trying fallback mock generation');
-        const mockResult = await promptGenerationService.mockGenerateFromQuestionnaire(answers);
-        console.log('promptStore: Received mock result', mockResult);
+        console.log("promptStore: Trying fallback mock generation");
+        const mockResult =
+          await promptGenerationService.mockGenerateFromQuestionnaire(answers);
+        console.log("promptStore: Received mock result", mockResult);
         return mockResult;
       } catch (fallbackErr) {
         console.error("Error in fallback prompt generation:", fallbackErr);
@@ -605,19 +649,22 @@ export const usePromptStore = defineStore("prompt", () => {
       generationInProgress.value = false;
     }
   }
-  
+
   async function refinePrompt(content, instructions) {
     generationInProgress.value = true;
-    
+
     try {
       // Try API first
       return await promptGenerationService.refinePrompt(content, instructions);
     } catch (err) {
       console.error("Error refining prompt:", err);
-      
+
       // Fallback to mock refinement for development
       try {
-        return await promptGenerationService.mockRefinePrompt(content, instructions);
+        return await promptGenerationService.mockRefinePrompt(
+          content,
+          instructions,
+        );
       } catch (fallbackErr) {
         console.error("Error in fallback prompt refinement:", fallbackErr);
         throw err;
@@ -626,10 +673,10 @@ export const usePromptStore = defineStore("prompt", () => {
       generationInProgress.value = false;
     }
   }
-  
+
   async function generateSections(type, sections) {
     generationInProgress.value = true;
-    
+
     try {
       return await promptGenerationService.generateSections(type, sections);
     } catch (err) {
@@ -639,41 +686,45 @@ export const usePromptStore = defineStore("prompt", () => {
       generationInProgress.value = false;
     }
   }
-  
+
   async function generateTitleAndTags(content) {
     generationInProgress.value = true;
-    
+
     try {
       return await promptGenerationService.generateTitleAndTags(content);
     } catch (err) {
       console.error("Error generating title and tags:", err);
-      
+
       // Fallback with simple extraction
       return {
-        title: content.split('\n')[0].replace(/^#\s*/, '') || 'New Prompt',
-        tags: []
+        title: content.split("\n")[0].replace(/^#\s*/, "") || "New Prompt",
+        tags: [],
       };
     } finally {
       generationInProgress.value = false;
     }
   }
-  
+
   async function comparePromptContents(originalContent, newContent) {
     generationInProgress.value = true;
-    
+
     try {
-      return await promptGenerationService.comparePrompts(originalContent, newContent);
+      return await promptGenerationService.comparePrompts(
+        originalContent,
+        newContent,
+      );
     } catch (err) {
       console.error("Error comparing prompts:", err);
-      
+
       // Simple fallback just noting there are differences
       return {
         differences: [
-          { 
-            type: 'note', 
-            description: 'The content has changed, but detailed comparison is not available.'
-          }
-        ]
+          {
+            type: "note",
+            description:
+              "The content has changed, but detailed comparison is not available.",
+          },
+        ],
       };
     } finally {
       generationInProgress.value = false;
@@ -699,7 +750,7 @@ export const usePromptStore = defineStore("prompt", () => {
     compareVersions,
     testHistoryLoading,
     versionsLoading,
-    
+
     // Template and generation state
     promptTemplates,
     userTemplates,
@@ -725,25 +776,25 @@ export const usePromptStore = defineStore("prompt", () => {
     setSearchQuery,
     setSelectedTag,
     clearFilters,
-    
+
     // AI Analysis Actions
     analyzePrompt,
     submitAnalysisFeedback,
     getAnalysisTemplates,
-    
+
     // Test History Actions
     fetchTestHistory,
     fetchTestSession,
     saveTestSession,
     deleteTestSession,
     startNewTestSession,
-    
+
     // Version Control Actions
     fetchPromptVersions,
     savePromptVersion,
     comparePromptVersions,
     restorePromptVersion,
-    
+
     // Template and Generation Actions
     fetchTemplates,
     fetchUserTemplates,
@@ -756,6 +807,6 @@ export const usePromptStore = defineStore("prompt", () => {
     refinePrompt,
     generateSections,
     generateTitleAndTags,
-    comparePromptContents
+    comparePromptContents,
   };
 });
