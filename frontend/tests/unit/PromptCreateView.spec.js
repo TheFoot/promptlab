@@ -11,9 +11,9 @@ vi.mock("../../src/components/MarkdownPreview.vue", () => ({
   default: {
     name: "MarkdownPreview",
     render() {
-      return h("div", { class: "mock-markdown-preview" }, this.content);
+      return h("div", { class: "mock-markdown-preview" }, this.markdown);
     },
-    props: ["content"],
+    props: ["markdown"],
   },
 }));
 
@@ -88,6 +88,17 @@ describe("PromptCreateView", () => {
     // Mock router.push
     router.push = vi.fn();
 
+    // Mock EnhancedPromptCreator component before mounting
+    vi.mock("../../src/components/EnhancedPromptCreator.vue", () => ({
+      default: {
+        name: "EnhancedPromptCreator",
+        render() {
+          return h("div", { class: "mock-enhanced-prompt-creator" });
+        },
+        emits: ["prompt-created"],
+      },
+    }));
+
     // Mount component with stubs
     wrapper = mount(PromptCreateView, {
       global: {
@@ -97,6 +108,9 @@ describe("PromptCreateView", () => {
         },
       },
     });
+    
+    // Toggle to classic mode for tests
+    wrapper.vm.useClassicMode = true;
   });
 
   afterEach(() => {
@@ -251,6 +265,6 @@ describe("PromptCreateView", () => {
 
     // Find MarkdownPreview and check its props
     const preview = wrapper.findComponent({ name: "MarkdownPreview" });
-    expect(preview.props("content")).toBe(testContent);
+    expect(preview.props("markdown")).toBe(testContent);
   });
 });
