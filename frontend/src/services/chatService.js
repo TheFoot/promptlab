@@ -160,10 +160,7 @@ function resetChat(reason = "manual_reset", currentPrompt = null) {
  * @param {Object} currentPrompt - The current prompt being used (optional)
  * @returns {Promise<Array>} - Updated messages array
  */
-async function sendMessage(
-  messageText,
-  currentPrompt = null,
-) {
+async function sendMessage(messageText, currentPrompt = null) {
   if (!messageText.trim() || _state.isLoading) return _state.messages;
 
   // Add user message to chat
