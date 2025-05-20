@@ -20,7 +20,7 @@ const getPrompts = async (req, res) => {
 
     const prompts = await Prompt.find(query)
       .sort({ updatedAt: -1 }) // Sort by most recently updated
-      .select("title content tags updatedAt");
+      .select("title tags updatedAt");
 
     res.json(prompts);
   } catch (error) {
