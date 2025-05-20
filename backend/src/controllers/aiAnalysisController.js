@@ -181,12 +181,10 @@ export async function getPromptSuggestionHistory(req, res) {
     return res.status(200).json([]);
   } catch (error) {
     global.logger.error("Error fetching suggestion history", error);
-    return res
-      .status(500)
-      .json({
-        message: "Error fetching suggestion history",
-        error: error.message,
-      });
+    return res.status(500).json({
+      message: "Error fetching suggestion history",
+      error: error.message,
+    });
   }
 }
 
@@ -500,12 +498,10 @@ export async function getPromptVersions(req, res) {
     return res.status(200).json(versionSummaries);
   } catch (error) {
     global.logger.error("Error fetching prompt versions", error);
-    return res
-      .status(500)
-      .json({
-        message: "Error fetching prompt versions",
-        error: error.message,
-      });
+    return res.status(500).json({
+      message: "Error fetching prompt versions",
+      error: error.message,
+    });
   }
 }
 
@@ -579,9 +575,8 @@ export async function generatePrompt(req, res) {
       .join("\n");
 
     // Instructions for generating a prompt
-    const systemPrompt = 
-      `You are an expert AI prompt engineer. Your task is to create a well-structured, 
-effective prompt based on the questionnaire answers provided.
+    const systemPrompt = `You are an expert AI prompt engineer. Your task is to create a 
+well-structured, effective prompt based on the questionnaire answers provided.
 Create a prompt that matches the requirements in the questionnaire answers exactly.
 Format your response as a complete, well-structured markdown document with appropriate 
 headings and sections.
@@ -668,12 +663,10 @@ export async function restorePromptVersion(req, res) {
     });
   } catch (error) {
     global.logger.error("Error restoring prompt version", error);
-    return res
-      .status(500)
-      .json({
-        message: "Error restoring prompt version",
-        error: error.message,
-      });
+    return res.status(500).json({
+      message: "Error restoring prompt version",
+      error: error.message,
+    });
   }
 }
 
@@ -684,13 +677,7 @@ export async function restorePromptVersion(req, res) {
  * @returns {string} The system prompt
  */
 function buildAnalysisSystemPrompt(
-  aspects = [
-    "clarity", 
-    "conciseness", 
-    "context", 
-    "specificity", 
-    "formatting"
-  ],
+  aspects = ["clarity", "conciseness", "context", "specificity", "formatting"],
 ) {
   return `You're an expert prompt engineer. Analyze the prompt and provide constructive feedback.
 Focus on these aspects: ${aspects.join(", ")}.
@@ -746,29 +733,31 @@ async function getProviderClient() {
 
       return {
         overallScore: 75,
-        summary: 
-          "Your prompt is generally clear but could be more specific in certain areas. " + 
+        summary:
+          "Your prompt is generally clear but could be more specific in certain areas. " +
           "Adding more context would help the AI understand exactly what you're looking for.",
         suggestions: [
           {
             category: "clarity",
             title: "Clarify the main objective",
             description:
-              "The prompt's main goal is somewhat ambiguous. " + 
+              "The prompt's main goal is somewhat ambiguous. " +
               "Making it explicit will help the AI focus on what's most important.",
             originalText:
               "I want you to analyze this data and give me insights.",
             replacementText:
-              "I want you to analyze this financial data and give me insights " + 
+              "I want you to analyze this financial data and give me insights " +
               "about revenue trends over the past quarter.",
             alternatives: [
               {
-                text: "Analyze this financial data and identify the top 3 factors " + 
-                      "affecting our revenue this quarter.",
+                text:
+                  "Analyze this financial data and identify the top 3 factors " +
+                  "affecting our revenue this quarter.",
               },
               {
-                text: "Review this financial dataset and provide specific insights " + 
-                      "on cost reduction opportunities and revenue growth.",
+                text:
+                  "Review this financial dataset and provide specific insights " +
+                  "on cost reduction opportunities and revenue growth.",
               },
             ],
           },
@@ -779,7 +768,7 @@ async function getProviderClient() {
               "Including examples of insights you want would help guide the response.",
             originalText: "",
             replacementText:
-              "For example, I'd like to know if there are any unexpected spikes or drops " + 
+              "For example, I'd like to know if there are any unexpected spikes or drops " +
               "in our monthly sales figures, and what might have caused them.",
             alternatives: [],
           },
