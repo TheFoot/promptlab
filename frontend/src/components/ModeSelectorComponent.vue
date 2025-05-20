@@ -24,30 +24,30 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits } from "vue";
 
-const props = defineProps({
+defineProps({
   modelValue: {
     type: String,
     required: true,
-    validator: (value) => ['edit', 'preview', 'chat', 'design'].includes(value)
+    validator: (value) => ["edit", "preview", "chat", "design"].includes(value),
   },
   availableModes: {
     type: Array,
     default: () => [
-      { value: 'edit', label: 'Edit', icon: 'fas fa-edit' },
-      { value: 'preview', label: 'Preview', icon: 'fas fa-eye' },
-      { value: 'chat', label: 'Chat', icon: 'fas fa-comment' },
-      { value: 'design', label: 'Design', icon: 'fas fa-palette' }
-    ]
-  }
+      { value: "edit", label: "Edit", icon: "fas fa-edit" },
+      { value: "preview", label: "Preview", icon: "fas fa-eye" },
+      { value: "chat", label: "Chat", icon: "fas fa-comment" },
+      { value: "design", label: "Design", icon: "fas fa-palette" },
+    ],
+  },
 });
 
-const emit = defineEmits(['update:modelValue', 'mode-changed']);
+const emit = defineEmits(["update:modelValue", "mode-changed"]);
 
 const selectMode = (mode) => {
-  emit('update:modelValue', mode);
-  emit('mode-changed', mode);
+  emit("update:modelValue", mode);
+  emit("mode-changed", mode);
 };
 </script>
 
@@ -73,24 +73,24 @@ const selectMode = (mode) => {
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text-color, #333);
-  
+
   &:hover {
     background-color: var(--hover-color, #e9e9e9);
   }
-  
+
   &--active {
     background-color: var(--primary-color, #4a6cf7);
     color: white;
-    
+
     &:hover {
       background-color: var(--primary-color-dark, #3a5ce7);
     }
   }
-  
+
   &__icon {
     font-size: 0.9em;
   }
-  
+
   &__label {
     font-size: 0.9em;
     font-weight: 500;
@@ -101,7 +101,7 @@ const selectMode = (mode) => {
   .mode-button__label {
     display: none;
   }
-  
+
   .mode-button {
     padding: 0.75rem;
   }

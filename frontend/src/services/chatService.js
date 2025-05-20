@@ -1,14 +1,14 @@
 // chatService.js - Handles chat functionality and integrations
 
 /**
- * Chat Service 
+ * Chat Service
  * Manages chat communication with AI models, handles WebSocket connections and state
  */
 
 // Import necessary services
 import alertService from "./alertService";
 import modelConfigService from "./modelConfigService";
-import { renderMarkdown, downloadCodeBlock } from "./markdownService";
+import { renderMarkdown } from "./markdownService";
 
 // Module state - using symbols for private fields
 const _state = {
@@ -24,7 +24,7 @@ const _state = {
   availableProviders: [],
   availableModels: [],
   providerDisplayNames: {},
-  modelDisplayNames: {}
+  modelDisplayNames: {},
 };
 
 /**
@@ -50,7 +50,8 @@ async function loadModelConfiguration() {
     _state.providerDisplayNames = config.providers.displayNames;
 
     // Always set the provider from config default or first available
-    _state.modelConfig.provider = config.providers.default || _state.availableProviders[0] || "";
+    _state.modelConfig.provider =
+      config.providers.default || _state.availableProviders[0] || "";
     console.log("Setting default provider to:", _state.modelConfig.provider);
 
     // Update available models for selected provider
@@ -79,7 +80,8 @@ async function updateAvailableModels() {
     _state.modelDisplayNames = config.models[provider]?.displayNames || {};
 
     // Always use the default model from config
-    _state.modelConfig.model = config.models[provider]?.default || _state.availableModels[0] || "";
+    _state.modelConfig.model =
+      config.models[provider]?.default || _state.availableModels[0] || "";
     console.log("Setting default model to:", _state.modelConfig.model);
   } catch (error) {
     console.error("Failed to update model list:", error);
@@ -114,9 +116,11 @@ function resetChat(reason = "manual_reset", currentPrompt = null) {
     case "model_change":
       // Model or provider change message
       resetMessage = `Chat reset due to model change. Now using: ${
-        _state.providerDisplayNames[_state.modelConfig.provider] || _state.modelConfig.provider
+        _state.providerDisplayNames[_state.modelConfig.provider] ||
+        _state.modelConfig.provider
       } / ${
-        _state.modelDisplayNames[_state.modelConfig.model] || _state.modelConfig.model
+        _state.modelDisplayNames[_state.modelConfig.model] ||
+        _state.modelConfig.model
       }`;
       break;
     case "prompt_change":
@@ -154,10 +158,12 @@ function resetChat(reason = "manual_reset", currentPrompt = null) {
  * Send message via chat
  * @param {string} messageText - The message text to send
  * @param {Object} currentPrompt - The current prompt being used (optional)
- * @param {Function} onChunkReceived - Callback to handle streaming chunks (optional)
  * @returns {Promise<Array>} - Updated messages array
  */
-async function sendMessage(messageText, currentPrompt = null, onChunkReceived = null) {
+async function sendMessage(
+  messageText,
+  currentPrompt = null,
+) {
   if (!messageText.trim() || _state.isLoading) return _state.messages;
 
   // Add user message to chat
@@ -174,7 +180,9 @@ async function sendMessage(messageText, currentPrompt = null, onChunkReceived = 
     const messageObj = {
       messages: [
         // Add system message with the current prompt content
-        ...(currentPrompt?.content ? [{ role: "system", content: currentPrompt.content }] : []),
+        ...(currentPrompt?.content
+          ? [{ role: "system", content: currentPrompt.content }]
+          : []),
         // Add all user and assistant messages
         ..._state.messages.filter((m) => m.role !== "system"),
       ],
@@ -211,7 +219,10 @@ async function sendMessage(messageText, currentPrompt = null, onChunkReceived = 
       }
 
       const data = await response.json();
-      const messageContent = typeof data.message === "string" ? data.message : String(data.message || "");
+      const messageContent =
+        typeof data.message === "string"
+          ? data.message
+          : String(data.message || "");
 
       _state.messages.push({
         role: "assistant",
@@ -403,10 +414,10 @@ function getState() {
 function updateModelConfig(config) {
   const previousProvider = _state.modelConfig.provider;
   const previousModel = _state.modelConfig.model;
-  
+
   // Update config with provided values
   Object.assign(_state.modelConfig, config);
-  
+
   // If provider changed, update available models
   if (config.provider && config.provider !== previousProvider) {
     handleProviderChange();
@@ -415,7 +426,7 @@ function updateModelConfig(config) {
   else if (config.model && config.model !== previousModel) {
     resetChat("model_change");
   }
-  
+
   return { ..._state.modelConfig };
 }
 
