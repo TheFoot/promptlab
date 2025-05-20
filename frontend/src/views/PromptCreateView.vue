@@ -4,13 +4,28 @@
       <PromptSidebar />
     </div>
     <div class="prompt-create-container">
-      <div class="prompt-header">
+      <div
+        v-if="useClassicMode"
+        class="prompt-header"
+      >
         <div class="header-content">
           <h2>Create New Prompt</h2>
+          <div class="header-actions">
+            <button
+              class="mode-switch-btn"
+              title="Switch to Enhanced Prompt Creator"
+              @click="toggleCreatorMode"
+            >
+              <i class="fas fa-magic" />
+              Enhanced Mode
+            </button>
+          </div>
         </div>
       </div>
 
+      <!-- Classic Prompt Creator -->
       <form
+        v-if="useClassicMode"
         class="prompt-form"
         @submit.prevent="savePrompt"
       >
@@ -50,7 +65,7 @@
             <div class="preview-header">
               Preview
             </div>
-            <MarkdownPreview :content="prompt.content" />
+            <MarkdownPreview :markdown="prompt.content" />
           </div>
         </div>
 
@@ -70,28 +85,58 @@
           </router-link>
         </div>
       </form>
+
+      <!-- Enhanced Prompt Creator -->
+      <div
+        v-else
+        class="enhanced-creator-container"
+      >
+        <div class="creator-header">
+          <h2>Create New Prompt</h2>
+          <div class="header-actions">
+            <button
+              class="mode-switch-btn classic-mode-btn"
+              title="Switch to Classic Prompt Creator"
+              @click="toggleCreatorMode"
+            >
+              <i class="fas fa-edit" />
+              Classic Mode
+            </button>
+          </div>
+        </div>
+        <EnhancedPromptCreator @prompt-created="handlePromptCreated" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { usePromptStore } from "../stores/promptStore";
+import { useUiStore } from "../stores/uiStore";
 import PromptSidebar from "../components/PromptSidebar.vue";
 import MarkdownPreview from "../components/MarkdownPreview.vue";
 import TagInput from "../components/TagInput.vue";
+import EnhancedPromptCreator from "../components/EnhancedPromptCreator.vue";
 
 const router = useRouter();
 const promptStore = usePromptStore();
+const uiStore = useUiStore();
 
 // Component state
 const saving = ref(false);
+const useClassicMode = ref(false); // Default to enhanced mode
 const prompt = ref({
   title: "",
   content: "",
   tags: [],
 });
+
+// Toggle between classic and enhanced creator modes
+const toggleCreatorMode = () => {
+  useClassicMode.value = !useClassicMode.value;
+};
 
 // Methods
 const savePrompt = async () => {
@@ -124,6 +169,24 @@ const savePrompt = async () => {
     saving.value = false;
   }
 };
+
+// Handle prompt creation from enhanced creator
+const handlePromptCreated = (newPromptId) => {
+  if (newPromptId) {
+    router.push(`/prompts/${newPromptId}`);
+  } else {
+    router.push("/");
+  }
+};
+
+// Set edit mode flag when component is mounted and clear it when unmounted
+onMounted(() => {
+  uiStore.setEditMode(true);
+});
+
+onUnmounted(() => {
+  uiStore.setEditMode(false);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -158,9 +221,69 @@ const savePrompt = async () => {
   border-radius: 8px 8px 0 0;
   border: 1px solid var(--border-color);
 
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
   h2 {
     margin: 0;
     color: var(--text-color);
+  }
+}
+
+.creator-header {
+  padding: 1rem;
+  background-color: var(--card-bg-color);
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-color);
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mode-switch-btn {
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-color-light, #e3f2fd);
+  border: 1px solid var(--primary-color, #1976d2);
+  border-radius: 4px;
+  color: var(--primary-color, #1976d2);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: var(--primary-color, #1976d2);
+    color: white;
+  }
+
+  i {
+    font-size: 1rem;
+  }
+
+  &.classic-mode-btn {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #495057;
+
+    &:hover {
+      background-color: #e9ecef;
+      color: #212529;
+    }
   }
 }
 
@@ -173,6 +296,22 @@ const savePrompt = async () => {
   border-top: none;
   border-radius: 0 0 8px 8px;
   padding: 1rem;
+}
+
+.enhanced-creator-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+
+  // Remove top border-radius if there's a header
+  &:has(.creator-header) {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: none;
+  }
 }
 
 .form-group {

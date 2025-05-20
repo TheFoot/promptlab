@@ -24,10 +24,13 @@ const setupPromptQueryMock = (results) => {
 };
 
 const assertErrorHandling = (res, statusCode, errorMessage) => {
-  assert.ok(res.status.calledWith(statusCode), `Should return ${statusCode} status code`);
+  assert.ok(
+    res.status.calledWith(statusCode),
+    `Should return ${statusCode} status code`,
+  );
   assert.ok(
     res.json.calledWith({ message: errorMessage }),
-    "Should return correct error message"
+    "Should return correct error message",
   );
 };
 
@@ -42,7 +45,11 @@ describe("Prompt Controller", () => {
   });
 
   describe("getPrompts", () => {
-    const runGetPromptsTest = async (queryParams, mockPrompts, expectedFilter) => {
+    const runGetPromptsTest = async (
+      queryParams,
+      mockPrompts,
+      expectedFilter,
+    ) => {
       // Arrange
       const mockPromptQuery = setupPromptQueryMock(mockPrompts);
       const { req, res } = mockExpressReqRes({ query: queryParams });
@@ -51,14 +58,17 @@ describe("Prompt Controller", () => {
       await getPrompts(req, res);
 
       // Assert
-      assert.ok(Prompt.find.calledWith(expectedFilter), "Should query with correct filter");
+      assert.ok(
+        Prompt.find.calledWith(expectedFilter),
+        "Should query with correct filter",
+      );
       assert.ok(
         mockPromptQuery.sort.calledWith({ updatedAt: -1 }),
-        "Should sort by updatedAt descending"
+        "Should sort by updatedAt descending",
       );
       assert.ok(
         mockPromptQuery.select.calledWith("title tags updatedAt"),
-        "Should select specific fields"
+        "Should select specific fields",
       );
       assert.ok(res.json.calledWith(mockPrompts), "Should return prompts list");
     };
@@ -75,11 +85,9 @@ describe("Prompt Controller", () => {
       const mockPrompts = [
         { _id: "1", title: "Test Prompt", tags: [], updatedAt: new Date() },
       ];
-      await runGetPromptsTest(
-        { search: "test query" },
-        mockPrompts,
-        { $text: { $search: "test query" } }
-      );
+      await runGetPromptsTest({ search: "test query" }, mockPrompts, {
+        $text: { $search: "test query" },
+      });
     });
 
     it("should apply tag filter when tag param is provided", async () => {
@@ -91,11 +99,9 @@ describe("Prompt Controller", () => {
           updatedAt: new Date(),
         },
       ];
-      await runGetPromptsTest(
-        { tag: "test-tag" },
-        mockPrompts,
-        { tags: "test-tag" }
-      );
+      await runGetPromptsTest({ tag: "test-tag" }, mockPrompts, {
+        tags: "test-tag",
+      });
     });
 
     it("should apply both search and tag filters when both are provided", async () => {
@@ -110,7 +116,7 @@ describe("Prompt Controller", () => {
       await runGetPromptsTest(
         { search: "filter", tag: "filter-tag" },
         mockPrompts,
-        { $text: { $search: "filter" }, tags: "filter-tag" }
+        { $text: { $search: "filter" }, tags: "filter-tag" },
       );
     });
 
@@ -152,7 +158,7 @@ describe("Prompt Controller", () => {
       // Assert
       assert.ok(
         Prompt.findById.calledWith("valid-id"),
-        "Should query with correct ID"
+        "Should query with correct ID",
       );
       assert.ok(res.json.calledWith(mockPrompt), "Should return the prompt");
     });
@@ -205,7 +211,7 @@ describe("Prompt Controller", () => {
       assert.ok(res.status.calledWith(201), "Should return 201 status code");
       assert.ok(
         res.json.calledWith(savedPrompt),
-        "Should return created prompt"
+        "Should return created prompt",
       );
     };
 
@@ -215,12 +221,12 @@ describe("Prompt Controller", () => {
         content: "New content",
         tags: ["new", "test"],
       };
-      
+
       const savedPrompt = {
         _id: "new-id",
         ...promptData,
       };
-      
+
       await testSuccessfulCreate(promptData, savedPrompt);
     });
 
@@ -230,13 +236,13 @@ describe("Prompt Controller", () => {
         content: "New content",
         // No tags
       };
-      
+
       const savedPrompt = {
         _id: "new-id",
         ...promptData,
         tags: [], // Empty tags array
       };
-      
+
       await testSuccessfulCreate(promptData, savedPrompt);
     });
 
@@ -324,11 +330,11 @@ describe("Prompt Controller", () => {
           new: true,
           runValidators: true,
         }),
-        "Should call findByIdAndUpdate with correct arguments"
+        "Should call findByIdAndUpdate with correct arguments",
       );
       assert.ok(
         res.json.calledWith(updatedPrompt),
-        "Should return updated prompt"
+        "Should return updated prompt",
       );
     });
 
@@ -396,11 +402,11 @@ describe("Prompt Controller", () => {
       // Assert
       assert.ok(
         Prompt.findByIdAndDelete.calledWith(promptId),
-        "Should call findByIdAndDelete with correct ID"
+        "Should call findByIdAndDelete with correct ID",
       );
       assert.ok(
         res.json.calledWith({ message: "Prompt deleted successfully" }),
-        "Should return success message"
+        "Should return success message",
       );
     });
 
