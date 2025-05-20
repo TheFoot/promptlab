@@ -64,10 +64,18 @@
         <div class="header-actions">
           <button
             v-if="!editMode"
-            class="btn btn-secondary"
+            class="btn btn-secondary mr-2"
             @click="enableEditMode"
           >
             Edit
+          </button>
+          <button
+            v-if="!editMode"
+            class="btn btn-outline-secondary"
+            @click="navigateToHome"
+            title="Close prompt and return to dashboard"
+          >
+            Close
           </button>
           <template v-else>
             <button
@@ -176,6 +184,10 @@ const enableEditMode = () => {
     tags: [...prompt.value.tags],
   };
   editMode.value = true;
+};
+
+const navigateToHome = () => {
+  router.push('/');
 };
 
 const cancelEdit = async () => {
@@ -366,6 +378,21 @@ onMounted(async () => {
   .header-actions {
     display: flex;
     gap: 0.5rem;
+    
+    .mr-2 {
+      margin-right: 0.5rem;
+    }
+    
+    .btn-outline-secondary {
+      background-color: transparent;
+      border: 1px solid var(--secondary-color);
+      color: var(--secondary-color);
+      
+      &:hover {
+        background-color: var(--secondary-color);
+        color: white;
+      }
+    }
   }
 }
 

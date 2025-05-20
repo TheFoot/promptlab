@@ -45,6 +45,10 @@ const promptStore = usePromptStore();
 
 // Fetch prompts when component is mounted
 onMounted(async () => {
+  // Explicitly clear the current prompt when navigating to home
+  // This will ensure chat assistant doesn't use a previous prompt
+  promptStore.currentPrompt = null;
+
   if (promptStore.prompts.length === 0) {
     await promptStore.fetchPrompts();
   }

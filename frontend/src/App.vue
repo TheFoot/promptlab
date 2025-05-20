@@ -30,14 +30,14 @@
             <span v-else>🌙</span>
           </button>
 
-          <!-- Chat toggle button - only show when not in edit mode -->
+          <!-- Chat toggle button - always visible but disabled when creating/editing -->
           <button
-            v-if="!isChatDisabled"
             class="header-button chat-toggle-button"
-            :class="{ active: isChatExpanded }"
+            :class="{ active: isChatExpanded, disabled: isChatDisabled }"
             aria-label="Toggle chat"
-            :title="isChatExpanded ? 'Close chat' : 'Open test chat'"
+            :title="isChatDisabled ? 'Chat unavailable while editing' : (isChatExpanded ? 'Close chat' : 'Open test chat')"
             @click="toggleChat"
+            :disabled="isChatDisabled"
           >
             <!-- Use same icon but with green indicator dot when active -->
             💬
@@ -287,6 +287,11 @@ watch(
 
     &.active:after {
       opacity: 1;
+    }
+    
+    &.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   }
 }

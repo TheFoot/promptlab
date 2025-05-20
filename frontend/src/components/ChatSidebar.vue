@@ -16,7 +16,7 @@
     >
       <div class="chat-header">
         <div class="header-content">
-          <h3>Test Prompt</h3>
+          <h3>{{ currentPrompt ? 'Test Prompt' : 'Chat Assistant' }}</h3>
           <button
             class="reset-button"
             title="Reset conversation"
@@ -382,8 +382,10 @@ const resetChat = (reason = "manual_reset") => {
   }
 
   // Add the prompt information if available
-  if (currentPrompt.value && reason !== "prompt_change") {
+  if (currentPrompt.value && reason !== "prompt_change" && reason !== "prompt_cleared") {
     resetMessage += ` Testing system prompt: ${currentPrompt.value.title}`;
+  } else if (!currentPrompt.value || reason === "prompt_cleared") {
+    resetMessage += " No prompt selected.";
   }
 
   // Add the system message
@@ -438,10 +440,10 @@ const sendMessage = async () => {
     // Create message object for API
     const messageObj = {
       messages: [
-        // Add system message with the current prompt content
+        // Add system message with the current prompt content only if there is a prompt
         ...(currentPrompt.value?.content
           ? [{ role: "system", content: currentPrompt.value.content }]
-          : []),
+          : [{ role: "system", content: "You are a helpful assistant." }]), // Default system message when no prompt is selected
         // Add all user and assistant messages
         ...messages.value.filter((m) => m.role !== "system"),
       ],
@@ -695,6 +697,9 @@ watch(
     if (newPrompt) {
       // Reset the chat history when the prompt changes
       resetChat("prompt_change");
+    } else {
+      // Clear chat when prompt is cleared
+      resetChat("prompt_cleared");
     }
   },
 );
