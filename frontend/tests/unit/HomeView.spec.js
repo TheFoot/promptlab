@@ -118,7 +118,7 @@ describe("HomeView.vue", () => {
     // Check that it displays the prompt count
     expect(wrapper.find(".existing-prompts-message").exists()).toBe(true);
     expect(wrapper.find(".existing-prompts-message").text()).toContain(
-      "You have 2 prompts available",
+      "You have 2 prompts in your laboratory",
     );
   });
 
@@ -134,7 +134,7 @@ describe("HomeView.vue", () => {
 
     // Check that it uses singular form
     expect(wrapper.find(".existing-prompts-message").text()).toContain(
-      "You have 1 prompt available",
+      "You have 1 prompt in your laboratory",
     );
   });
 });
