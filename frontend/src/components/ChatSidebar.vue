@@ -2,33 +2,59 @@
   <div
     v-if="!disabled"
     class="chat-sidebar"
-    :class="{ 'chat-sidebar-expanded': isExpanded }"
+    :class="{ 
+      'chat-sidebar-expanded': isExpanded,
+      'embedded-mode': embedded
+    }"
   >
     <div
-      v-if="isExpanded"
+      v-if="isExpanded && !embedded"
       class="resize-handle"
       @mousedown="startResize"
     />
 
     <div
-      v-if="isExpanded"
+      v-if="isExpanded || embedded"
       class="chat-content"
     >
-      <div class="chat-header">
-        <div class="header-content">
-          <h3>{{ currentPrompt ? "Test Prompt" : "Chat Assistant" }}</h3>
+      <div class="chat-toolbar">
+        <div class="toolbar-left">
+          <!-- Future toolbar items can go here -->
+        </div>
+        <div class="toolbar-right">
           <button
-            class="reset-button"
+            class="reset-btn"
             title="Reset conversation"
             @click="() => resetChat('manual_reset')"
           >
-            Reset
+            🔄 Reset
+          </button>
+          <button
+            v-if="agentMode === 'design'"
+            class="analyze-btn"
+            title="Analyze current prompt"
+            @click="analyzeCurrentPrompt"
+          >
+            🔍 Analyze
           </button>
         </div>
       </div>
 
       <div class="chat-controls">
-        <div class="chat-settings">
+        <div
+          class="settings-header"
+          @click="toggleSettings"
+        >
+          <span class="settings-title">Agent Settings</span>
+          <span
+            class="settings-toggle"
+            :class="{ expanded: settingsExpanded[agentMode] }"
+          >▼</span>
+        </div>
+        <div 
+          v-show="settingsExpanded[agentMode]" 
+          class="chat-settings"
+        >
           <div class="settings-row">
             <label for="provider-select">Provider:</label>
             <select
@@ -73,6 +99,62 @@
               step="0.1"
             >
           </div>
+
+          <!-- Conversation-level system message attachment for chat mode -->
+          <div 
+            v-if="agentMode === 'chat' && getPromptContent()"
+            class="conversation-attachment"
+          >
+            <div class="attachment-header">
+              <div class="attachment-icon">
+                📎
+              </div>
+              <div class="attachment-label">
+                System Instructions
+              </div>
+            </div>
+            <div class="prompt-attachment">
+              <div class="attachment-icon">
+                ⚙️
+              </div>
+              <div class="attachment-content">
+                <div class="attachment-title">
+                  {{ currentPrompt?.title || 'System Prompt' }}
+                </div>
+                <div class="attachment-preview">
+                  {{ getPromptContent().substring(0, 100) }}{{ getPromptContent().length > 100 ? '...' : '' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Conversation-level prompt attachment for design mode -->
+          <div 
+            v-if="agentMode === 'design' && currentPrompt?.content"
+            class="conversation-attachment"
+          >
+            <div class="attachment-header">
+              <div class="attachment-icon">
+                📎
+              </div>
+              <div class="attachment-label">
+                Attached to conversation
+              </div>
+            </div>
+            <div class="prompt-attachment">
+              <div class="attachment-icon">
+                📄
+              </div>
+              <div class="attachment-content">
+                <div class="attachment-title">
+                  {{ currentPrompt.title || 'Untitled Prompt' }}
+                </div>
+                <div class="attachment-preview">
+                  {{ currentPrompt.content.substring(0, 100) }}{{ currentPrompt.content.length > 100 ? '...' : '' }}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -89,13 +171,20 @@
             'assistant-message': message.role === 'assistant',
           }"
         >
-          <div class="message-role">
-            {{ message.role === "user" ? "You" : "Assistant" }}
+          <div
+            class="message-role"
+            :class="{ 'error-message': message.isError }"
+          >
+            {{ message.role === "user" ? "You" : (agentMode === 'design' ? "Design Agent" : "Chat Agent") }}
+            <span
+              v-if="message.isError"
+              class="error-indicator"
+            >⚠️</span>
           </div>
           <div
             class="message-content"
             @dblclick="copyMessageToClipboard(message.content)"
-            v-html="formatMessage(message.content)"
+            v-html="formatMessageWithPlaceholders(message)"
           />
         </div>
         <div
@@ -164,6 +253,22 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // For embedded mode in DynamicContextPanel
+  embedded: {
+    type: Boolean,
+    default: false,
+  },
+  // Override system prompt instead of using current prompt
+  systemPrompt: {
+    type: String,
+    default: null,
+  },
+  // Agent mode: 'chat' (test prompts) or 'design' (design assistant)
+  agentMode: {
+    type: String,
+    default: 'chat',
+    validator: (value) => ['chat', 'design'].includes(value),
+  },
 });
 
 // Watch for parent-controlled expanded state
@@ -200,8 +305,8 @@ watch(
 
 // We use the markdownService for rendering markdown content
 
-// Initialize expanded state from props
-const isExpanded = ref(props.expanded);
+// Initialize expanded state from props - always expanded in embedded mode
+const isExpanded = ref(props.expanded || props.embedded);
 const messages = ref([]);
 const newMessage = ref("");
 const isLoading = ref(false);
@@ -222,8 +327,32 @@ const availableModels = ref([]);
 const providerDisplayNames = ref({});
 const modelDisplayNames = ref({});
 
-// Get current prompt from store
-const currentPrompt = computed(() => promptStore.currentPrompt);
+// Settings visibility state - track per agent mode
+const settingsExpanded = ref({
+  chat: false,
+  design: false
+});
+
+// Check if this is a new browser session
+const isNewSession = ref(false);
+
+// Get current prompt from store or props
+const currentPrompt = computed(() => {
+  // Always use the store prompt for full data (title, content, etc.)
+  // The systemPrompt prop is just for overriding the content for the AI
+  return promptStore.currentPrompt;
+});
+
+// Get the content to use for AI system message
+const getPromptContent = () => {
+  if (props.systemPrompt) {
+    return props.systemPrompt;
+  }
+  return currentPrompt.value?.content;
+};
+
+// System messages are now handled server-side via agents
+// The agent system on the server will build appropriate system prompts
 
 // Define emits
 const emit = defineEmits(["toggle", "resize"]);
@@ -352,51 +481,184 @@ const handleProviderChange = async () => {
   resetChat("model_change");
 };
 
+// Toggle settings visibility
+const toggleSettings = () => {
+  settingsExpanded.value[props.agentMode] = !settingsExpanded.value[props.agentMode];
+  // Save state to localStorage
+  localStorage.setItem(`chat-settings-expanded-${props.agentMode}`, settingsExpanded.value[props.agentMode].toString());
+};
+
+// Close settings when user starts interacting
+const closeSettingsOnInteraction = () => {
+  if (settingsExpanded.value[props.agentMode]) {
+    settingsExpanded.value[props.agentMode] = false;
+    localStorage.setItem(`chat-settings-expanded-${props.agentMode}`, 'false');
+  }
+};
+
 // Reset chat conversation
 const resetChat = (reason = "manual_reset") => {
   messages.value = [];
 
-  // Add appropriate system message based on reset reason
+  // Add appropriate system message based on reset reason and agent mode
   let resetMessage = "";
 
-  switch (reason) {
-    case "model_change":
-      // Model or provider change message
-      resetMessage = `Chat reset due to model change. Now using: ${providerDisplayNames.value[modelConfig.provider] || modelConfig.provider} / ${modelDisplayNames.value[modelConfig.model] || modelConfig.model}`;
-      break;
-    case "prompt_change":
-      // Prompt change message
-      resetMessage = `Chat reset due to prompt change. Now testing: ${currentPrompt.value?.title || "Unknown prompt"}`;
-      break;
-    case "manual_reset":
-      // Manual reset by user
-      resetMessage = "Chat manually reset.";
-      break;
-    case "init":
-      // Initial setup
-      resetMessage = "Chat initialized.";
-      break;
-    default:
-      // Default message
-      resetMessage = "Chat reset.";
+  if (props.agentMode === 'design') {
+    // Design agent reset messages
+    switch (reason) {
+      case "model_change":
+        resetMessage = `Model changed to ${providerDisplayNames.value[modelConfig.provider] || modelConfig.provider} / ${modelDisplayNames.value[modelConfig.model] || modelConfig.model}. Ready to analyze prompts with the new model.`;
+        break;
+      case "prompt_change":
+        resetMessage = currentPrompt.value?.title 
+          ? `Now working with **${currentPrompt.value.title}**. I'm here to help analyze and improve it.`
+          : "Now working with your prompt. I'm here to help analyze and improve it.";
+        break;
+      case "manual_reset":
+        resetMessage = currentPrompt.value?.title 
+          ? `Hi! I'm here to help you analyze and improve your prompt **${currentPrompt.value.title}**. Click the Analyze button to get started, or feel free to ask me anything about prompt design.`
+          : "Hi! I'm here to help you analyze and improve your prompt. Click the Analyze button to get started, or feel free to ask me anything about prompt design.";
+        break;
+      case "init":
+        resetMessage = currentPrompt.value?.title 
+          ? `Hi! I'm here to help you analyze and improve your prompt **${currentPrompt.value.title}**. Click the Analyze button to get started, or feel free to ask me anything about prompt design.`
+          : "Hi! I'm here to help you analyze and improve your prompt. Click the Analyze button to get started, or feel free to ask me anything about prompt design.";
+        break;
+      default:
+        resetMessage = "I'm ready to help you with prompt analysis and design.";
+    }
+  } else {
+    // Chat agent reset messages  
+    switch (reason) {
+      case "model_change":
+        resetMessage = `Model changed to ${providerDisplayNames.value[modelConfig.provider] || modelConfig.provider} / ${modelDisplayNames.value[modelConfig.model] || modelConfig.model}. Let's continue testing your prompt.`;
+        break;
+      case "prompt_change":
+        resetMessage = currentPrompt.value?.title 
+          ? `Now testing **${currentPrompt.value.title}**. I'm ready to respond using this prompt as my system instructions.`
+          : "Now testing your prompt. I'm ready to respond using this prompt as my system instructions.";
+        break;
+      case "manual_reset":
+        resetMessage = currentPrompt.value?.title 
+          ? `Hello! I'm ready to help you test your prompt **${currentPrompt.value.title}**. Go ahead and ask me anything to see how I respond with your prompt instructions.`
+          : "Hello! I'm ready to help you test your prompt. Go ahead and ask me anything to see how I respond with your prompt instructions.";
+        break;
+      case "init":
+        resetMessage = currentPrompt.value?.title 
+          ? `Hello! I'm ready to help you test your prompt **${currentPrompt.value.title}**. Go ahead and ask me anything to see how I respond with your prompt instructions.`
+          : "Hello! I'm ready to help you test your prompt. Go ahead and ask me anything to see how I respond with your prompt instructions.";
+        break;
+      default:
+        resetMessage = "Ready to test your prompt.";
+    }
   }
 
-  // Add the prompt information if available
-  if (
-    currentPrompt.value &&
-    reason !== "prompt_change" &&
-    reason !== "prompt_cleared"
-  ) {
-    resetMessage += ` Testing system prompt: ${currentPrompt.value.title}`;
-  } else if (!currentPrompt.value || reason === "prompt_cleared") {
+  // Add prompt information only if no prompt is available
+  if (!currentPrompt.value || reason === "prompt_cleared") {
     resetMessage += " No prompt selected.";
   }
 
-  // Add the system message
+  // Add the assistant message (so it displays with markdown rendering)
   messages.value.push({
-    role: "system",
+    role: "assistant",
     content: resetMessage,
   });
+};
+
+// Analyze current prompt (for design agent mode)
+const analyzeCurrentPrompt = () => {
+  if (!currentPrompt.value?.content) {
+    alertService.showAlert("No prompt available to analyze", "warning", 3000);
+    return;
+  }
+
+  // Close settings on interaction
+  closeSettingsOnInteraction();
+
+  // Create clean analysis message (no attachment - server handles prompt automatically)
+  const analysisMessage = "Please analyze this prompt.";
+  
+  // Add user message to chat without attachment (server-side will handle prompt)
+  messages.value.push({
+    role: "user", 
+    content: analysisMessage
+  });
+
+  // Auto-send the analysis request
+  sendAnalysisMessage();
+};
+
+// Send analysis message (modified version of sendMessage for auto-analysis)
+const sendAnalysisMessage = async () => {
+  if (isLoading.value) return;
+
+  // Scroll to bottom after new message
+  await nextTick();
+  scrollToBottom();
+
+  // Set loading state
+  isLoading.value = true;
+
+  try {
+    // Create message object for API
+    const messageObj = {
+      messages: [
+        // Add all user and assistant messages (server will handle system message via agent)
+        ...messages.value
+          .filter((m) => m.role !== "system")
+          .map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
+      ],
+      provider: modelConfig.provider,
+      model: modelConfig.model,
+      temperature: modelConfig.temperature,
+      stream: true,
+      agentType: props.agentMode,
+      promptContent: getPromptContent(),
+      promptTitle: currentPrompt.value?.title,
+    };
+
+    if (socket.value && socket.value.readyState === WebSocket.OPEN) {
+      socket.value.send(JSON.stringify(messageObj));
+    } else {
+      console.log("WebSocket not connected, using REST API fallback");
+      const apiUrl = "/api/chat";
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(messageObj),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(JSON.stringify(errorData));
+      }
+
+      const data = await response.json();
+      const messageContent =
+        typeof data.message === "string"
+          ? data.message
+          : String(data.message || "");
+
+      messages.value.push({
+        role: "assistant",
+        content: messageContent,
+      });
+    }
+  } catch (error) {
+    messages.value.push({
+      role: "assistant",
+      content: parseErrorMessage(error.message || error),
+      isError: true,
+    });
+  } finally {
+    isLoading.value = false;
+    scrollToBottom();
+  }
 };
 
 // Copy message to clipboard
@@ -415,9 +677,66 @@ const formatMessage = (content) => {
   return renderMarkdown(content);
 };
 
+// Format message with prompt placeholders as badges
+const formatMessageWithPlaceholders = (message) => {
+  
+  if (!message.hasPromptPlaceholder) {
+    return formatMessage(message.content);
+  }
+
+  // Replace prompt placeholders with discrete badges
+  const contentWithBadges = message.content.replace(
+    /<current-prompt>(.*?)<\/current-prompt>/g,
+    '<span class="prompt-placeholder-badge" title="Current prompt will be inserted here">📄 $1</span>'
+  );
+
+  return formatMessage(contentWithBadges);
+};
+
+// Parse error into human-readable message
+const parseErrorMessage = (error) => {
+  // Log full error to console
+  console.error("Full error details:", error);
+
+  // Try to extract meaningful error message
+  if (typeof error === 'string') {
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(error);
+      // Look for common error message properties
+      return parsed.message || parsed.error || parsed.details || parsed.msg || "An unexpected error occurred.";
+    } catch {
+      // If not JSON, check if it looks like a JSON string that failed to parse
+      if (error.includes('"message"') || error.includes('"error"')) {
+        // Try to extract message property using regex as fallback
+        const messageMatch = error.match(/"message"\s*:\s*"([^"]+)"/);
+        if (messageMatch) {
+          return messageMatch[1];
+        }
+        const errorMatch = error.match(/"error"\s*:\s*"([^"]+)"/);
+        if (errorMatch) {
+          return errorMatch[1];
+        }
+      }
+      // If not JSON-like, return the string directly (but clean it up)
+      return error.replace(/^Error:\s*/, '');
+    }
+  }
+  
+  if (error && typeof error === 'object') {
+    // Extract message from error object
+    return error.message || error.error || error.details || error.msg || "An unexpected error occurred.";
+  }
+  
+  return "An unexpected error occurred.";
+};
+
 // Send message function
 const sendMessage = async () => {
   if (!newMessage.value.trim() || isLoading.value) return;
+
+  // Close settings on first interaction
+  closeSettingsOnInteraction();
 
   // Add user message to chat
   messages.value.push({
@@ -444,17 +763,21 @@ const sendMessage = async () => {
     // Create message object for API
     const messageObj = {
       messages: [
-        // Add system message with the current prompt content only if there is a prompt
-        ...(currentPrompt.value?.content
-          ? [{ role: "system", content: currentPrompt.value.content }]
-          : [{ role: "system", content: "You are a helpful assistant." }]), // Default system message when no prompt is selected
-        // Add all user and assistant messages
-        ...messages.value.filter((m) => m.role !== "system"),
+        // Add all user and assistant messages (server will handle system message via agent)
+        ...messages.value
+          .filter((m) => m.role !== "system")
+          .map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
       ],
       provider: modelConfig.provider,
       model: modelConfig.model,
       temperature: modelConfig.temperature,
       stream: true,
+      agentType: props.agentMode,
+      promptContent: getPromptContent(),
+      promptTitle: currentPrompt.value?.title,
     };
 
     if (socket.value && socket.value.readyState === WebSocket.OPEN) {
@@ -480,7 +803,8 @@ const sendMessage = async () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to send message");
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(JSON.stringify(errorData));
       }
 
       const data = await response.json();
@@ -495,10 +819,10 @@ const sendMessage = async () => {
       });
     }
   } catch (error) {
-    console.error("Error sending message:", error);
     messages.value.push({
       role: "assistant",
-      content: "Sorry, there was an error processing your request.",
+      content: parseErrorMessage(error.message || error),
+      isError: true,
     });
   } finally {
     isLoading.value = false;
@@ -586,11 +910,17 @@ const setupWebSocket = () => {
         isLoading.value = false;
         scrollToBottom();
       } else if (data.type === "error") {
-        console.error("WebSocket error from server:", data.error);
         isLoading.value = false;
+        
+        // Remove any empty message that might have been created on "start"
+        if (messages.value.length > 0 && messages.value[messages.value.length - 1].content === "") {
+          messages.value.pop();
+        }
+        
         messages.value.push({
           role: "assistant",
-          content: `Error: ${data.error}`,
+          content: parseErrorMessage(data.error),
+          isError: true,
         });
         scrollToBottom();
       } else if (data.type === "info") {
@@ -659,6 +989,21 @@ onMounted(async () => {
     if (width >= 250 && width <= 600) {
       sidebarWidth.value = width;
     }
+  }
+
+  // Initialize settings visibility state
+  const sessionKey = 'chat-session-initialized';
+  const isNewSessionValue = !localStorage.getItem(sessionKey);
+  isNewSession.value = isNewSessionValue;
+  
+  // For new sessions, show settings expanded
+  if (isNewSessionValue) {
+    settingsExpanded.value[props.agentMode] = true;
+    localStorage.setItem(sessionKey, 'true');
+  } else {
+    // Load saved state for this agent mode
+    const savedState = localStorage.getItem(`chat-settings-expanded-${props.agentMode}`);
+    settingsExpanded.value[props.agentMode] = savedState === 'true';
   }
 
   // Initialize with a clean slate
@@ -742,6 +1087,15 @@ watch(
     width: 400px;
     transition: none; /* Disable transition when resizing */
   }
+
+  &.embedded-mode {
+    position: static;
+    width: 100% !important;
+    height: 100%;
+    border-left: none;
+    box-shadow: none;
+    border-radius: 0;
+  }
   /* Toggle button removed - now in the main app header */
 
   .resize-handle {
@@ -769,58 +1123,121 @@ watch(
     overflow: hidden;
   }
 
-  .chat-header {
-    padding: 0 15px;
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--primary-color);
-    color: white;
-    height: 50px; /* Slightly smaller than app header */
-    box-sizing: border-box;
+  .chat-toolbar {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-
-    .header-content {
+    padding: 0.5rem 1rem;
+    background-color: var(--surface-color, #f8f9fa);
+    border-bottom: 1px solid var(--border-color);
+    min-height: 40px;
+    
+    /* Make toolbar stand out with subtle different background */
+    @media (prefers-color-scheme: dark) {
+      background-color: #2d2d2d;
+    }
+    
+    .toolbar-left {
+      flex: 1;
+    }
+    
+    .toolbar-right {
       display: flex;
-      width: 100%;
-      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    
+    .reset-btn {
+      padding: 0.25rem 0.75rem;
+      background-color: transparent;
+      color: var(--secondary-color, #6c757d);
+      border: 1px solid var(--secondary-color, #6c757d);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
       align-items: center;
+      gap: 0.5rem;
+      
+      &:hover:not(:disabled) {
+        background-color: var(--secondary-color, #6c757d);
+        color: white;
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     }
 
-    h3 {
-      margin: 0;
-      font-size: 1.2rem;
-    }
-
-    .reset-button {
-      background: rgba(255, 255, 255, 0.2);
+    .analyze-btn {
+      padding: 0.25rem 0.75rem;
+      background-color: var(--primary-color);
       color: white;
       border: none;
       border-radius: 4px;
-      padding: 5px 10px;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       cursor: pointer;
-      transition: background-color 0.2s;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.3);
+      transition: background-color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      
+      &:hover:not(:disabled) {
+        background-color: var(--primary-color-dark, #3a5ce7);
       }
-
-      &:active {
-        background: rgba(255, 255, 255, 0.4);
+      
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
     }
   }
 
   .chat-controls {
-    padding: 10px 15px;
     border-bottom: 1px solid var(--border-color);
     background-color: rgba(74, 108, 247, 0.05);
 
+    .settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: rgba(74, 108, 247, 0.08);
+      }
+
+      .settings-title {
+        font-weight: 500;
+        font-size: 0.9rem;
+        color: var(--text-color);
+      }
+
+      .settings-toggle {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        transition: transform 0.2s ease;
+
+        &.expanded {
+          transform: rotate(180deg);
+        }
+      }
+    }
+
     .chat-settings {
+      padding: 10px 15px 10px 15px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+      background-color: rgba(74, 108, 247, 0.02);
+      
+      @media (prefers-color-scheme: dark) {
+        background-color: rgba(0, 0, 0, 0.1);
+      }
     }
 
     .settings-row {
@@ -864,6 +1281,16 @@ watch(
     display: flex;
     flex-direction: column;
     gap: 15px;
+    
+    /* Subtle inset shadow to create depth - same as editor */
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 
+                inset 0 1px 2px rgba(0, 0, 0, 0.1);
+
+    /* Better contrast in dark mode */
+    @media (prefers-color-scheme: dark) {
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 
+                  inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
   }
 
   .chat-message {
@@ -890,10 +1317,26 @@ watch(
       }
     }
 
+
     .message-role {
       font-weight: bold;
       font-size: 0.8rem;
       margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      &.error-message {
+        color: #dc3545; /* Red color for errors */
+        
+        @media (prefers-color-scheme: dark) {
+          color: #ff6b6b; /* Lighter red for dark mode */
+        }
+      }
+    }
+
+    .error-indicator {
+      font-size: 0.7rem;
     }
 
     .message-content {
@@ -937,6 +1380,92 @@ watch(
       :deep(ol) {
         padding-left: 20px;
         margin-bottom: 10px;
+      }
+
+      // Prompt placeholder badge styling
+      :deep(.prompt-placeholder-badge) {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        background-color: rgba(74, 108, 247, 0.1);
+        color: var(--primary-color);
+        padding: 0.15rem 0.4rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: 1px solid rgba(74, 108, 247, 0.2);
+        cursor: help;
+        
+        @media (prefers-color-scheme: dark) {
+          background-color: rgba(74, 108, 247, 0.2);
+          border-color: rgba(74, 108, 247, 0.3);
+        }
+      }
+    }
+  }
+
+  .conversation-attachment {
+    padding: 0.75rem;
+    background-color: rgba(34, 197, 94, 0.05);
+    border-bottom: 1px solid rgba(34, 197, 94, 0.15);
+    
+    @media (prefers-color-scheme: dark) {
+      background-color: rgba(34, 197, 94, 0.1);
+      border-bottom-color: rgba(34, 197, 94, 0.25);
+    }
+
+    .attachment-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      
+      .attachment-icon {
+        font-size: 0.9rem;
+      }
+      
+      .attachment-label {
+        font-weight: 500;
+      }
+    }
+
+    .prompt-attachment {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background-color: rgba(74, 108, 247, 0.05);
+      border: 1px solid rgba(74, 108, 247, 0.15);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.85rem;
+
+      @media (prefers-color-scheme: dark) {
+        background-color: rgba(74, 108, 247, 0.1);
+        border-color: rgba(74, 108, 247, 0.25);
+      }
+
+      .attachment-icon {
+        font-size: 1.1rem;
+        flex-shrink: 0;
+      }
+
+      .attachment-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .attachment-title {
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 0.25rem;
+      }
+
+      .attachment-preview {
+        color: var(--text-secondary);
+        line-height: 1.4;
+        word-break: break-word;
       }
     }
   }

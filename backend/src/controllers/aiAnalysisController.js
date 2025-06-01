@@ -6,6 +6,9 @@
  */
 
 import providers from "../config/providers.js";
+import { v4 as uuidv4 } from "uuid";
+import { AnalysisModelFactory } from "../services/aiAnalysisModelFactory.js";
+import { buildAnalysisSystemPrompt } from "../prompts/analysisPrompts.js";
 
 // In-memory store for test sessions and prompt versions
 // In a production environment, these would be stored in a database
@@ -213,8 +216,8 @@ export async function saveTestSession(req, res) {
       return res.status(400).json({ message: "Conversation data is required" });
     }
 
-    // Create a new test session
-    const sessionId = `session_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    // Create a new test session with UUID
+    const sessionId = uuidv4();
     const newSession = {
       id: sessionId,
       promptId,
@@ -435,8 +438,8 @@ export async function savePromptVersion(req, res) {
         ? Math.max(...promptVersionsList.map((v) => v.versionNumber)) + 1
         : 1;
 
-    // Create new version
-    const versionId = `version_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    // Create new version with UUID
+    const versionId = uuidv4();
     const newVersion = {
       id: versionId,
       promptId,
@@ -574,15 +577,11 @@ export async function generatePrompt(req, res) {
       })
       .join("\n");
 
-    // Instructions for generating a prompt
-    const systemPrompt = `You are an expert AI prompt engineer. Your task is to create a 
-well-structured, effective prompt based on the questionnaire answers provided.
-Create a prompt that matches the requirements in the questionnaire answers exactly.
-Format your response as a complete, well-structured markdown document with appropriate 
-headings and sections.
-Focus on clarity, specificity, and providing enough context for the AI to understand 
-the request precisely.
-The prompt should be ready to use without further modification.`;
+    // Get prompt template from analysisPrompts.js
+    const { promptGenerationSystem } = await import(
+      "../prompts/analysisPrompts.js"
+    );
+    const systemPrompt = promptGenerationSystem;
 
     // Build messages array for the AI
     const messages = [
@@ -597,15 +596,17 @@ The prompt should be ready to use without further modification.`;
     const providerClient = await getProviderClient(provider, model);
 
     // Call the AI with the prepared messages
-    // For now we'll simulate this with a mock response
     const promptContent = await providerClient.generateContent(messages);
-    console.log("Generated prompt content of length:", promptContent.length);
+    global.logger.debug(
+      "Generated prompt content of length:",
+      promptContent.length,
+    );
 
     // Generate a title and tags based on the content and questionnaire
     const title = generateTitleFromContent(promptContent, answers);
     const suggestedTags = generateTagsFromAnswers(answers);
 
-    console.log(
+    global.logger.debug(
       "Returning response with content length:",
       promptContent.length,
       "title:",
@@ -670,46 +671,9 @@ export async function restorePromptVersion(req, res) {
   }
 }
 
-/**
- * Build the system prompt for analysis based on requested aspects
- *
- * @param {Array<string>} aspects - Aspects to analyze
- * @returns {string} The system prompt
- */
-function buildAnalysisSystemPrompt(
-  aspects = ["clarity", "conciseness", "context", "specificity", "formatting"],
-) {
-  return `You're an expert prompt engineer. Analyze the prompt and provide constructive feedback.
-Focus on these aspects: ${aspects.join(", ")}.
+// Removed prompt template - now imported from analysisPrompts.js
 
-For your analysis, provide:
-1. An overall score (0-100)
-2. A brief summary of the prompt's strengths and weaknesses
-3. Specific suggestions for improvement, with:
-   - The issue identified
-   - The reason it's problematic
-   - A specific replacement or addition
-   - One or more alternative suggestions when relevant
-
-Format your response as valid JSON with this structure:
-{
-  "overallScore": number,
-  "summary": "brief overall assessment",
-  "suggestions": [
-    {
-      "category": "one of: clarity, conciseness, context, specificity, formatting",
-      "title": "short issue description",
-      "description": "detailed explanation",
-      "originalText": "text to be improved (if applicable)",
-      "replacementText": "suggested improvement",
-      "alternatives": [
-        { "text": "first alternative" },
-        { "text": "second alternative" }
-      ]
-    }
-  ]
-}`;
-}
+// Removed class definitions - now imported from separate files
 
 /**
  * Get the provider-specific client for AI calls
@@ -718,170 +682,9 @@ Format your response as valid JSON with this structure:
  * @param {string} model - Model name (optional)
  * @returns {Object} Provider client
  */
-async function getProviderClient() {
-  // This is a placeholder implementation
-  // In a real implementation, this would initialize the appropriate client
-  // based on the specified provider and model
-
-  return {
-    generateAnalysis: async () => {
-      // This mock implementation returns a sample analysis result
-      // In a real implementation, this would call the provider's API
-
-      // A slight delay to simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      return {
-        overallScore: 75,
-        summary:
-          "Your prompt is generally clear but could be more specific in certain areas. " +
-          "Adding more context would help the AI understand exactly what you're looking for.",
-        suggestions: [
-          {
-            category: "clarity",
-            title: "Clarify the main objective",
-            description:
-              "The prompt's main goal is somewhat ambiguous. " +
-              "Making it explicit will help the AI focus on what's most important.",
-            originalText:
-              "I want you to analyze this data and give me insights.",
-            replacementText:
-              "I want you to analyze this financial data and give me insights " +
-              "about revenue trends over the past quarter.",
-            alternatives: [
-              {
-                text:
-                  "Analyze this financial data and identify the top 3 factors " +
-                  "affecting our revenue this quarter.",
-              },
-              {
-                text:
-                  "Review this financial dataset and provide specific insights " +
-                  "on cost reduction opportunities and revenue growth.",
-              },
-            ],
-          },
-          {
-            category: "specificity",
-            title: "Add specific examples",
-            description:
-              "Including examples of insights you want would help guide the response.",
-            originalText: "",
-            replacementText:
-              "For example, I'd like to know if there are any unexpected spikes or drops " +
-              "in our monthly sales figures, and what might have caused them.",
-            alternatives: [],
-          },
-        ],
-      };
-    },
-
-    // New method for generating content
-    generateContent: async (messages) => {
-      // This mock implementation returns a sample generated prompt
-      // In a real implementation, this would call the provider's API
-
-      // A slight delay to simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Extract the type from messages to customize the response
-      const userMessage =
-        messages.find((m) => m.role === "user")?.content || "";
-      const promptType =
-        (userMessage.match(/promptType:\s*(\w+)/) || [])[1] || "general";
-
-      // Create a sample prompt based on type and purpose
-      let promptContent = "";
-
-      if (promptType === "coding" || userMessage.includes("coding")) {
-        promptContent = `# Code Generation Prompt
-
-## Task Description
-I need you to generate [programming language] code that accomplishes the following task:
-[Detailed description of the functionality needed]
-
-## Requirements
-- The code should be well-structured and follow best practices
-- Include clear comments explaining the logic
-- Handle edge cases appropriately
-- Optimize for [performance/readability/maintainability]
-
-## Input Format
-[Description of input data format or parameters]
-
-## Expected Output
-[Description of expected output or behavior]
-
-## Example
-[Optional: Example of similar code or input/output examples]
-
-## Additional Notes
-- [Any constraints or specific requirements]
-- [Any preferences for implementation approach]
-- If you have questions about the requirements, please ask for clarification before proceeding.`;
-      } else if (
-        promptType === "creative" ||
-        userMessage.includes("creative")
-      ) {
-        promptContent = `# Creative Writing Prompt
-
-## Writing Task
-Create a [story/poem/script] about [subject] with the following elements:
-
-## Elements to Include
-- [Character types or specific characters]
-- [Setting details]
-- [Themes to explore]
-- [Plot elements or structure]
-
-## Style and Tone
-- Write in a [formal/casual/poetic/etc.] tone
-- Use [first/third] person perspective
-- The overall mood should be [descriptive terms for mood]
-
-## Length and Structure
-- Approximately [length requirement] in total
-- Structure should include [specific structural elements]
-
-## Additional Guidelines
-- [Any specific constraints]
-- [Any elements to avoid]
-- Feel free to be creative while maintaining the core requirements above`;
-      } else {
-        promptContent = `# General Purpose Prompt
-
-## Objective
-[Clear statement of what you need the AI to do]
-
-## Background Context
-[Relevant background information that helps understand the task]
-
-## Specific Instructions
-1. [First specific instruction or step]
-2. [Second specific instruction or step]
-3. [Third specific instruction or step]
-
-## Format Requirements
-- [How the response should be formatted]
-- [Any specific sections to include]
-- [Length expectations]
-
-## Examples
-[Example of the type of response you're looking for]
-
-## Constraints
-- [Time constraints]
-- [Topical constraints]
-- [Any other limitations]
-
-## Additional Notes
-- If anything is unclear, please ask clarifying questions before proceeding
-- Prioritize [accuracy/creativity/brevity/etc.] in your response`;
-      }
-
-      return promptContent;
-    },
-  };
+async function getProviderClient(provider, model) {
+  // Create the appropriate model client based on the provider
+  return AnalysisModelFactory.createModel(provider, model);
 }
 
 /**

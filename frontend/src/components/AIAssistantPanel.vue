@@ -1,17 +1,14 @@
 <template>
   <div class="ai-assistant-panel">
     <div class="panel-header">
-      <h3>AI Assistant</h3>
-      <div class="header-actions">
-        <button
-          class="analyze-button"
-          :disabled="isAnalyzing || !hasPromptContent"
-          @click="analyzePrompt"
-        >
-          <i class="fas fa-magic" />
-          <span>{{ isAnalyzing ? "Analyzing..." : "Analyze Prompt" }}</span>
-        </button>
-      </div>
+      <button
+        class="analyze-button"
+        :disabled="isAnalyzing || !hasPromptContent"
+        @click="analyzePrompt"
+      >
+        <i class="fas fa-magic" />
+        <span>{{ isAnalyzing ? "Analyzing..." : "Analyze Prompt" }}</span>
+      </button>
     </div>
 
     <div class="panel-content">
@@ -250,56 +247,54 @@ onMounted(() => {
 
   .panel-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: stretch;
     align-items: center;
-    padding: 12px 16px;
+    padding: 8px;
     border-bottom: 1px solid var(--border-color, #e0e0e0);
     background-color: var(--surface-color, #f5f5f5);
 
-    h3 {
-      margin: 0;
-      font-size: 1.1rem;
-      color: var(--text-color, #333333);
+  }
+
+  .analyze-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background-color: var(--primary-color, #4a6cf7);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    width: 100%;
+    min-height: 40px;
+
+    &:hover:not(:disabled) {
+      background-color: var(--primary-color-dark, #3a5ce7);
     }
 
-    .header-actions {
-      display: flex;
-      gap: 8px;
+    &:disabled {
+      background-color: var(--disabled-color, #cccccc);
+      cursor: not-allowed;
+      opacity: 0.7;
     }
 
-    .analyze-button {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background-color: var(--primary-color, #4a6cf7);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 6px 12px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background-color 0.2s;
+    i {
+      font-size: 1rem;
+    }
 
-      &:hover:not(:disabled) {
-        background-color: var(--primary-color-dark, #3a5ce7);
-      }
-
-      &:disabled {
-        background-color: var(--disabled-color, #cccccc);
-        cursor: not-allowed;
-        opacity: 0.7;
-      }
-
-      i {
-        font-size: 0.9rem;
-      }
+    span {
+      font-weight: 500;
     }
   }
 
   .panel-content {
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
   }

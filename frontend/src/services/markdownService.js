@@ -147,6 +147,10 @@ export function createMarkedInstance(options = {}) {
     breaks: true,
     gfm: true,
     async: false,
+    pedantic: false,
+    sanitize: false,
+    smartLists: true,
+    smartypants: false,
     hooks: {
       preprocess(markdown) {
         return markdown;
@@ -200,30 +204,14 @@ export function createMarkedInstance(options = {}) {
     `;
   };
 
-  // Create paragraph renderer that properly handles token objects
-  const paragraphRenderer = (token) => {
-    // Extract text from token
-    const text = token.text || "";
-
-    // If paragraph contains only a code block, don't wrap in <p> tags
-    if (
-      text.trim().startsWith('<div class="code-block-wrapper">') &&
-      text.trim().endsWith("</div>")
-    ) {
-      return text;
-    }
-
-    // Otherwise use the normal paragraph formatting
-    return `<p>${text}</p>`;
-  };
-
-  // Apply the custom renderers to the instance
+  // Apply the custom renderers to the instance (only code renderer for now)
   markedInstance.use({
     renderer: {
       code: codeRenderer,
-      paragraph: paragraphRenderer,
+      // Don't override paragraph renderer - let Marked handle inline formatting
     },
   });
+  
 
   return markedInstance;
 }
@@ -245,6 +233,7 @@ export function renderMarkdown(content) {
 
     // Parse the markdown
     const result = markedInstance.parse(processedContent);
+    
     return result || ""; // Ensure we always return a string
   } catch (error) {
     console.error("Error rendering markdown:", error);

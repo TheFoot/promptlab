@@ -24,20 +24,17 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from "vue";
-
 defineProps({
   modelValue: {
     type: String,
     required: true,
-    validator: (value) => ["edit", "preview", "chat", "design"].includes(value),
+    validator: (value) => ["edit", "chat", "design"].includes(value),
   },
   availableModes: {
     type: Array,
     default: () => [
-      { value: "edit", label: "Edit", icon: "fas fa-edit" },
-      { value: "preview", label: "Preview", icon: "fas fa-eye" },
       { value: "chat", label: "Chat", icon: "fas fa-comment" },
+      { value: "edit", label: "Edit", icon: "fas fa-edit" },
       { value: "design", label: "Design", icon: "fas fa-palette" },
     ],
   },
@@ -55,10 +52,12 @@ const selectMode = (mode) => {
 .mode-selector {
   display: flex;
   background-color: var(--surface-color, #f5f5f5);
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
   border: 1px solid var(--border-color, #e0e0e0);
-  margin-bottom: 1rem;
+  border-left: none;
+  border-right: none;
+  margin-bottom: 0;
 }
 
 .mode-button {
@@ -73,6 +72,11 @@ const selectMode = (mode) => {
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text-color, #333);
+  
+  /* Improve contrast for dark mode - darken inactive tabs */
+  @media (prefers-color-scheme: dark) {
+    color: #999999;
+  }
 
   &:hover {
     background-color: var(--hover-color, #e9e9e9);

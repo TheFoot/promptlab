@@ -62,22 +62,43 @@
           />
         </div>
         <div class="header-actions">
-          <button
+          <div
             v-if="!editMode"
-            class="btn btn-secondary mr-2"
-            @click="enableEditMode"
+            class="mode-button-bar"
           >
-            Edit
-          </button>
+            <button
+              class="mode-btn"
+              :class="{ active: contextPanelMode === 'chat' }"
+              @click="setContextPanelMode('chat')"
+            >
+              <span class="btn-icon">💬</span>
+              Chat
+            </button>
+            <button
+              class="mode-btn"
+              :class="{ active: contextPanelMode === 'edit' }"
+              @click="setContextPanelMode('edit')"
+            >
+              <span class="btn-icon">✏️</span>
+              Edit
+            </button>
+            <button
+              class="mode-btn"
+              :class="{ active: contextPanelMode === 'design' }"
+              @click="setContextPanelMode('design')"
+            >
+              <span class="btn-icon">🎨</span>
+              Design
+            </button>
+          </div>
           <button
-            v-if="!editMode"
             class="btn btn-outline-secondary"
-            title="Close prompt and return to dashboard"
-            @click="navigateToHome"
+            :title="editMode ? 'Close editor' : 'Close prompt and return to dashboard'"
+            @click="editMode ? cancelEdit : navigateToHome"
           >
-            Close
+            ✕ Close
           </button>
-          <template v-else>
+          <template v-if="editMode">
             <button
               class="btn btn-primary mr-2"
               :disabled="saving"
@@ -85,23 +106,14 @@
             >
               {{ saving ? "Saving..." : "Save" }}
             </button>
-            <button
-              class="btn btn-secondary"
-              @click="cancelEdit"
-            >
-              Cancel
-            </button>
           </template>
         </div>
       </div>
 
-      <div
-        class="prompt-content"
-        :class="{ 'edit-mode': editMode }"
-      >
+      <div class="prompt-content">
         <div
           class="editor-container"
-          :class="{ 'full-width': !editMode }"
+          :style="{ width: editMode ? '50%' : `${100 - contextPanelWidthPercent}%` }"
         >
           <textarea
             v-if="editMode"
@@ -109,20 +121,104 @@
             class="content-editor"
             placeholder="Write your prompt here using markdown..."
           />
-          <MarkdownPreview
+          <div
             v-else
-            :content="prompt.content"
-          />
+            class="preview-wrapper"
+          >
+            <!-- Preview Status Bar -->
+            <div
+              class="preview-status-bar"
+              :class="{ 'has-changes': hasUnsavedChanges }"
+            >
+              <div class="status-indicator">
+                <span
+                  v-if="hasUnsavedChanges"
+                  class="status-text"
+                >
+                  <span class="status-dot unsaved" />
+                  Previewing local changes
+                </span>
+                <span
+                  v-else
+                  class="status-text"
+                >
+                  <span class="status-dot saved" />
+                  Saved content
+                </span>
+              </div>
+              <div
+                v-if="hasUnsavedChanges"
+                class="status-actions"
+              >
+                <span class="changes-hint">Changes not saved</span>
+              </div>
+            </div>
+            <!-- Preview Content -->
+            <MarkdownPreview
+              :content="contextPanelMode === 'edit' ? editableContent : prompt.content"
+            />
+          </div>
         </div>
         <div
           v-if="editMode"
           class="preview-container"
+          style="width: 50%"
         >
           <div class="preview-header">
             Preview
           </div>
           <MarkdownPreview :content="editedPrompt.content" />
         </div>
+        
+        <!-- Always show DynamicContextPanel -->
+        <DynamicContextPanel
+          v-if="!editMode"
+          :prompt-content="prompt.content"
+          :initial-mode="contextPanelMode"
+          :use-slot-content="true"
+          @update:prompt-content="handleAISuggestion"
+          @mode-changed="handleModeChange"
+          @resize="handlePanelResize"
+        >
+          <template #chat-mode>
+            <ChatSidebar
+              :system-prompt="prompt.content"
+              :embedded="true"
+              agent-mode="chat"
+            />
+          </template>
+          <template #edit-mode>
+            <div class="edit-mode-panel">
+              <div class="edit-toolbar">
+                <div class="toolbar-left">
+                  <!-- Future toolbar items can go here -->
+                </div>
+                <div class="toolbar-right">
+                  <button
+                    class="save-btn"
+                    :disabled="saving"
+                    @click="savePanelChanges"
+                  >
+                    {{ saving ? "Saving..." : "Save" }}
+                  </button>
+                </div>
+              </div>
+              <textarea
+                v-model="editableContent"
+                class="panel-editor"
+                placeholder="Edit your prompt here..."
+                @input="handleContentEdit"
+              />
+            </div>
+          </template>
+          <template #design-mode>
+            <ChatSidebar
+              :system-prompt="prompt.content"
+              :embedded="true"
+              agent-mode="design"
+            />
+          </template>
+        </DynamicContextPanel>
       </div>
 
       <div
@@ -145,14 +241,18 @@ import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { usePromptStore } from "../stores/promptStore";
 import { useUiStore } from "../stores/uiStore";
+import { useContextPanelStore } from "../stores/contextPanelStore";
 import PromptSidebar from "../components/PromptSidebar.vue";
 import MarkdownPreview from "../components/MarkdownPreview.vue";
 import TagInput from "../components/TagInput.vue";
+import DynamicContextPanel from "../components/DynamicContextPanel.vue";
+import ChatSidebar from "../components/ChatSidebar.vue";
 
 const route = useRoute();
 const router = useRouter();
 const promptStore = usePromptStore();
 const uiStore = useUiStore();
+const contextPanelStore = useContextPanelStore();
 
 // Component state
 const editMode = ref(false);
@@ -163,10 +263,22 @@ const editedPrompt = ref({
   tags: [],
 });
 
+// Context panel state
+const contextPanelMode = ref(contextPanelStore.activeMode || 'chat');
+const contextPanelWidthPercent = ref(40); // Default 40% width
+const editableContent = ref(''); // For edit mode in panel
+
 // Computed properties
 const loading = computed(() => promptStore.loading);
 const error = computed(() => promptStore.error);
 const prompt = computed(() => promptStore.currentPrompt);
+
+// Check if there are unsaved changes in the panel editor
+const hasUnsavedChanges = computed(() => {
+  return contextPanelMode.value === 'edit' && 
+         prompt.value && 
+         editableContent.value !== prompt.value.content;
+});
 
 // Methods
 const fetchPrompt = async () => {
@@ -177,13 +289,18 @@ const fetchPrompt = async () => {
   }
 };
 
-const enableEditMode = () => {
+const enableEditMode = () => { // eslint-disable-line no-unused-vars
   editedPrompt.value = {
     title: prompt.value.title,
     content: prompt.value.content,
     tags: [...prompt.value.tags],
   };
   editMode.value = true;
+};
+
+const setContextPanelMode = (mode) => {
+  contextPanelMode.value = mode;
+  contextPanelStore.setActiveMode(mode);
 };
 
 const navigateToHome = () => {
@@ -248,6 +365,48 @@ const confirmDelete = async () => {
   }
 };
 
+// Context panel handlers
+const handleModeChange = (mode) => {
+  contextPanelMode.value = mode;
+  contextPanelStore.setActiveMode(mode);
+};
+
+const handlePanelResize = (widthPercent) => {
+  contextPanelWidthPercent.value = widthPercent;
+};
+
+const handleAISuggestion = (newContent) => {
+  if (newContent && prompt.value) {
+    // Apply AI suggestion to the current prompt
+    promptStore.updatePrompt(route.params.id, {
+      ...prompt.value,
+      content: newContent
+    });
+  }
+};
+
+const handleContentEdit = () => {
+  // Just handle the input - no auto-save to avoid focus loss
+  // Content will be saved when user clicks Save button
+};
+
+const savePanelChanges = async () => {
+  if (!prompt.value) return;
+  
+  saving.value = true;
+  try {
+    await promptStore.updatePrompt(route.params.id, {
+      ...prompt.value,
+      content: editableContent.value
+    });
+  } catch (error) {
+    console.error("Error saving prompt from panel:", error);
+  } finally {
+    saving.value = false;
+  }
+};
+
+
 // Watch for route changes to load the correct prompt
 watch(
   () => route.params.id,
@@ -263,6 +422,23 @@ watch(
     }
   },
 );
+
+// Watch for prompt changes to sync editableContent (only when different)
+watch(
+  () => prompt.value?.content,
+  (newContent) => {
+    if (newContent && newContent !== editableContent.value) {
+      editableContent.value = newContent;
+    }
+  },
+  { immediate: true }
+);
+
+// Watch for context panel mode changes to keep everything in sync
+watch(contextPanelMode, (newMode) => {
+  contextPanelStore.setActiveMode(newMode);
+  localStorage.setItem("context-panel-mode", newMode);
+});
 
 // Update global UI state when edit mode changes
 watch(editMode, (isEditMode) => {
@@ -290,6 +466,13 @@ watch(
 
 // Lifecycle hooks
 onMounted(async () => {
+  // Initialize mode from localStorage to sync with DynamicContextPanel
+  const savedMode = localStorage.getItem("context-panel-mode");
+  if (savedMode && ["chat", "edit", "design"].includes(savedMode)) {
+    contextPanelMode.value = savedMode;
+    contextPanelStore.setActiveMode(savedMode);
+  }
+
   if (route.params.id) {
     await fetchPrompt();
 
@@ -378,6 +561,56 @@ onMounted(async () => {
   .header-actions {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
+
+    .mode-button-bar {
+      display: flex;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-right: 1rem;
+
+      .mode-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--card-bg-color);
+        border: none;
+        border-right: 1px solid var(--border-color);
+        color: var(--text-color);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 1rem;
+        font-weight: 500;
+
+        &:last-child {
+          border-right: none;
+        }
+
+        &:hover {
+          background-color: var(--hover-color, #f0f0f0);
+          
+          /* Darker text on hover in dark mode */
+          @media (prefers-color-scheme: dark) {
+            color: #333333;
+          }
+        }
+
+        &.active {
+          background-color: var(--primary-color);
+          color: white;
+
+          &:hover {
+            background-color: var(--primary-color-dark, #3a5ce7);
+          }
+        }
+
+        .btn-icon {
+          font-size: 1em;
+        }
+      }
+    }
 
     .mr-2 {
       margin-right: 0.5rem;
@@ -403,18 +636,7 @@ onMounted(async () => {
   border-radius: 0 0 8px 8px;
   overflow: hidden;
   background-color: var(--card-bg-color);
-
-  &.edit-mode {
-    .editor-container,
-    .preview-container {
-      width: 50%;
-      height: 100%;
-    }
-
-    .editor-container {
-      border-right: 1px solid var(--border-color);
-    }
-  }
+  position: relative;
 
   .editor-container,
   .preview-container {
@@ -422,14 +644,11 @@ onMounted(async () => {
     display: flex;
     flex-direction: column;
     overflow: auto;
+    transition: width 0.2s ease;
   }
 
   .editor-container {
-    width: 100%;
-
-    &.full-width {
-      width: 100%;
-    }
+    border-right: 1px solid var(--border-color);
   }
 
   .content-editor {
@@ -448,6 +667,68 @@ onMounted(async () => {
     background-color: rgba(0, 0, 0, 0.03);
     border-bottom: 1px solid var(--border-color);
     font-weight: 500;
+  }
+
+  .preview-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: var(--card-bg-color);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    min-height: 40px;
+
+    &.has-changes {
+      background-color: rgba(255, 193, 7, 0.1);
+      border-bottom-color: rgba(255, 193, 7, 0.3);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-text {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-color);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+
+      &.saved {
+        background-color: #28a745;
+      }
+
+      &.unsaved {
+        background-color: #ffc107;
+      }
+    }
+
+    .status-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .changes-hint {
+      color: #856404;
+      font-size: 0.8rem;
+      font-style: italic;
+    }
   }
 }
 
@@ -476,6 +757,95 @@ onMounted(async () => {
 
 .error {
   color: var(--error-color);
+}
+
+.edit-mode-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .edit-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: var(--surface-color, #f8f9fa);
+    border-bottom: 1px solid var(--border-color);
+    min-height: 40px;
+    
+    /* Make toolbar stand out with subtle different background */
+    @media (prefers-color-scheme: dark) {
+      background-color: #2d2d2d;
+    }
+    
+    .toolbar-left {
+      flex: 1;
+    }
+    
+    .toolbar-right {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .save-btn {
+      padding: 0.25rem 0.75rem;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      
+      &:hover:not(:disabled) {
+        background-color: var(--primary-color-dark, #3a5ce7);
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .panel-editor {
+    flex: 1;
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    resize: none;
+    font-family: monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background-color: var(--secondary-color, #f8f9fa);
+    color: var(--text-color);
+    border-radius: 0;
+    outline: none;
+    
+    /* Subtle inset shadow to create depth */
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 
+                inset 0 1px 2px rgba(0, 0, 0, 0.1);
+
+    /* Better contrast in dark mode */
+    @media (prefers-color-scheme: dark) {
+      background-color: #2a2a2a;
+      color: #ffffff;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 
+                  inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    &:focus {
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 
+                  inset 0 1px 2px rgba(0, 0, 0, 0.1),
+                  inset 0 0 0 2px var(--primary-color);
+                  
+      @media (prefers-color-scheme: dark) {
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 
+                    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+                    inset 0 0 0 2px var(--primary-color);
+      }
+    }
+  }
 }
 
 @media (max-width: 768px) {

@@ -1,4 +1,4 @@
-import ChatModelFactory from "../services/chatService.js";
+import AgentChatService from "../services/agentChatService.js";
 import config from "../config/index.js";
 
 // Controller for chat API endpoints
@@ -8,15 +8,17 @@ const chatController = {
     // Define variables outside try/catch to make them available in the catch block
     let provider = "openai";
     let model = "";
+    let agentType = "chat";
     const clientIp = req.ip || "0.0.0.0";
 
     try {
       // Extract request data
-      const { messages, temperature } = req.body;
+      const { messages, temperature, promptContent, promptTitle } = req.body;
 
-      // Extract and normalize provider and model
+      // Extract and normalize provider, model, and agent type
       provider = req.body.provider?.toLowerCase() || config.providers.default;
       model = req.body.model || "";
+      agentType = req.body.agentType?.toLowerCase() || "chat";
 
       if (!messages || !Array.isArray(messages)) {
         return res
@@ -24,31 +26,43 @@ const chatController = {
           .json({ error: "Messages are required and must be an array" });
       }
 
-      global.logger.debug("Processing chat request", {
+      global.logger.debug("Processing agent chat request", {
         clientIp,
         provider,
         model,
+        agentType,
         messageCount: messages.length,
+        hasPromptContent: !!promptContent,
       });
 
-      const chatModel = ChatModelFactory.createModel(provider);
-      const response = await chatModel.chat(messages, { model, temperature });
+      // Use agent chat service for processing
+      const response = await AgentChatService.processChat({
+        messages,
+        agentType,
+        provider,
+        model,
+        temperature,
+        promptContent,
+        promptTitle,
+      });
 
-      global.logger.info("Chat request successful", {
+      global.logger.info("Agent chat request successful", {
         clientIp,
         provider,
         model,
+        agentType,
         tokens: response.usage?.total_tokens,
       });
 
       return res.json(response);
     } catch (error) {
-      global.logger.error("Chat request failed", {
+      global.logger.error("Agent chat request failed", {
         error: error.message,
         stack: error.stack,
         clientIp,
         provider, // Now safely defined
         model, // Now safely defined
+        agentType, // Now safely defined
         requestBody: req.body, // Log the request body for debugging
       });
 
@@ -85,9 +99,10 @@ const chatController = {
     });
 
     ws.on("message", async (message) => {
-      // Store provider and model outside try/catch for error handling access
+      // Store provider, model, and agent type outside try/catch for error handling access
       let provider = config.providers.default;
       let model = "";
+      let agentType = "chat";
       let clientRequestData = null;
 
       try {
@@ -108,20 +123,23 @@ const chatController = {
 
         clientRequestData = data;
         // Extract with explicit check for undefined to differentiate between missing and false
-        const { messages, temperature } = data;
+        const { messages, temperature, promptContent, promptTitle } = data;
         // Only default to true if stream is completely missing from the data
         const stream = "stream" in data ? data.stream : false;
 
-        // Extract and normalize provider and model
+        // Extract and normalize provider, model, and agent type
         provider = data.provider?.toLowerCase() || config.providers.default;
         model = data.model || "";
+        agentType = data.agentType?.toLowerCase() || "chat";
 
-        global.logger.debug("WebSocket message received", {
+        global.logger.debug("WebSocket agent message received", {
           clientIp,
           messageCount: messages?.length,
           provider,
           model,
+          agentType,
           stream,
+          hasPromptContent: !!promptContent,
         });
 
         if (!messages || !Array.isArray(messages)) {
@@ -136,16 +154,21 @@ const chatController = {
         // Start the message
         ws.send(JSON.stringify({ type: "start" }));
 
-        const chatModel = ChatModelFactory.createModel(provider);
-
         if (stream) {
-          // Stream the response
-          const response = await chatModel.streamChat(
-            messages,
+          // Stream the response using agent service
+          const response = await AgentChatService.processStreamingChat(
+            {
+              messages,
+              agentType,
+              provider,
+              model,
+              temperature,
+              promptContent,
+              promptTitle,
+            },
             (content) => {
               ws.send(JSON.stringify({ type: "stream", content }));
             },
-            { model, temperature },
           );
 
           // End the message with the complete response text
@@ -153,19 +176,27 @@ const chatController = {
             JSON.stringify({
               type: "end",
               content: response.message,
+              agentType: response.agentType,
             }),
           );
-          global.logger.info("WebSocket stream completed", {
+          global.logger.info("WebSocket agent stream completed", {
             clientIp,
             provider,
             model,
+            agentType,
           });
         } else {
-          // Get the full response at once
-          const response = await chatModel.chat(messages, {
+          // Get the full response at once using agent service
+          const response = await AgentChatService.processChat({
+            messages,
+            agentType,
+            provider,
             model,
             temperature,
+            promptContent,
+            promptTitle,
           });
+
           ws.send(
             JSON.stringify({
               type: "stream",
@@ -176,23 +207,26 @@ const chatController = {
             JSON.stringify({
               type: "end",
               content: response.message,
+              agentType: response.agentType,
             }),
           );
-          global.logger.info("WebSocket non-streaming response completed", {
+          global.logger.info("WebSocket agent non-streaming response completed", {
             clientIp,
             provider,
             model,
+            agentType,
             tokens: response.usage?.total_tokens,
           });
         }
       } catch (error) {
         // Log the error with available context
-        global.logger.error("WebSocket chat request failed", {
+        global.logger.error("WebSocket agent chat request failed", {
           error: error.message,
           stack: error.stack,
           clientIp: req.socket.remoteAddress,
           provider, // Now safely defined
           model, // Now safely defined
+          agentType, // Now safely defined
           requestData: clientRequestData, // Include the original request data for debugging
         });
 
@@ -226,6 +260,10 @@ const chatController = {
           displayNames: config.providers.ui.displayNames,
         },
         models: {},
+        agents: {
+          available: AgentChatService.getAvailableAgentTypes(),
+          metadata: AgentChatService.getAllAgentMetadata(),
+        },
       };
 
       // Add model configurations for each provider
@@ -249,6 +287,28 @@ const chatController = {
 
       return res.status(500).json({
         error: "Failed to retrieve provider configuration",
+        message: error.message,
+      });
+    }
+  },
+
+  // Get available agent configurations
+  async getAgentConfig(req, res) {
+    try {
+      const agentConfig = {
+        available: AgentChatService.getAvailableAgentTypes(),
+        metadata: AgentChatService.getAllAgentMetadata(),
+      };
+
+      return res.json(agentConfig);
+    } catch (error) {
+      global.logger.error("Error getting agent config", {
+        error: error.message,
+        stack: error.stack,
+      });
+
+      return res.status(500).json({
+        error: "Failed to retrieve agent configuration",
         message: error.message,
       });
     }
