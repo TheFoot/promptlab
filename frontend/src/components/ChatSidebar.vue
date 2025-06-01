@@ -17,7 +17,10 @@
       v-if="isExpanded || embedded"
       class="chat-content"
     >
-      <div class="chat-toolbar">
+      <div
+        v-if="!hideToolbar"
+        class="chat-toolbar"
+      >
         <div class="toolbar-left">
           <!-- Future toolbar items can go here -->
         </div>
@@ -289,6 +292,11 @@ const props = defineProps({
     type: String,
     default: 'chat',
     validator: (value) => ['chat', 'design'].includes(value),
+  },
+  // Hide the internal toolbar when embedded in context panels
+  hideToolbar: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -1147,6 +1155,12 @@ onUnmounted(() => {
   if (window.downloadCodeBlock === handleDownloadCodeBlock) {
     window.downloadCodeBlock = undefined;
   }
+});
+
+// Expose methods for parent components
+defineExpose({
+  resetChat,
+  analyzeCurrentPrompt
 });
 
 // Watch for changes in the current prompt

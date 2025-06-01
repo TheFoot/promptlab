@@ -26,7 +26,7 @@
   <div
     v-else
     class="prompt-detail-view"
-    :class="{ editing: editMode }"
+    :class="{ editing: contextPanelMode === 'edit' }"
   >
     <div class="sidebar">
       <PromptSidebar />
@@ -34,36 +34,20 @@
     <div class="prompt-detail-container">
       <div class="prompt-header">
         <div class="header-content">
-          <h2 v-if="!editMode">
-            {{ prompt.title }}
-          </h2>
           <input
-            v-else
             v-model="editedPrompt.title"
             type="text"
             placeholder="Prompt title"
             class="title-input"
+            @input="debouncedSaveTitle"
           >
-          <div
-            v-if="!editMode"
-            class="prompt-tags"
-          >
-            <span
-              v-for="tag in prompt.tags"
-              :key="tag"
-              class="prompt-tag"
-            >{{
-              tag
-            }}</span>
-          </div>
           <TagInput
-            v-else
             v-model="editedPrompt.tags"
+            @update:model-value="debouncedSaveTags"
           />
         </div>
         <div class="header-actions">
           <div
-            v-if="!editMode"
             class="mode-button-bar"
           >
             <button
@@ -93,38 +77,20 @@
           </div>
           <button
             class="btn btn-outline-secondary"
-            :title="editMode ? 'Close editor' : 'Close prompt and return to dashboard'"
-            @click="editMode ? cancelEdit : navigateToHome"
+            :title="contextPanelMode === 'edit' ? 'Close editor' : 'Close prompt and return to dashboard'"
+            @click="handleCloseButton"
           >
             ✕ Close
           </button>
-          <template v-if="editMode">
-            <button
-              class="btn btn-primary mr-2"
-              :disabled="saving"
-              @click="savePrompt"
-            >
-              {{ saving ? "Saving..." : "Save" }}
-            </button>
-          </template>
         </div>
       </div>
 
       <div class="prompt-content">
         <div
           class="editor-container"
-          :style="{ width: editMode ? '50%' : `${100 - contextPanelWidthPercent}%` }"
+          :style="{ width: `${100 - contextPanelWidthPercent}%` }"
         >
-          <textarea
-            v-if="editMode"
-            v-model="editedPrompt.content"
-            class="content-editor"
-            placeholder="Write your prompt here using markdown..."
-          />
-          <div
-            v-else
-            class="preview-wrapper"
-          >
+          <div class="preview-wrapper">
             <!-- Preview Status Bar -->
             <div
               class="preview-status-bar"
@@ -159,20 +125,9 @@
             />
           </div>
         </div>
-        <div
-          v-if="editMode"
-          class="preview-container"
-          style="width: 50%"
-        >
-          <div class="preview-header">
-            Preview
-          </div>
-          <MarkdownPreview :content="editedPrompt.content" />
-        </div>
         
         <!-- Always show DynamicContextPanel -->
         <DynamicContextPanel
-          v-if="!editMode"
           :prompt-content="prompt.content"
           :initial-mode="contextPanelMode"
           :use-slot-content="true"
@@ -181,17 +136,41 @@
           @resize="handlePanelResize"
         >
           <template #chat-mode>
-            <ChatSidebar
-              :system-prompt="prompt.content"
-              :embedded="true"
-              agent-mode="chat"
-            />
+            <div class="chat-mode-panel">
+              <div class="panel-header-toolbar">
+                <div class="toolbar-left">
+                  <h3 class="panel-title">
+                    <span class="panel-icon">💬</span>
+                    Prompt Chat Agent
+                  </h3>
+                </div>
+                <div class="toolbar-right">
+                  <button
+                    class="reset-btn"
+                    title="Reset conversation"
+                    @click="() => $refs.chatSidebar?.resetChat('manual_reset')"
+                  >
+                    🔄 Reset
+                  </button>
+                </div>
+              </div>
+              <ChatSidebar
+                ref="chatSidebar"
+                :system-prompt="prompt.content"
+                :embedded="true"
+                :hide-toolbar="true"
+                agent-mode="chat"
+              />
+            </div>
           </template>
           <template #edit-mode>
             <div class="edit-mode-panel">
-              <div class="edit-toolbar">
+              <div class="panel-header-toolbar">
                 <div class="toolbar-left">
-                  <!-- Future toolbar items can go here -->
+                  <h3 class="panel-title">
+                    <span class="panel-icon">✏️</span>
+                    Prompt Markdown Editor
+                  </h3>
                 </div>
                 <div class="toolbar-right">
                   <button
@@ -199,6 +178,7 @@
                     :disabled="saving"
                     @click="savePanelChanges"
                   >
+                    <span class="save-icon">💾</span>
                     {{ saving ? "Saving..." : "Save" }}
                   </button>
                 </div>
@@ -212,25 +192,41 @@
             </div>
           </template>
           <template #design-mode>
-            <ChatSidebar
-              :system-prompt="prompt.content"
-              :embedded="true"
-              agent-mode="design"
-            />
+            <div class="design-mode-panel">
+              <div class="panel-header-toolbar">
+                <div class="toolbar-left">
+                  <h3 class="panel-title">
+                    <span class="panel-icon">🎨</span>
+                    Prompt Design Agent
+                  </h3>
+                </div>
+                <div class="toolbar-right">
+                  <button
+                    class="reset-btn"
+                    title="Reset conversation"
+                    @click="() => $refs.designSidebar?.resetChat('manual_reset')"
+                  >
+                    🔄 Reset
+                  </button>
+                  <button
+                    class="analyze-btn"
+                    title="Analyze current prompt"
+                    @click="() => $refs.designSidebar?.analyzeCurrentPrompt()"
+                  >
+                    🔍 Analyze
+                  </button>
+                </div>
+              </div>
+              <ChatSidebar
+                ref="designSidebar"
+                :system-prompt="prompt.content"
+                :embedded="true"
+                :hide-toolbar="true"
+                agent-mode="design"
+              />
+            </div>
           </template>
         </DynamicContextPanel>
-      </div>
-
-      <div
-        v-if="editMode"
-        class="prompt-footer"
-      >
-        <button
-          class="btn btn-danger"
-          @click="confirmDelete"
-        >
-          Delete Prompt
-        </button>
       </div>
     </div>
   </div>
@@ -255,7 +251,6 @@ const uiStore = useUiStore();
 const contextPanelStore = useContextPanelStore();
 
 // Component state
-const editMode = ref(false);
 const saving = ref(false);
 const editedPrompt = ref({
   title: "",
@@ -289,14 +284,6 @@ const fetchPrompt = async () => {
   }
 };
 
-const enableEditMode = () => { // eslint-disable-line no-unused-vars
-  editedPrompt.value = {
-    title: prompt.value.title,
-    content: prompt.value.content,
-    tags: [...prompt.value.tags],
-  };
-  editMode.value = true;
-};
 
 const setContextPanelMode = (mode) => {
   contextPanelMode.value = mode;
@@ -307,14 +294,28 @@ const navigateToHome = () => {
   router.push("/");
 };
 
+const handleCloseButton = () => {
+  if (contextPanelMode.value === 'edit') {
+    cancelEdit();
+  } else {
+    navigateToHome();
+  }
+};
+
 const cancelEdit = async () => {
-  // First, update edit mode state
-  editMode.value = false;
+  // Reset edited prompt data
   editedPrompt.value = {
     title: prompt.value.title,
     content: prompt.value.content,
     tags: [...prompt.value.tags],
   };
+  
+  // Reset editable content to original
+  editableContent.value = prompt.value.content;
+
+  // Reset context panel mode to chat when exiting edit mode
+  contextPanelMode.value = 'chat';
+  contextPanelStore.setActiveMode('chat');
 
   // Force UI layout update after state change
   await nextTick();
@@ -324,45 +325,6 @@ const cancelEdit = async () => {
     // Trigger window resize event to ensure all components adjust
     window.dispatchEvent(new Event("resize"));
   }, 100);
-};
-
-const savePrompt = async () => {
-  if (!editedPrompt.value.title || !editedPrompt.value.content) {
-    alert("Title and content are required");
-    return;
-  }
-
-  saving.value = true;
-  try {
-    await promptStore.updatePrompt(route.params.id, editedPrompt.value);
-
-    // First, update edit mode state
-    editMode.value = false;
-
-    // Force UI layout update after state change
-    await nextTick();
-
-    // Allow time for transitions and layout adjustments
-    setTimeout(() => {
-      // Trigger window resize event to ensure all components adjust
-      window.dispatchEvent(new Event("resize"));
-    }, 100);
-  } catch (error) {
-    console.error("Error saving prompt:", error);
-  } finally {
-    saving.value = false;
-  }
-};
-
-const confirmDelete = async () => {
-  if (confirm("Are you sure you want to delete this prompt?")) {
-    try {
-      await promptStore.deletePrompt(route.params.id);
-      router.push("/");
-    } catch (error) {
-      console.error("Error deleting prompt:", error);
-    }
-  }
 };
 
 // Context panel handlers
@@ -391,19 +353,60 @@ const handleContentEdit = () => {
 };
 
 const savePanelChanges = async () => {
-  if (!prompt.value) return;
+  if (!prompt.value || !editableContent.value) return;
   
   saving.value = true;
   try {
+    // Only save content from the editor panel
     await promptStore.updatePrompt(route.params.id, {
       ...prompt.value,
       content: editableContent.value
     });
+
+    // Reset context panel mode to chat when exiting edit mode
+    contextPanelMode.value = 'chat';
+    contextPanelStore.setActiveMode('chat');
   } catch (error) {
-    console.error("Error saving prompt from panel:", error);
+    console.error("Error saving prompt content:", error);
   } finally {
     saving.value = false;
   }
+};
+
+// Debounced save functions for title and tags
+let titleSaveTimeout = null;
+let tagsSaveTimeout = null;
+
+const debouncedSaveTitle = () => {
+  if (titleSaveTimeout) clearTimeout(titleSaveTimeout);
+  titleSaveTimeout = setTimeout(async () => {
+    if (!prompt.value || !editedPrompt.value.title.trim()) return;
+    
+    try {
+      await promptStore.updatePrompt(route.params.id, {
+        ...prompt.value,
+        title: editedPrompt.value.title
+      });
+    } catch (error) {
+      console.error("Error saving title:", error);
+    }
+  }, 1000); // 1 second debounce
+};
+
+const debouncedSaveTags = () => {
+  if (tagsSaveTimeout) clearTimeout(tagsSaveTimeout);
+  tagsSaveTimeout = setTimeout(async () => {
+    if (!prompt.value) return;
+    
+    try {
+      await promptStore.updatePrompt(route.params.id, {
+        ...prompt.value,
+        tags: editedPrompt.value.tags
+      });
+    } catch (error) {
+      console.error("Error saving tags:", error);
+    }
+  }, 1000); // 1 second debounce
 };
 
 
@@ -440,9 +443,24 @@ watch(contextPanelMode, (newMode) => {
   localStorage.setItem("context-panel-mode", newMode);
 });
 
+// Watch for prompt changes to initialize editedPrompt
+watch(
+  () => prompt.value,
+  (newPrompt) => {
+    if (newPrompt) {
+      editedPrompt.value = {
+        title: newPrompt.title,
+        content: newPrompt.content,
+        tags: [...newPrompt.tags],
+      };
+    }
+  },
+  { immediate: true }
+);
+
 // Update global UI state when edit mode changes
-watch(editMode, (isEditMode) => {
-  uiStore.setEditMode(isEditMode);
+watch(contextPanelMode, (mode) => {
+  uiStore.setEditMode(mode === 'edit');
 });
 
 // Watch for prompt to be null after loading completes
@@ -523,7 +541,7 @@ onMounted(async () => {
 .prompt-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 1rem;
   background-color: var(--card-bg-color);
   border-radius: 8px 8px 0 0;
@@ -532,30 +550,22 @@ onMounted(async () => {
   position: relative; /* For z-index to work */
   z-index: 50; /* Higher than sidebar but lower than app header */
 
-  h2 {
-    margin: 0;
-    color: var(--text-color);
-  }
-
   .title-input {
     font-size: 1.5rem;
     font-weight: bold;
     width: 100%;
-  }
-
-  .prompt-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    margin-top: 0.5rem;
-  }
-
-  .prompt-tag {
-    background-color: rgba(74, 108, 247, 0.1);
-    color: var(--primary-color);
-    padding: 0.25rem 0.5rem;
-    border-radius: 2rem;
-    font-size: 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    padding: 0;
+    margin: 0;
+    outline: none;
+    
+    &:focus {
+      background-color: rgba(74, 108, 247, 0.05);
+      border-radius: 4px;
+      padding: 0.25rem;
+    }
   }
 
   .header-actions {
@@ -759,12 +769,14 @@ onMounted(async () => {
   color: var(--error-color);
 }
 
+.chat-mode-panel,
+.design-mode-panel,
 .edit-mode-panel {
   height: 100%;
   display: flex;
   flex-direction: column;
 
-  .edit-toolbar {
+  .panel-header-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -780,6 +792,20 @@ onMounted(async () => {
     
     .toolbar-left {
       flex: 1;
+      
+      .panel-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .panel-icon {
+        font-size: 1.1rem;
+      }
     }
     
     .toolbar-right {
@@ -787,7 +813,9 @@ onMounted(async () => {
       gap: 0.5rem;
     }
     
-    .save-btn {
+    .save-btn,
+    .reset-btn,
+    .analyze-btn {
       padding: 0.25rem 0.75rem;
       background-color: var(--primary-color);
       color: white;
@@ -796,6 +824,9 @@ onMounted(async () => {
       font-size: 0.85rem;
       cursor: pointer;
       transition: background-color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
       
       &:hover:not(:disabled) {
         background-color: var(--primary-color-dark, #3a5ce7);
@@ -806,7 +837,28 @@ onMounted(async () => {
         cursor: not-allowed;
       }
     }
+
+    .reset-btn {
+      background-color: var(--secondary-color, #6c757d);
+      
+      &:hover:not(:disabled) {
+        background-color: var(--secondary-color-dark, #545b62);
+      }
+    }
+
+    .analyze-btn {
+      background-color: var(--success-color, #28a745);
+      
+      &:hover:not(:disabled) {
+        background-color: var(--success-color-dark, #1e7e34);
+      }
+    }
+
+    .save-icon {
+      font-size: 0.875rem;
+    }
   }
+
 
   .panel-editor {
     flex: 1;

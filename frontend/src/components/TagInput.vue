@@ -116,11 +116,11 @@ const onKeydown = (event) => {
 .tag-item {
   display: flex;
   align-items: center;
-  background-color: var(--tag-bg-color, rgba(74, 108, 247, 0.1));
-  color: var(--tag-text-color, #333); /* Darker text for better contrast */
-  font-weight: 500; /* Slightly bolder for better readability */
+  background-color: rgba(74, 108, 247, 0.1);
+  color: var(--primary-color);
   padding: 0.25rem 0.5rem;
   border-radius: 2rem;
+  font-size: 0.75rem;
   margin-right: 0.25rem;
   margin-bottom: 0.25rem;
 }
@@ -132,12 +132,9 @@ const onKeydown = (event) => {
 .tag-remove {
   background: none;
   border: none;
-  color: var(
-    --tag-remove-color,
-    #444
-  ); /* Darker color for better readability */
+  color: var(--primary-color);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -145,13 +142,14 @@ const onKeydown = (event) => {
   padding: 0.1rem;
   margin-left: 0.25rem;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   font-weight: bold;
+  opacity: 0.7;
 
   &:hover {
-    background-color: var(--tag-hover-bg-color, rgba(0, 0, 0, 0.08));
-    color: var(--tag-remove-hover-color, #000);
+    opacity: 1;
+    background-color: rgba(74, 108, 247, 0.2);
   }
 }
 
@@ -175,6 +173,10 @@ const onKeydown = (event) => {
   &:focus {
     box-shadow: none;
     background-color: rgba(0, 0, 0, 0.04);
+
+    @media (prefers-color-scheme: dark) {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
   }
 }
 
