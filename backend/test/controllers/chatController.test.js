@@ -264,9 +264,8 @@ describe("Chat Controller", async () => {
 
       await messageHandler(message);
 
-      // Assert
-      assert.equal(chatModelStub.calledWith("openai"), true);
-      assert.equal(mockChatModel.chat.calledOnce, true);
+      // Assert - Check that AgentChatService.processChat was called
+      assert.equal(AgentChatService.processChat.calledOnce, true);
 
       // Check messages that were sent to the client
       // First, start message (initial info + start)
@@ -339,9 +338,9 @@ describe("Chat Controller", async () => {
         }
       });
 
-      // Set up chat model to throw an error
+      // Set up AgentChatService to throw an error
       const error = new Error("API error");
-      mockChatModel.streamChat.rejects(error);
+      AgentChatService.processStreamingChat.rejects(error);
 
       // Act
       chatController.handleWebSocket(ws, req);
