@@ -17,6 +17,28 @@ class ChatModelBase {
     throw new Error("Not implemented");
   }
   /* eslint-enable no-unused-vars */
+
+  // Simulate streaming by sending incremental chunks for better UX
+  // This is useful for models that don't support native streaming
+  async _simulateStreaming(content, onChunk, wordsPerChunk = 3, delayMs = 50) {
+    const words = content.split(' ');
+    
+    for (let i = 0; i < words.length; i += wordsPerChunk) {
+      // Get the next chunk of words
+      const chunkWords = words.slice(i, i + wordsPerChunk);
+      const chunk = chunkWords.join(' ');
+      
+      // Add space before chunk if not the first chunk
+      const chunkToSend = i > 0 ? ' ' + chunk : chunk;
+      
+      onChunk(chunkToSend);
+      
+      // Add small delay to simulate streaming (except for the last chunk)
+      if (i + wordsPerChunk < words.length) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
 }
 
 // OpenAI model implementation
@@ -42,7 +64,36 @@ class OpenAIModel extends ChatModelBase {
 
     this.defaultModel = openaiConfig.models.default;
     this.defaults = openaiConfig.defaults;
+    this.reasoningCapabilities = openaiConfig.reasoningCapabilities || {};
   }
+
+  // Check if a model supports thinking
+  _supportsThinking(model) {
+    return this.reasoningCapabilities[model]?.thinking || false;
+  }
+
+  // Check if a model supports streaming thinking
+  _supportsStreamingThinking(model) {
+    return this.reasoningCapabilities[model]?.streamingThinking || false;
+  }
+
+  // Convert system messages to user messages for models that don't support them (like o1 series)
+  _adaptMessagesForModel(messages, model) {
+    if (this._supportsThinking(model)) {
+      // o1, o3, o4 models don't support system messages, convert them to user messages
+      return messages.map(msg => {
+        if (msg.role === 'system') {
+          return {
+            role: 'user',
+            content: `System instructions: ${msg.content}`
+          };
+        }
+        return msg;
+      });
+    }
+    return messages;
+  }
+
 
   async chat(messages, options = {}) {
     const model = options.model || this.defaultModel;
@@ -86,7 +137,7 @@ class OpenAIModel extends ChatModelBase {
     }
   }
 
-  async streamChat(messages, onChunk, options = {}) {
+  async streamChat(messages, callbacks, options = {}) {
     const model = options.model || this.defaultModel;
     const temperature =
       options.temperature !== undefined
@@ -98,8 +149,89 @@ class OpenAIModel extends ChatModelBase {
         model,
         temperature,
         messageCount: messages.length,
+        supportsThinking: this._supportsThinking(model),
+        supportsStreamingThinking: this._supportsStreamingThinking(model),
       });
 
+      // Handle legacy callback format
+      let streamingCallbacks;
+      if (typeof callbacks === 'function') {
+        streamingCallbacks = { onResponseChunk: callbacks };
+      } else {
+        streamingCallbacks = callbacks;
+      }
+
+      // Handle reasoning models (o1, o3, o4 series) - these don't support streaming
+      if (this._supportsThinking(model)) {
+        // Show thinking placeholder
+        if (streamingCallbacks.onThinkingStart) {
+          streamingCallbacks.onThinkingStart();
+        }
+
+        // Send placeholder thinking content for OpenAI models (they don't expose actual thinking)
+        if (streamingCallbacks.onThinkingChunk) {
+          const thinkingPlaceholder = [
+            `🤔 ${model} is reasoning through this problem...`,
+            "",
+            "Note: OpenAI reasoning models perform internal thinking that is not visible",
+            "in the API response. The model is analyzing the request, considering",
+            "different approaches, and formulating the best response."
+          ].join("\n");
+          streamingCallbacks.onThinkingChunk(thinkingPlaceholder);
+        }
+
+        // Convert system messages to user messages for reasoning models
+        const adaptedMessages = this._adaptMessagesForModel(messages, model);
+
+        global.logger.debug("Calling reasoning model with adapted messages", {
+          model,
+          originalMessageCount: messages.length,
+          adaptedMessageCount: adaptedMessages.length,
+          hasSystemMessage: messages.some(msg => msg.role === 'system'),
+        });
+
+        // For reasoning models, we need to use non-streaming API
+        const response = await this.client.chat.completions.create({
+          model,
+          messages: adaptedMessages,
+          // Reasoning models have fixed temperature and other parameters
+        });
+
+        // End thinking phase
+        if (streamingCallbacks.onThinkingEnd) {
+          streamingCallbacks.onThinkingEnd();
+        }
+
+        // Start response phase
+        if (streamingCallbacks.onResponseStart) {
+          streamingCallbacks.onResponseStart();
+        }
+
+        // Simulate streaming by chunking the response for better UX
+        const content = response.choices[0]?.message?.content || "";
+        if (content && streamingCallbacks.onResponseChunk) {
+          await this._simulateStreaming(content, streamingCallbacks.onResponseChunk);
+        }
+
+        // End response phase
+        if (streamingCallbacks.onResponseEnd) {
+          streamingCallbacks.onResponseEnd();
+        }
+
+        global.logger.debug("Completed reasoning request to OpenAI API", {
+          model,
+          responseLength: content.length,
+        });
+
+        return { message: content };
+      }
+
+      // Regular streaming for non-reasoning models
+      if (streamingCallbacks.onResponseStart) {
+        streamingCallbacks.onResponseStart();
+      }
+
+      // For non-reasoning models, messages are used as-is (they support system messages)
       const stream = await this.client.chat.completions.create({
         model,
         messages,
@@ -114,9 +246,16 @@ class OpenAIModel extends ChatModelBase {
         const content = chunk.choices[0]?.delta?.content || "";
         if (content) {
           responseText += content;
-          onChunk(content);
+          if (streamingCallbacks.onResponseChunk) {
+            streamingCallbacks.onResponseChunk(content);
+          }
           chunkCount++;
         }
+      }
+
+      // End response phase
+      if (streamingCallbacks.onResponseEnd) {
+        streamingCallbacks.onResponseEnd();
       }
 
       global.logger.debug("Completed streaming from OpenAI API", {
@@ -165,6 +304,12 @@ class AnthropicModel extends ChatModelBase {
 
     this.defaultModel = anthropicConfig.models.default;
     this.defaults = anthropicConfig.defaults;
+    this.reasoningCapabilities = anthropicConfig.reasoningCapabilities || {};
+  }
+
+  // Check if a model supports thinking
+  _supportsThinking(model) {
+    return this.reasoningCapabilities[model]?.thinking || false;
   }
 
   // Convert OpenAI format messages to Anthropic format
@@ -246,7 +391,7 @@ class AnthropicModel extends ChatModelBase {
     }
   }
 
-  async streamChat(messages, onChunk, options = {}) {
+  async streamChat(messages, callbacks, options = {}) {
     const model = options.model || this.defaultModel;
     const temperature =
       options.temperature !== undefined
@@ -263,13 +408,21 @@ class AnthropicModel extends ChatModelBase {
         temperature,
         messageCount: messages.length,
         apiKeyPresent: !!this.client.apiKey,
+        supportsThinking: this._supportsThinking(model),
       });
+
+      // Handle legacy callback format
+      let streamingCallbacks;
+      if (typeof callbacks === 'function') {
+        streamingCallbacks = { onResponseChunk: callbacks };
+      } else {
+        streamingCallbacks = callbacks;
+      }
 
       // Prepare request parameters (omitting undefined values)
       const requestParams = {
         model,
         messages: convertedMessages,
-        temperature,
         max_tokens: maxTokens,
         stream: true,
       };
@@ -279,17 +432,81 @@ class AnthropicModel extends ChatModelBase {
         requestParams.system = systemMessage;
       }
 
+      // Enable thinking for reasoning-capable models
+      if (this._supportsThinking(model)) {
+        const thinkingBudget = options.thinkingBudget || 
+          this.reasoningCapabilities[model]?.thinkingBudget?.suggested || 4000;
+          
+        requestParams.thinking = {
+          type: "enabled",
+          budget_tokens: thinkingBudget
+        };
+        
+        // Temperature must be 1 when thinking is enabled
+        requestParams.temperature = 1;
+        
+        global.logger.debug("Enabled thinking for Anthropic model", {
+          model,
+          thinkingBudget,
+          temperature: 1,
+        });
+      } else {
+        // Use normal temperature for non-thinking models
+        requestParams.temperature = temperature;
+      }
+
       const stream = await this.client.messages.create(requestParams);
 
       let responseText = "";
       let chunkCount = 0;
+      let isThinking = false;
+      let hasStartedResponse = false;
 
       for await (const chunk of stream) {
-        if (chunk.type === "content_block_delta" && chunk.delta.text) {
+        // Handle thinking blocks
+        if (chunk.type === "content_block_start" && chunk.content_block?.type === "thinking") {
+          isThinking = true;
+          if (streamingCallbacks.onThinkingStart) {
+            streamingCallbacks.onThinkingStart();
+          }
+        }
+        // Handle text response blocks
+        else if (chunk.type === "content_block_start" && chunk.content_block?.type === "text") {
+          if (isThinking && streamingCallbacks.onThinkingEnd) {
+            streamingCallbacks.onThinkingEnd();
+            isThinking = false;
+          }
+          if (!hasStartedResponse && streamingCallbacks.onResponseStart) {
+            streamingCallbacks.onResponseStart();
+            hasStartedResponse = true;
+          }
+        }
+        // Handle thinking content deltas
+        else if (chunk.type === "content_block_delta" && chunk.delta?.type === "thinking_delta") {
+          if (streamingCallbacks.onThinkingChunk && chunk.delta.thinking) {
+            streamingCallbacks.onThinkingChunk(chunk.delta.thinking);
+          }
+        }
+        // Handle text content deltas (existing logic)
+        else if (chunk.type === "content_block_delta" && chunk.delta?.text) {
           responseText += chunk.delta.text;
-          onChunk(chunk.delta.text);
+          if (streamingCallbacks.onResponseChunk) {
+            streamingCallbacks.onResponseChunk(chunk.delta.text);
+          }
           chunkCount++;
         }
+        // Handle block end
+        else if (chunk.type === "content_block_stop") {
+          if (isThinking && streamingCallbacks.onThinkingEnd) {
+            streamingCallbacks.onThinkingEnd();
+            isThinking = false;
+          }
+        }
+      }
+
+      // Ensure response end is called
+      if (streamingCallbacks.onResponseEnd) {
+        streamingCallbacks.onResponseEnd();
       }
 
       global.logger.debug("Completed streaming from Anthropic API", {

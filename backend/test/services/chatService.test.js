@@ -438,7 +438,7 @@ describe("Chat Service", async () => {
       // Arrange
       const messages = [{ role: "user", content: "Hello" }];
       const options = {
-        model: "claude-3-opus-20240229",
+        model: "claude-opus-4-20250514",
         temperature: 0.5,
         maxTokens: 2000,
       };
@@ -452,7 +452,7 @@ describe("Chat Service", async () => {
 
       // Verify API was called with correct parameters
       const callArgs = stubForTest.firstCall.args[0];
-      assert.strictEqual(callArgs.model, "claude-3-opus-20240229");
+      assert.strictEqual(callArgs.model, "claude-opus-4-20250514");
       assert.strictEqual(callArgs.temperature, 0.5);
       assert.strictEqual(callArgs.max_tokens, 2000);
       assert.deepStrictEqual(callArgs.messages, messages);
@@ -544,7 +544,7 @@ describe("Chat Service", async () => {
 
       // Arrange
       const messages = [{ role: "user", content: "Hello" }];
-      const options = { model: "claude-3-haiku-20240307", temperature: 0.5 };
+      const options = { model: "claude-sonnet-4-20250514", temperature: 0.5 };
       const chunkCallback = sinon.spy();
 
       // Act

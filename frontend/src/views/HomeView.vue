@@ -6,12 +6,14 @@
     <div class="welcome-container">
       <div class="welcome-card card">
         <h2>Welcome to PromptLab!</h2>
-        <p>This application helps you manage and test your LLM prompts.</p>
+        <p>Your AI-assisted laboratory for creating, testing, and optimizing LLM prompts with intelligent design agents.</p>
         <ul class="feature-list">
-          <li>Create and organize prompts for different AI models</li>
-          <li>Add tags to categorize your prompts</li>
-          <li>Use markdown to format your prompts</li>
-          <li>Search and filter by tags to quickly find what you need</li>
+          <li>AI-assisted prompt creation with intelligent suggestions</li>
+          <li>Interactive chat agents to test prompts in real-time</li>
+          <li>Design agents for prompt analysis and optimization</li>
+          <li>Support for multiple providers (OpenAI, Anthropic, Claude)</li>
+          <li>Advanced reasoning models and inline editing with autosave</li>
+          <li>Organize with tags, markdown formatting, and smart search</li>
         </ul>
         <div class="welcome-actions">
           <router-link
@@ -28,7 +30,7 @@
             You have {{ promptStore.prompts.length }} prompt{{
               promptStore.prompts.length !== 1 ? "s" : ""
             }}
-            available. <br>Select one from the sidebar to view or edit.
+            in your laboratory. <br>Select one from the sidebar to test with AI agents, analyze with design tools, or edit with intelligent assistance.
           </div>
         </div>
       </div>
@@ -45,6 +47,10 @@ const promptStore = usePromptStore();
 
 // Fetch prompts when component is mounted
 onMounted(async () => {
+  // Explicitly clear the current prompt when navigating to home
+  // This will ensure chat assistant doesn't use a previous prompt
+  promptStore.currentPrompt = null;
+
   if (promptStore.prompts.length === 0) {
     await promptStore.fetchPrompts();
   }

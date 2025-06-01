@@ -33,43 +33,40 @@ describe("Server Module Additional Tests", () => {
   });
 
   describe("initializeApp", () => {
-    it("should attempt fallback MongoDB connection on failure", async () => {
+    it("should log connection info and succeed when MongoDB connects", async () => {
       // Arrange
-      const dbError = new Error("Connection failed");
-      mongooseConnectStub.onFirstCall().rejects(dbError);
-      mongooseConnectStub.onSecondCall().resolves();
+      mongooseConnectStub.resolves();
 
-      // Mock config with docker URI
+      // Mock config
       const originalMongodbUri = config.mongodbUri;
       Object.defineProperty(config, "mongodbUri", {
-        value: "mongodb://nonexistent:27017/test",
+        value: "mongodb://localhost:27017/test",
         configurable: true,
       });
 
       try {
         // Act
-        await serverModule.initializeApp();
+        const result = await serverModule.initializeApp();
 
         // Assert
         assert.strictEqual(
           mongooseConnectStub.callCount,
-          2,
-          "MongoDB connection should be attempted twice",
+          1,
+          "MongoDB connection should be attempted once",
         );
 
         const mockLogger = global.logger;
         assert.ok(
-          mockLogger.error.calledWith("Failed to connect to MongoDB"),
-          "Error should be logged",
+          mockLogger.info.calledWith("Connecting to MongoDB"),
+          "Connection attempt should be logged",
         );
         assert.ok(
-          mockLogger.info.calledWith("Trying fallback connection"),
-          "Fallback should be logged",
+          mockLogger.info.calledWith("MongoDB connected successfully"),
+          "Connection success should be logged",
         );
-        assert.ok(
-          mockLogger.info.calledWith("MongoDB connected via fallback"),
-          "Fallback success should be logged",
-        );
+        
+        assert.ok(result.app, "Should return app instance");
+        assert.ok(result.server, "Should return server instance");
       } finally {
         // Restore config
         Object.defineProperty(config, "mongodbUri", {

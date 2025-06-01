@@ -69,17 +69,61 @@ class ModelConfigService {
       },
       models: {
         openai: {
-          available: ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4o"],
-          default: "gpt-3.5-turbo",
+          available: [
+            "o4-mini",
+            "o3", 
+            "o3-mini",
+            "o1-preview", 
+            "o1-mini", 
+            "gpt-4o", 
+            "gpt-4-turbo", 
+            "gpt-4", 
+            "gpt-3.5-turbo"
+          ],
+          default: "gpt-4o",
           displayNames: {
-            "gpt-3.5-turbo": "GPT-3.5 Turbo",
-            "gpt-4": "GPT-4",
-            "gpt-4-turbo": "GPT-4 Turbo",
+            "o4-mini": "o4-mini (Latest Reasoning) 🧠",
+            "o3": "o3 (Advanced Reasoning) 🧠",
+            "o3-mini": "o3-mini (Reasoning) 🧠",
+            "o1-preview": "o1-preview (Reasoning) 🧠",
+            "o1-mini": "o1-mini (Reasoning) 🧠",
             "gpt-4o": "GPT-4o",
+            "gpt-4-turbo": "GPT-4 Turbo",
+            "gpt-4": "GPT-4",
+            "gpt-3.5-turbo": "GPT-3.5 Turbo",
+          },
+          reasoningCapabilities: {
+            "o4-mini": {
+              thinking: true,
+              streamingThinking: false,
+              thinkingBudget: { min: 1000, max: 50000, suggested: 4000 },
+            },
+            "o3": {
+              thinking: true,
+              streamingThinking: false,
+              thinkingBudget: { min: 1000, max: 100000, suggested: 10000 },
+            },
+            "o3-mini": {
+              thinking: true,
+              streamingThinking: false,
+              thinkingBudget: { min: 1000, max: 50000, suggested: 4000 },
+            },
+            "o1-preview": {
+              thinking: true,
+              streamingThinking: false,
+              thinkingBudget: { min: 25000, max: 25000, suggested: 25000 },
+            },
+            "o1-mini": {
+              thinking: true,
+              streamingThinking: false,
+              thinkingBudget: { min: 25000, max: 25000, suggested: 25000 },
+            },
           },
         },
         anthropic: {
           available: [
+            "claude-opus-4-20250514",
+            "claude-sonnet-4-20250514",
             "claude-3-7-sonnet-latest",
             "claude-3-5-sonnet-latest",
             "claude-3-5-haiku-latest",
@@ -87,14 +131,33 @@ class ModelConfigService {
             "claude-3-sonnet-20240229",
             "claude-3-haiku-20240307",
           ],
-          default: "claude-3-7-sonnet-latest",
+          default: "claude-sonnet-4-20250514",
           displayNames: {
-            "claude-3-7-sonnet-latest": "Claude 3.7 Sonnet (Newest)",
+            "claude-opus-4-20250514": "Claude 4 Opus (Reasoning) 🧠",
+            "claude-sonnet-4-20250514": "Claude 4 Sonnet (Reasoning) 🧠",
+            "claude-3-7-sonnet-latest": "Claude 3.7 Sonnet (Reasoning) 🧠",
             "claude-3-5-sonnet-latest": "Claude 3.5 Sonnet",
             "claude-3-5-haiku-latest": "Claude 3.5 Haiku",
             "claude-3-opus-20240229": "Claude 3 Opus",
             "claude-3-sonnet-20240229": "Claude 3 Sonnet",
             "claude-3-haiku-20240307": "Claude 3 Haiku",
+          },
+          reasoningCapabilities: {
+            "claude-opus-4-20250514": {
+              thinking: true,
+              streamingThinking: true,
+              thinkingBudget: { min: 1024, max: 128000, suggested: 4000 },
+            },
+            "claude-sonnet-4-20250514": {
+              thinking: true,
+              streamingThinking: true,
+              thinkingBudget: { min: 1024, max: 128000, suggested: 4000 },
+            },
+            "claude-3-7-sonnet-latest": {
+              thinking: true,
+              streamingThinking: true,
+              thinkingBudget: { min: 1024, max: 32000, suggested: 4000 },
+            },
           },
         },
       },
@@ -136,6 +199,24 @@ class ModelConfigService {
   async getModelDisplayName(provider, model) {
     const config = await this.getConfig();
     return config.models[provider]?.displayNames[model] || model;
+  }
+
+  async getModelCapabilities(provider, model) {
+    const config = await this.getConfig();
+    return config.models[provider]?.reasoningCapabilities?.[model] || {
+      thinking: false,
+      streamingThinking: false,
+    };
+  }
+
+  async supportsReasoning(provider, model) {
+    const capabilities = await this.getModelCapabilities(provider, model);
+    return capabilities.thinking;
+  }
+
+  async supportsStreamingThinking(provider, model) {
+    const capabilities = await this.getModelCapabilities(provider, model);
+    return capabilities.streamingThinking;
   }
 }
 

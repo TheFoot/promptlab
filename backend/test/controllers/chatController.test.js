@@ -3,7 +3,7 @@ import assert from "node:assert";
 import sinon from "sinon";
 
 import chatController from "../../src/controllers/chatController.js";
-import ChatModelFactory from "../../src/services/chatService.js";
+import AgentChatService from "../../src/services/agentChatService.js";
 import config from "../../src/config/index.js";
 import {
   mockExpressReqRes,
@@ -13,8 +13,7 @@ import {
 
 describe("Chat Controller", async () => {
   let restoreLogger;
-  let chatModelStub;
-  let mockChatModel;
+  let agentChatServiceStub;
 
   before(() => {
     // Setup mock logger to prevent test logs
@@ -27,28 +26,24 @@ describe("Chat Controller", async () => {
   });
 
   beforeEach(() => {
-    // Create mock chat model with all required methods
-    mockChatModel = {
-      chat: sinon.stub(),
-      streamChat: sinon.stub(),
-    };
-
-    // Set up default mock behaviors
-    mockChatModel.chat.resolves({
-      message: "This is a mock response",
+    // Create stub for AgentChatService
+    agentChatServiceStub = sinon.stub(AgentChatService, "processChat").resolves({
+      message: "This is a mock agent response",
       usage: { total_tokens: 100 },
+      agentType: "chat",
+      agentMetadata: { type: "chat", name: "ChatAgent" },
     });
 
-    // Setup streamChat to call the callback and resolve
-    mockChatModel.streamChat.callsFake(async (messages, callback) => {
-      callback("This is a mock stream response");
-      return { message: "This is a mock stream response" };
+    // Create stub for streaming version
+    sinon.stub(AgentChatService, "processStreamingChat").callsFake(async (params, onChunk) => {
+      onChunk("This is a mock stream response");
+      return {
+        message: "This is a mock stream response",
+        usage: { total_tokens: 100 },
+        agentType: params.agentType || "chat",
+        agentMetadata: { type: "chat", name: "ChatAgent" },
+      };
     });
-
-    // Create stub for ChatModelFactory
-    chatModelStub = sinon
-      .stub(ChatModelFactory, "createModel")
-      .returns(mockChatModel);
   });
 
   afterEach(() => {
@@ -65,6 +60,8 @@ describe("Chat Controller", async () => {
           provider: "openai",
           model: "gpt-4",
           temperature: 0.7,
+          agentType: "chat",
+          promptContent: "You are a helpful assistant.",
         },
       });
 
@@ -72,14 +69,17 @@ describe("Chat Controller", async () => {
       await chatController.sendMessage(req, res);
 
       // Assert
-      assert.equal(chatModelStub.calledWith("openai"), true);
-      assert.equal(mockChatModel.chat.calledOnce, true);
+      assert.equal(agentChatServiceStub.calledOnce, true);
       assert.equal(res.json.calledOnce, true);
 
-      // Check that chat was called with correct parameters
-      const chatArgs = mockChatModel.chat.firstCall.args;
-      assert.deepEqual(chatArgs[0], [{ role: "user", content: "Hello" }]);
-      assert.deepEqual(chatArgs[1], { model: "gpt-4", temperature: 0.7 });
+      // Check that AgentChatService was called with correct parameters
+      const chatArgs = agentChatServiceStub.firstCall.args[0];
+      assert.deepEqual(chatArgs.messages, [{ role: "user", content: "Hello" }]);
+      assert.equal(chatArgs.provider, "openai");
+      assert.equal(chatArgs.model, "gpt-4");
+      assert.equal(chatArgs.temperature, 0.7);
+      assert.equal(chatArgs.agentType, "chat");
+      assert.equal(chatArgs.promptContent, "You are a helpful assistant.");
     });
 
     it("should use default provider when not specified", async () => {
@@ -96,9 +96,12 @@ describe("Chat Controller", async () => {
       await chatController.sendMessage(req, res);
 
       // Assert
-      assert.equal(chatModelStub.calledWith(config.providers.default), true);
-      assert.equal(mockChatModel.chat.calledOnce, true);
+      assert.equal(agentChatServiceStub.calledOnce, true);
       assert.equal(res.json.calledOnce, true);
+
+      // Check that default provider was used
+      const chatArgs = agentChatServiceStub.firstCall.args[0];
+      assert.equal(chatArgs.provider, config.providers.default);
     });
 
     it("should return 400 when messages are missing", async () => {
@@ -146,7 +149,7 @@ describe("Chat Controller", async () => {
     it("should handle errors from the chat model", async () => {
       // Arrange
       const error = new Error("API error");
-      mockChatModel.chat.rejects(error);
+      agentChatServiceStub.rejects(error);
 
       const { req, res } = mockExpressReqRes({
         body: {
@@ -201,20 +204,20 @@ describe("Chat Controller", async () => {
       const message = JSON.stringify({
         messages: [{ role: "user", content: "Hello" }],
         provider: "anthropic",
-        model: "claude-3-haiku-20240307",
+        model: "claude-sonnet-4-20250514",
         temperature: 0.5,
         stream: true,
+        agentType: "chat",
       });
 
       await messageHandler(message);
 
-      // Assert
-      assert.equal(chatModelStub.calledWith("anthropic"), true);
-      assert.equal(mockChatModel.streamChat.calledOnce, true);
+      // Assert - Check that AgentChatService.processStreamingChat was called
+      assert.equal(AgentChatService.processStreamingChat.calledOnce, true);
 
       // Check messages that were sent to the client
-      // First, start message
-      assert.equal(ws.send.callCount, 4); // info, start, stream content, end
+      // info, start, stream content, end
+      assert.equal(ws.send.callCount, 4);
       assert.equal(JSON.parse(ws.send.secondCall.args[0]).type, "start");
 
       // Then content
@@ -261,9 +264,8 @@ describe("Chat Controller", async () => {
 
       await messageHandler(message);
 
-      // Assert
-      assert.equal(chatModelStub.calledWith("openai"), true);
-      assert.equal(mockChatModel.chat.calledOnce, true);
+      // Assert - Check that AgentChatService.processChat was called
+      assert.equal(AgentChatService.processChat.calledOnce, true);
 
       // Check messages that were sent to the client
       // First, start message (initial info + start)
@@ -336,9 +338,9 @@ describe("Chat Controller", async () => {
         }
       });
 
-      // Set up chat model to throw an error
+      // Set up AgentChatService to throw an error
       const error = new Error("API error");
-      mockChatModel.streamChat.rejects(error);
+      AgentChatService.processStreamingChat.rejects(error);
 
       // Act
       chatController.handleWebSocket(ws, req);
