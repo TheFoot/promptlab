@@ -89,7 +89,13 @@
           </div>
 
           <div class="settings-row">
-            <label for="temp-slider">Temperature: {{ modelConfig.temperature.toFixed(1) }}</label>
+            <label for="temp-slider">
+              Temperature: {{ effectiveTemperature.toFixed(1) }}
+              <span
+                v-if="!canAdjustTemperature"
+                class="fixed-value-note"
+              >(Fixed for reasoning models)</span>
+            </label>
             <input
               id="temp-slider"
               v-model.number="modelConfig.temperature"
@@ -97,6 +103,8 @@
               min="0"
               max="1"
               step="0.1"
+              :disabled="!canAdjustTemperature"
+              :class="{ 'disabled-control': !canAdjustTemperature }"
             >
           </div>
 
@@ -181,6 +189,18 @@
               class="error-indicator"
             >⚠️</span>
           </div>
+          
+          <!-- Thinking panel for assistant messages -->
+          <ThinkingStatusPanel
+            v-if="message.role === 'assistant' && (message.hasThinking || message.isThinking)"
+            :thinking-content="message.thinkingContent || ''"
+            :is-thinking="message.isThinking || false"
+            :thinking-start-time="message.thinkingStartTime"
+            :thinking-end-time="message.thinkingEndTime"
+            :default-expanded="false"
+            :auto-scroll="true"
+          />
+          
           <div
             class="message-content"
             @dblclick="copyMessageToClipboard(message.content)"
@@ -240,6 +260,7 @@ import "highlight.js/styles/github.css";
 import alertService from "../services/alertService";
 import modelConfigService from "../services/modelConfigService";
 import { renderMarkdown, downloadCodeBlock } from "../services/markdownService";
+import ThinkingStatusPanel from "./ThinkingStatusPanel.vue";
 import "../styles/code-blocks.scss";
 
 // Props
@@ -343,6 +364,22 @@ const currentPrompt = computed(() => {
   return promptStore.currentPrompt;
 });
 
+// Track if current model supports temperature adjustment
+const supportsTemperatureControl = ref(true);
+
+// Check if current model allows temperature changes (non-reasoning models)
+const canAdjustTemperature = computed(() => {
+  return supportsTemperatureControl.value;
+});
+
+// Get the effective temperature display value
+const effectiveTemperature = computed(() => {
+  if (!supportsTemperatureControl.value) {
+    return 1.0; // Fixed temperature for reasoning models
+  }
+  return modelConfig.temperature;
+});
+
 // Get the content to use for AI system message
 const getPromptContent = () => {
   if (props.systemPrompt) {
@@ -399,6 +436,9 @@ const updateAvailableModels = async () => {
     modelConfig.model =
       config.models[provider]?.default || availableModels.value[0] || "";
     console.log("Setting default model to:", modelConfig.model);
+    
+    // Update temperature control capability for new model
+    await updateTemperatureControl();
   } catch (error) {
     console.error("Failed to update model list:", error);
     availableModels.value = [];
@@ -865,9 +905,79 @@ const setupWebSocket = () => {
         // Start of a new message
         console.log("Starting new assistant message");
         // Make sure the message content starts as an empty string
-        currentAssistantMessage = { role: "assistant", content: "" };
+        currentAssistantMessage = { 
+          role: "assistant", 
+          content: "",
+          thinkingContent: "",
+          isThinking: false,
+          hasThinking: false,
+          thinkingStartTime: null,
+          thinkingEndTime: null
+        };
         // Add message to the messages array - create a new object rather than pushing the reference
-        messages.value.push({ role: "assistant", content: "" });
+        messages.value.push({ 
+          role: "assistant", 
+          content: "",
+          thinkingContent: "",
+          isThinking: false,
+          hasThinking: false,
+          thinkingStartTime: null,
+          thinkingEndTime: null
+        });
+      } else if (data.type === "thinking_start" && currentAssistantMessage) {
+        // Start of thinking phase
+        console.log("Starting thinking phase");
+        currentAssistantMessage.isThinking = true;
+        currentAssistantMessage.hasThinking = true;
+        currentAssistantMessage.thinkingStartTime = new Date();
+        
+        // Update the message in the array
+        const lastIndex = messages.value.length - 1;
+        if (lastIndex >= 0) {
+          messages.value[lastIndex] = {
+            ...messages.value[lastIndex],
+            isThinking: true,
+            hasThinking: true,
+            thinkingStartTime: new Date()
+          };
+        }
+      } else if (data.type === "thinking_stream" && currentAssistantMessage) {
+        // Thinking content chunk
+        console.log("Received thinking chunk:", data.content);
+        
+        const contentChunk = data.content;
+        currentAssistantMessage.thinkingContent =
+          typeof currentAssistantMessage.thinkingContent === "string"
+            ? currentAssistantMessage.thinkingContent + contentChunk
+            : contentChunk;
+        
+        // Update the message in the array
+        const lastIndex = messages.value.length - 1;
+        if (lastIndex >= 0) {
+          messages.value[lastIndex] = {
+            ...messages.value[lastIndex],
+            thinkingContent: currentAssistantMessage.thinkingContent
+          };
+        }
+      } else if (data.type === "thinking_end" && currentAssistantMessage) {
+        // End of thinking phase
+        console.log("Thinking phase completed");
+        currentAssistantMessage.isThinking = false;
+        currentAssistantMessage.thinkingEndTime = new Date();
+        
+        // Update the message in the array
+        const lastIndex = messages.value.length - 1;
+        if (lastIndex >= 0) {
+          messages.value[lastIndex] = {
+            ...messages.value[lastIndex],
+            isThinking: false,
+            thinkingEndTime: new Date()
+          };
+        }
+      } else if (data.type === "response_start" && currentAssistantMessage) {
+        // Start of response phase
+        console.log("Starting response phase");
+        // No special handling needed, just logging
       } else if (data.type === "stream" && currentAssistantMessage) {
         // Continuation of a message
         console.log("Received content chunk:", data.content);
@@ -884,9 +994,9 @@ const setupWebSocket = () => {
         // Update the last message in the array with current content
         const lastIndex = messages.value.length - 1;
         if (lastIndex >= 0) {
-          // Create a completely new object reference
+          // Create a completely new object reference while preserving thinking data
           messages.value[lastIndex] = {
-            role: "assistant",
+            ...messages.value[lastIndex],
             content:
               typeof currentAssistantMessage.content === "string"
                 ? currentAssistantMessage.content
@@ -1053,6 +1163,21 @@ watch(
   },
 );
 
+// Update temperature control capability when model changes
+const updateTemperatureControl = async () => {
+  try {
+    const capabilities = await modelConfigService.getModelCapabilities(modelConfig.provider, modelConfig.model);
+    supportsTemperatureControl.value = !capabilities.thinking;
+    
+    // If model doesn't support temperature control, set it to 1
+    if (!supportsTemperatureControl.value) {
+      modelConfig.temperature = 1.0;
+    }
+  } catch {
+    supportsTemperatureControl.value = true; // Default to allowing temperature control
+  }
+};
+
 // Watch for changes in the model selection
 watch(
   () => modelConfig.model,
@@ -1061,6 +1186,17 @@ watch(
       // Reset chat history when model changes
       resetChat("model_change");
     }
+    // Update temperature control capability
+    updateTemperatureControl();
+  },
+);
+
+// Watch for changes in provider selection
+watch(
+  () => modelConfig.provider,
+  () => {
+    // Update temperature control capability when provider changes
+    updateTemperatureControl();
   },
 );
 </script>
@@ -1249,6 +1385,22 @@ watch(
         font-size: 0.85rem;
         color: var(--text-secondary);
         font-weight: 500;
+      }
+      
+      .fixed-value-note {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-style: italic;
+        font-weight: normal;
+      }
+    }
+    
+    .disabled-control {
+      opacity: 0.5;
+      cursor: not-allowed;
+      
+      &:disabled {
+        background-color: var(--disabled-bg, #f5f5f5);
       }
     }
 

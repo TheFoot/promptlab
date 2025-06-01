@@ -113,10 +113,10 @@ class AgentChatService {
   /**
    * Process a streaming chat request using an agent
    * @param {Object} params - Chat parameters (same as processChat)
-   * @param {Function} onChunk - Callback for streaming chunks
+   * @param {Object|Function} callbacks - Callback functions or legacy onChunk function
    * @returns {Object} - Chat response
    */
-  static async processStreamingChat(params, onChunk) {
+  static async processStreamingChat(params, callbacks) {
     const {
       messages = [],
       agentType = 'chat',
@@ -172,16 +172,32 @@ class AgentChatService {
       // Get AI model and send streaming request
       const chatModel = ChatModelFactory.createModel(provider);
       
-      // Wrapper for onChunk to allow agent postprocessing if needed
-      const wrappedOnChunk = (content) => {
-        // For streaming, we pass chunks through directly
-        // Postprocessing happens on the final complete response
-        onChunk(content);
-      };
+      // Handle legacy callback format or new structured callbacks
+      let streamingCallbacks;
+      if (typeof callbacks === 'function') {
+        // Legacy format - convert to new format
+        streamingCallbacks = {
+          onResponseChunk: callbacks,
+          onThinkingStart: () => {},
+          onThinkingChunk: () => {},
+          onThinkingEnd: () => {},
+          onResponseStart: () => {},
+          onResponseEnd: () => {},
+        };
+      } else {
+        streamingCallbacks = {
+          onThinkingStart: callbacks.onThinkingStart || (() => {}),
+          onThinkingChunk: callbacks.onThinkingChunk || (() => {}),
+          onThinkingEnd: callbacks.onThinkingEnd || (() => {}),
+          onResponseStart: callbacks.onResponseStart || (() => {}),
+          onResponseChunk: callbacks.onResponseChunk || callbacks.onChunk || (() => {}),
+          onResponseEnd: callbacks.onResponseEnd || (() => {}),
+        };
+      }
 
       const response = await chatModel.streamChat(
         finalMessages,
-        wrappedOnChunk,
+        streamingCallbacks,
         {
           model,
           temperature,

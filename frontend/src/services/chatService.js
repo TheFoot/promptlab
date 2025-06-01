@@ -286,9 +286,95 @@ function setupWebSocket(onMessageUpdate = null) {
         // Start of a new message
         console.log("Starting new assistant message");
         // Make sure the message content starts as an empty string
-        _state.currentAssistantMessage = { role: "assistant", content: "" };
+        _state.currentAssistantMessage = { 
+          role: "assistant", 
+          content: "",
+          thinkingContent: "",
+          isThinking: false,
+          hasThinking: false,
+          thinkingStartTime: null,
+          thinkingEndTime: null
+        };
         // Add message to the messages array - create a new object rather than pushing the reference
-        _state.messages.push({ role: "assistant", content: "" });
+        _state.messages.push({ 
+          role: "assistant", 
+          content: "",
+          thinkingContent: "",
+          isThinking: false,
+          hasThinking: false,
+          thinkingStartTime: null,
+          thinkingEndTime: null
+        });
+      } else if (data.type === "thinking_start" && _state.currentAssistantMessage) {
+        // Start of thinking phase
+        console.log("Starting thinking phase");
+        _state.currentAssistantMessage.isThinking = true;
+        _state.currentAssistantMessage.hasThinking = true;
+        _state.currentAssistantMessage.thinkingStartTime = new Date();
+        
+        // Update the message in the array
+        const lastIndex = _state.messages.length - 1;
+        if (lastIndex >= 0) {
+          _state.messages[lastIndex] = {
+            ..._state.messages[lastIndex],
+            isThinking: true,
+            hasThinking: true,
+            thinkingStartTime: new Date()
+          };
+        }
+        
+        if (onMessageUpdate) {
+          onMessageUpdate([..._state.messages]);
+        }
+      } else if (data.type === "thinking_stream" && _state.currentAssistantMessage) {
+        // Thinking content chunk
+        console.log("Received thinking chunk:", data.content);
+        
+        const contentChunk = data.content;
+        _state.currentAssistantMessage.thinkingContent =
+          typeof _state.currentAssistantMessage.thinkingContent === "string"
+            ? _state.currentAssistantMessage.thinkingContent + contentChunk
+            : contentChunk;
+        
+        // Update the message in the array
+        const lastIndex = _state.messages.length - 1;
+        if (lastIndex >= 0) {
+          _state.messages[lastIndex] = {
+            ..._state.messages[lastIndex],
+            thinkingContent: _state.currentAssistantMessage.thinkingContent
+          };
+        }
+        
+        if (onMessageUpdate) {
+          onMessageUpdate([..._state.messages]);
+        }
+      } else if (data.type === "thinking_end" && _state.currentAssistantMessage) {
+        // End of thinking phase
+        console.log("Thinking phase completed");
+        _state.currentAssistantMessage.isThinking = false;
+        _state.currentAssistantMessage.thinkingEndTime = new Date();
+        
+        // Update the message in the array
+        const lastIndex = _state.messages.length - 1;
+        if (lastIndex >= 0) {
+          _state.messages[lastIndex] = {
+            ..._state.messages[lastIndex],
+            isThinking: false,
+            thinkingEndTime: new Date()
+          };
+        }
+        
+        if (onMessageUpdate) {
+          onMessageUpdate([..._state.messages]);
+        }
+      } else if (data.type === "response_start" && _state.currentAssistantMessage) {
+        // Start of response phase
+        console.log("Starting response phase");
+        // No special handling needed, just logging
+        
+        if (onMessageUpdate) {
+          onMessageUpdate([..._state.messages]);
+        }
       } else if (data.type === "stream" && _state.currentAssistantMessage) {
         // Continuation of a message
         console.log("Received content chunk:", data.content);
@@ -305,9 +391,9 @@ function setupWebSocket(onMessageUpdate = null) {
         // Update the last message in the array with current content
         const lastIndex = _state.messages.length - 1;
         if (lastIndex >= 0) {
-          // Create a completely new object reference
+          // Create a completely new object reference while preserving thinking data
           _state.messages[lastIndex] = {
-            role: "assistant",
+            ..._state.messages[lastIndex],
             content:
               typeof _state.currentAssistantMessage.content === "string"
                 ? _state.currentAssistantMessage.content

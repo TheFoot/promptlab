@@ -166,8 +166,25 @@ const chatController = {
               promptContent,
               promptTitle,
             },
-            (content) => {
-              ws.send(JSON.stringify({ type: "stream", content }));
+            {
+              onThinkingStart: () => {
+                ws.send(JSON.stringify({ type: "thinking_start" }));
+              },
+              onThinkingChunk: (content) => {
+                ws.send(JSON.stringify({ type: "thinking_stream", content }));
+              },
+              onThinkingEnd: () => {
+                ws.send(JSON.stringify({ type: "thinking_end" }));
+              },
+              onResponseStart: () => {
+                ws.send(JSON.stringify({ type: "response_start" }));
+              },
+              onResponseChunk: (content) => {
+                ws.send(JSON.stringify({ type: "stream", content }));
+              },
+              onResponseEnd: () => {
+                // Will be called automatically at the end
+              },
             },
           );
 
@@ -274,6 +291,7 @@ const chatController = {
             available: providerConfig.models.available,
             default: providerConfig.models.default,
             displayNames: providerConfig.models.displayNames,
+            reasoningCapabilities: providerConfig.reasoningCapabilities || {},
           };
         }
       });
