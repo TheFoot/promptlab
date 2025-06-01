@@ -239,7 +239,7 @@ function saveTestSessionToLocalStorage(promptId, session) {
     // Generate a simple ID for local storage
     const sessionWithId = {
       ...session,
-      id: `local_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      id: `local_${Date.now()}_${Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1) * 1000)}`,
     };
 
     sessions.unshift(sessionWithId); // Add to beginning of array

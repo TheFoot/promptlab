@@ -50,7 +50,7 @@ async function getTemplates(filters = {}) {
         tags: prompt.tags,
         metadata: {
           creator: prompt.createdBy ? "user" : "system",
-          popularity: Math.floor(Math.random() * 50) + 1, // Placeholder
+          popularity: Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1) * 50) + 1, // Placeholder
           featured: false,
         },
       }))
@@ -523,7 +523,7 @@ async function getFeaturedTemplates(limit = 5) {
       tags: prompt.tags,
       metadata: {
         creator: "system",
-        popularity: Math.floor(Math.random() * 100) + 50, // Placeholder
+        popularity: Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1) * 100) + 50, // Placeholder
         featured: true,
       },
     }));
@@ -561,7 +561,7 @@ async function getUserTemplates() {
       tags: prompt.tags,
       metadata: {
         creator: "user",
-        popularity: Math.floor(Math.random() * 20) + 1, // Placeholder
+        popularity: Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1) * 20) + 1, // Placeholder
         featured: false,
       },
     }));
