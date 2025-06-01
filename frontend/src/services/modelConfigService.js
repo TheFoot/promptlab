@@ -80,6 +80,8 @@ class ModelConfigService {
         },
         anthropic: {
           available: [
+            "claude-opus-4-20250514",
+            "claude-sonnet-4-20250514",
             "claude-3-7-sonnet-latest",
             "claude-3-5-sonnet-latest",
             "claude-3-5-haiku-latest",
@@ -87,9 +89,11 @@ class ModelConfigService {
             "claude-3-sonnet-20240229",
             "claude-3-haiku-20240307",
           ],
-          default: "claude-3-7-sonnet-latest",
+          default: "claude-sonnet-4-20250514",
           displayNames: {
-            "claude-3-7-sonnet-latest": "Claude 3.7 Sonnet (Newest)",
+            "claude-opus-4-20250514": "Claude 4 Opus (Latest)",
+            "claude-sonnet-4-20250514": "Claude 4 Sonnet (Latest)",
+            "claude-3-7-sonnet-latest": "Claude 3.7 Sonnet",
             "claude-3-5-sonnet-latest": "Claude 3.5 Sonnet",
             "claude-3-5-haiku-latest": "Claude 3.5 Haiku",
             "claude-3-opus-20240229": "Claude 3 Opus",

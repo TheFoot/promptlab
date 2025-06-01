@@ -204,7 +204,7 @@ describe("Chat Controller", async () => {
       const message = JSON.stringify({
         messages: [{ role: "user", content: "Hello" }],
         provider: "anthropic",
-        model: "claude-3-haiku-20240307",
+        model: "claude-sonnet-4-20250514",
         temperature: 0.5,
         stream: true,
         agentType: "chat",
