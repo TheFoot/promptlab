@@ -111,7 +111,7 @@ async function getTemplateById(id) {
       sections: extractSectionsFromContent(prompt.content),
       metadata: {
         creator: prompt.createdBy ? "user" : "system",
-        popularity: Math.floor(Math.random() * 50) + 1, // Placeholder
+        popularity: Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1) * 50) + 1, // Placeholder
         featured: false,
       },
     };
