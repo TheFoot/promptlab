@@ -26,7 +26,7 @@
   <div
     v-else
     class="prompt-detail-view"
-    :class="{ editing: editMode }"
+    :class="{ editing: contextPanelMode === 'edit' }"
   >
     <div class="sidebar">
       <PromptSidebar />
@@ -34,99 +34,199 @@
     <div class="prompt-detail-container">
       <div class="prompt-header">
         <div class="header-content">
-          <h2 v-if="!editMode">
-            {{ prompt.title }}
-          </h2>
           <input
-            v-else
             v-model="editedPrompt.title"
             type="text"
             placeholder="Prompt title"
             class="title-input"
+            @input="debouncedSaveTitle"
           >
-          <div
-            v-if="!editMode"
-            class="prompt-tags"
-          >
-            <span
-              v-for="tag in prompt.tags"
-              :key="tag"
-              class="prompt-tag"
-            >{{
-              tag
-            }}</span>
-          </div>
           <TagInput
-            v-else
             v-model="editedPrompt.tags"
+            @update:model-value="debouncedSaveTags"
           />
         </div>
         <div class="header-actions">
-          <button
-            v-if="!editMode"
-            class="btn btn-secondary"
-            @click="enableEditMode"
+          <div
+            class="mode-button-bar"
           >
-            Edit
+            <button
+              class="mode-btn"
+              :class="{ active: contextPanelMode === 'chat' }"
+              @click="setContextPanelMode('chat')"
+            >
+              <span class="btn-icon">💬</span>
+              Chat
+            </button>
+            <button
+              class="mode-btn"
+              :class="{ active: contextPanelMode === 'edit' }"
+              @click="setContextPanelMode('edit')"
+            >
+              <span class="btn-icon">✏️</span>
+              Edit
+            </button>
+            <button
+              class="mode-btn"
+              :class="{ active: contextPanelMode === 'design' }"
+              @click="setContextPanelMode('design')"
+            >
+              <span class="btn-icon">🎨</span>
+              Design
+            </button>
+          </div>
+          <button
+            class="btn btn-outline-secondary"
+            :title="contextPanelMode === 'edit' ? 'Close editor' : 'Close prompt and return to dashboard'"
+            @click="handleCloseButton"
+          >
+            ✕ Close
           </button>
-          <template v-else>
-            <button
-              class="btn btn-primary mr-2"
-              :disabled="saving"
-              @click="savePrompt"
-            >
-              {{ saving ? "Saving..." : "Save" }}
-            </button>
-            <button
-              class="btn btn-secondary"
-              @click="cancelEdit"
-            >
-              Cancel
-            </button>
-          </template>
         </div>
       </div>
 
-      <div
-        class="prompt-content"
-        :class="{ 'edit-mode': editMode }"
-      >
+      <div class="prompt-content">
         <div
           class="editor-container"
-          :class="{ 'full-width': !editMode }"
+          :style="{ width: `${100 - contextPanelWidthPercent}%` }"
         >
-          <textarea
-            v-if="editMode"
-            v-model="editedPrompt.content"
-            class="content-editor"
-            placeholder="Write your prompt here using markdown..."
-          />
-          <MarkdownPreview
-            v-else
-            :content="prompt.content"
-          />
-        </div>
-        <div
-          v-if="editMode"
-          class="preview-container"
-        >
-          <div class="preview-header">
-            Preview
+          <div class="preview-wrapper">
+            <!-- Preview Status Bar -->
+            <div
+              class="preview-status-bar"
+              :class="{ 'has-changes': hasUnsavedChanges }"
+            >
+              <div class="status-indicator">
+                <span
+                  v-if="hasUnsavedChanges"
+                  class="status-text"
+                >
+                  <span class="status-dot unsaved" />
+                  Previewing local changes
+                </span>
+                <span
+                  v-else
+                  class="status-text"
+                >
+                  <span class="status-dot saved" />
+                  Saved content
+                </span>
+              </div>
+              <div
+                v-if="hasUnsavedChanges"
+                class="status-actions"
+              >
+                <span class="changes-hint">Changes not saved</span>
+              </div>
+            </div>
+            <!-- Preview Content -->
+            <MarkdownPreview
+              :content="contextPanelMode === 'edit' ? editableContent : prompt.content"
+            />
           </div>
-          <MarkdownPreview :content="editedPrompt.content" />
         </div>
-      </div>
-
-      <div
-        v-if="editMode"
-        class="prompt-footer"
-      >
-        <button
-          class="btn btn-danger"
-          @click="confirmDelete"
+        
+        <!-- Always show DynamicContextPanel -->
+        <DynamicContextPanel
+          :prompt-content="prompt.content"
+          :initial-mode="contextPanelMode"
+          :use-slot-content="true"
+          @update:prompt-content="handleAISuggestion"
+          @mode-changed="handleModeChange"
+          @resize="handlePanelResize"
         >
-          Delete Prompt
-        </button>
+          <template #chat-mode>
+            <div class="chat-mode-panel">
+              <div class="panel-header-toolbar">
+                <div class="toolbar-left">
+                  <h3 class="panel-title">
+                    <span class="panel-icon">💬</span>
+                    Prompt Chat Agent
+                  </h3>
+                </div>
+                <div class="toolbar-right">
+                  <button
+                    class="reset-btn"
+                    title="Reset conversation"
+                    @click="() => $refs.chatSidebar?.resetChat('manual_reset')"
+                  >
+                    🔄 Reset
+                  </button>
+                </div>
+              </div>
+              <ChatSidebar
+                ref="chatSidebar"
+                :system-prompt="prompt.content"
+                :embedded="true"
+                :hide-toolbar="true"
+                agent-mode="chat"
+              />
+            </div>
+          </template>
+          <template #edit-mode>
+            <div class="edit-mode-panel">
+              <div class="panel-header-toolbar">
+                <div class="toolbar-left">
+                  <h3 class="panel-title">
+                    <span class="panel-icon">✏️</span>
+                    Prompt Markdown Editor
+                  </h3>
+                </div>
+                <div class="toolbar-right">
+                  <button
+                    class="save-btn"
+                    :disabled="saving"
+                    @click="savePanelChanges"
+                  >
+                    <span class="save-icon">💾</span>
+                    {{ saving ? "Saving..." : "Save" }}
+                  </button>
+                </div>
+              </div>
+              <textarea
+                v-model="editableContent"
+                class="panel-editor"
+                placeholder="Edit your prompt here..."
+                @input="handleContentEdit"
+              />
+            </div>
+          </template>
+          <template #design-mode>
+            <div class="design-mode-panel">
+              <div class="panel-header-toolbar">
+                <div class="toolbar-left">
+                  <h3 class="panel-title">
+                    <span class="panel-icon">🎨</span>
+                    Prompt Design Agent
+                  </h3>
+                </div>
+                <div class="toolbar-right">
+                  <button
+                    class="reset-btn"
+                    title="Reset conversation"
+                    @click="() => $refs.designSidebar?.resetChat('manual_reset')"
+                  >
+                    🔄 Reset
+                  </button>
+                  <button
+                    class="analyze-btn"
+                    title="Analyze current prompt"
+                    @click="() => $refs.designSidebar?.analyzeCurrentPrompt()"
+                  >
+                    🔍 Analyze
+                  </button>
+                </div>
+              </div>
+              <ChatSidebar
+                ref="designSidebar"
+                :system-prompt="prompt.content"
+                :embedded="true"
+                :hide-toolbar="true"
+                agent-mode="design"
+              />
+            </div>
+          </template>
+        </DynamicContextPanel>
       </div>
     </div>
   </div>
@@ -137,17 +237,20 @@ import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { usePromptStore } from "../stores/promptStore";
 import { useUiStore } from "../stores/uiStore";
+import { useContextPanelStore } from "../stores/contextPanelStore";
 import PromptSidebar from "../components/PromptSidebar.vue";
 import MarkdownPreview from "../components/MarkdownPreview.vue";
 import TagInput from "../components/TagInput.vue";
+import DynamicContextPanel from "../components/DynamicContextPanel.vue";
+import ChatSidebar from "../components/ChatSidebar.vue";
 
 const route = useRoute();
 const router = useRouter();
 const promptStore = usePromptStore();
 const uiStore = useUiStore();
+const contextPanelStore = useContextPanelStore();
 
 // Component state
-const editMode = ref(false);
 const saving = ref(false);
 const editedPrompt = ref({
   title: "",
@@ -155,10 +258,22 @@ const editedPrompt = ref({
   tags: [],
 });
 
+// Context panel state
+const contextPanelMode = ref(contextPanelStore.activeMode || 'chat');
+const contextPanelWidthPercent = ref(40); // Default 40% width
+const editableContent = ref(''); // For edit mode in panel
+
 // Computed properties
 const loading = computed(() => promptStore.loading);
 const error = computed(() => promptStore.error);
 const prompt = computed(() => promptStore.currentPrompt);
+
+// Check if there are unsaved changes in the panel editor
+const hasUnsavedChanges = computed(() => {
+  return contextPanelMode.value === 'edit' && 
+         prompt.value && 
+         editableContent.value !== prompt.value.content;
+});
 
 // Methods
 const fetchPrompt = async () => {
@@ -169,23 +284,38 @@ const fetchPrompt = async () => {
   }
 };
 
-const enableEditMode = () => {
-  editedPrompt.value = {
-    title: prompt.value.title,
-    content: prompt.value.content,
-    tags: [...prompt.value.tags],
-  };
-  editMode.value = true;
+
+const setContextPanelMode = (mode) => {
+  contextPanelMode.value = mode;
+  contextPanelStore.setActiveMode(mode);
+};
+
+const navigateToHome = () => {
+  router.push("/");
+};
+
+const handleCloseButton = () => {
+  if (contextPanelMode.value === 'edit') {
+    cancelEdit();
+  } else {
+    navigateToHome();
+  }
 };
 
 const cancelEdit = async () => {
-  // First, update edit mode state
-  editMode.value = false;
+  // Reset edited prompt data
   editedPrompt.value = {
     title: prompt.value.title,
     content: prompt.value.content,
     tags: [...prompt.value.tags],
   };
+  
+  // Reset editable content to original
+  editableContent.value = prompt.value.content;
+
+  // Reset context panel mode to chat when exiting edit mode
+  contextPanelMode.value = 'chat';
+  contextPanelStore.setActiveMode('chat');
 
   // Force UI layout update after state change
   await nextTick();
@@ -197,44 +327,88 @@ const cancelEdit = async () => {
   }, 100);
 };
 
-const savePrompt = async () => {
-  if (!editedPrompt.value.title || !editedPrompt.value.content) {
-    alert("Title and content are required");
-    return;
-  }
+// Context panel handlers
+const handleModeChange = (mode) => {
+  contextPanelMode.value = mode;
+  contextPanelStore.setActiveMode(mode);
+};
 
+const handlePanelResize = (widthPercent) => {
+  contextPanelWidthPercent.value = widthPercent;
+};
+
+const handleAISuggestion = (newContent) => {
+  if (newContent && prompt.value) {
+    // Apply AI suggestion to the current prompt
+    promptStore.updatePrompt(route.params.id, {
+      ...prompt.value,
+      content: newContent
+    });
+  }
+};
+
+const handleContentEdit = () => {
+  // Just handle the input - no auto-save to avoid focus loss
+  // Content will be saved when user clicks Save button
+};
+
+const savePanelChanges = async () => {
+  if (!prompt.value || !editableContent.value) return;
+  
   saving.value = true;
   try {
-    await promptStore.updatePrompt(route.params.id, editedPrompt.value);
+    // Only save content from the editor panel
+    await promptStore.updatePrompt(route.params.id, {
+      ...prompt.value,
+      content: editableContent.value
+    });
 
-    // First, update edit mode state
-    editMode.value = false;
-
-    // Force UI layout update after state change
-    await nextTick();
-
-    // Allow time for transitions and layout adjustments
-    setTimeout(() => {
-      // Trigger window resize event to ensure all components adjust
-      window.dispatchEvent(new Event("resize"));
-    }, 100);
+    // Reset context panel mode to chat when exiting edit mode
+    contextPanelMode.value = 'chat';
+    contextPanelStore.setActiveMode('chat');
   } catch (error) {
-    console.error("Error saving prompt:", error);
+    console.error("Error saving prompt content:", error);
   } finally {
     saving.value = false;
   }
 };
 
-const confirmDelete = async () => {
-  if (confirm("Are you sure you want to delete this prompt?")) {
+// Debounced save functions for title and tags
+let titleSaveTimeout = null;
+let tagsSaveTimeout = null;
+
+const debouncedSaveTitle = () => {
+  if (titleSaveTimeout) clearTimeout(titleSaveTimeout);
+  titleSaveTimeout = setTimeout(async () => {
+    if (!prompt.value || !editedPrompt.value.title.trim()) return;
+    
     try {
-      await promptStore.deletePrompt(route.params.id);
-      router.push("/");
+      await promptStore.updatePrompt(route.params.id, {
+        ...prompt.value,
+        title: editedPrompt.value.title
+      });
     } catch (error) {
-      console.error("Error deleting prompt:", error);
+      console.error("Error saving title:", error);
     }
-  }
+  }, 1000); // 1 second debounce
 };
+
+const debouncedSaveTags = () => {
+  if (tagsSaveTimeout) clearTimeout(tagsSaveTimeout);
+  tagsSaveTimeout = setTimeout(async () => {
+    if (!prompt.value) return;
+    
+    try {
+      await promptStore.updatePrompt(route.params.id, {
+        ...prompt.value,
+        tags: editedPrompt.value.tags
+      });
+    } catch (error) {
+      console.error("Error saving tags:", error);
+    }
+  }, 1000); // 1 second debounce
+};
+
 
 // Watch for route changes to load the correct prompt
 watch(
@@ -252,9 +426,41 @@ watch(
   },
 );
 
+// Watch for prompt changes to sync editableContent (only when different)
+watch(
+  () => prompt.value?.content,
+  (newContent) => {
+    if (newContent && newContent !== editableContent.value) {
+      editableContent.value = newContent;
+    }
+  },
+  { immediate: true }
+);
+
+// Watch for context panel mode changes to keep everything in sync
+watch(contextPanelMode, (newMode) => {
+  contextPanelStore.setActiveMode(newMode);
+  localStorage.setItem("context-panel-mode", newMode);
+});
+
+// Watch for prompt changes to initialize editedPrompt
+watch(
+  () => prompt.value,
+  (newPrompt) => {
+    if (newPrompt) {
+      editedPrompt.value = {
+        title: newPrompt.title,
+        content: newPrompt.content,
+        tags: [...newPrompt.tags],
+      };
+    }
+  },
+  { immediate: true }
+);
+
 // Update global UI state when edit mode changes
-watch(editMode, (isEditMode) => {
-  uiStore.setEditMode(isEditMode);
+watch(contextPanelMode, (mode) => {
+  uiStore.setEditMode(mode === 'edit');
 });
 
 // Watch for prompt to be null after loading completes
@@ -278,6 +484,13 @@ watch(
 
 // Lifecycle hooks
 onMounted(async () => {
+  // Initialize mode from localStorage to sync with DynamicContextPanel
+  const savedMode = localStorage.getItem("context-panel-mode");
+  if (savedMode && ["chat", "edit", "design"].includes(savedMode)) {
+    contextPanelMode.value = savedMode;
+    contextPanelStore.setActiveMode(savedMode);
+  }
+
   if (route.params.id) {
     await fetchPrompt();
 
@@ -328,7 +541,7 @@ onMounted(async () => {
 .prompt-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 1rem;
   background-color: var(--card-bg-color);
   border-radius: 8px 8px 0 0;
@@ -337,35 +550,92 @@ onMounted(async () => {
   position: relative; /* For z-index to work */
   z-index: 50; /* Higher than sidebar but lower than app header */
 
-  h2 {
-    margin: 0;
-    color: var(--text-color);
-  }
-
   .title-input {
     font-size: 1.5rem;
     font-weight: bold;
     width: 100%;
-  }
-
-  .prompt-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    margin-top: 0.5rem;
-  }
-
-  .prompt-tag {
-    background-color: rgba(74, 108, 247, 0.1);
-    color: var(--primary-color);
-    padding: 0.25rem 0.5rem;
-    border-radius: 2rem;
-    font-size: 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    padding: 0;
+    margin: 0;
+    outline: none;
+    
+    &:focus {
+      background-color: rgba(74, 108, 247, 0.05);
+      border-radius: 4px;
+      padding: 0.25rem;
+    }
   }
 
   .header-actions {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
+
+    .mode-button-bar {
+      display: flex;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-right: 1rem;
+
+      .mode-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--card-bg-color);
+        border: none;
+        border-right: 1px solid var(--border-color);
+        color: var(--text-color);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 1rem;
+        font-weight: 500;
+
+        &:last-child {
+          border-right: none;
+        }
+
+        &:hover {
+          background-color: var(--hover-color, #f0f0f0);
+          
+          /* Darker text on hover in dark mode */
+          @media (prefers-color-scheme: dark) {
+            color: #333333;
+          }
+        }
+
+        &.active {
+          background-color: var(--primary-color);
+          color: white;
+
+          &:hover {
+            background-color: var(--primary-color-dark, #3a5ce7);
+          }
+        }
+
+        .btn-icon {
+          font-size: 1em;
+        }
+      }
+    }
+
+    .mr-2 {
+      margin-right: 0.5rem;
+    }
+
+    .btn-outline-secondary {
+      background-color: transparent;
+      border: 1px solid var(--secondary-color);
+      color: var(--secondary-color);
+
+      &:hover {
+        background-color: var(--secondary-color);
+        color: white;
+      }
+    }
   }
 }
 
@@ -376,18 +646,7 @@ onMounted(async () => {
   border-radius: 0 0 8px 8px;
   overflow: hidden;
   background-color: var(--card-bg-color);
-
-  &.edit-mode {
-    .editor-container,
-    .preview-container {
-      width: 50%;
-      height: 100%;
-    }
-
-    .editor-container {
-      border-right: 1px solid var(--border-color);
-    }
-  }
+  position: relative;
 
   .editor-container,
   .preview-container {
@@ -395,14 +654,11 @@ onMounted(async () => {
     display: flex;
     flex-direction: column;
     overflow: auto;
+    transition: width 0.2s ease;
   }
 
   .editor-container {
-    width: 100%;
-
-    &.full-width {
-      width: 100%;
-    }
+    border-right: 1px solid var(--border-color);
   }
 
   .content-editor {
@@ -421,6 +677,68 @@ onMounted(async () => {
     background-color: rgba(0, 0, 0, 0.03);
     border-bottom: 1px solid var(--border-color);
     font-weight: 500;
+  }
+
+  .preview-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: var(--card-bg-color);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    min-height: 40px;
+
+    &.has-changes {
+      background-color: rgba(255, 193, 7, 0.1);
+      border-bottom-color: rgba(255, 193, 7, 0.3);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-text {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-color);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+
+      &.saved {
+        background-color: #28a745;
+      }
+
+      &.unsaved {
+        background-color: #ffc107;
+      }
+    }
+
+    .status-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .changes-hint {
+      color: #856404;
+      font-size: 0.8rem;
+      font-style: italic;
+    }
   }
 }
 
@@ -449,6 +767,137 @@ onMounted(async () => {
 
 .error {
   color: var(--error-color);
+}
+
+.chat-mode-panel,
+.design-mode-panel,
+.edit-mode-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .panel-header-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: var(--surface-color, #f8f9fa);
+    border-bottom: 1px solid var(--border-color);
+    min-height: 40px;
+    
+    /* Make toolbar stand out with subtle different background */
+    @media (prefers-color-scheme: dark) {
+      background-color: #2d2d2d;
+    }
+    
+    .toolbar-left {
+      flex: 1;
+      
+      .panel-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .panel-icon {
+        font-size: 1.1rem;
+      }
+    }
+    
+    .toolbar-right {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .save-btn,
+    .reset-btn,
+    .analyze-btn {
+      padding: 0.25rem 0.75rem;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      
+      &:hover:not(:disabled) {
+        background-color: var(--primary-color-dark, #3a5ce7);
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .reset-btn {
+      background-color: var(--secondary-color, #6c757d);
+      
+      &:hover:not(:disabled) {
+        background-color: var(--secondary-color-dark, #545b62);
+      }
+    }
+
+    .analyze-btn {
+      background-color: var(--success-color, #28a745);
+      
+      &:hover:not(:disabled) {
+        background-color: var(--success-color-dark, #1e7e34);
+      }
+    }
+
+    .save-icon {
+      font-size: 0.875rem;
+    }
+  }
+
+
+  .panel-editor {
+    flex: 1;
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    resize: none;
+    font-family: monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background-color: var(--secondary-color, #f8f9fa);
+    color: var(--text-color);
+    border-radius: 0;
+    outline: none;
+    
+    /* Subtle inset shadow to create depth */
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 
+                inset 0 1px 2px rgba(0, 0, 0, 0.1);
+
+    /* Better contrast in dark mode */
+    @media (prefers-color-scheme: dark) {
+      background-color: #2a2a2a;
+      color: #ffffff;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 
+                  inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    &:focus {
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 
+                  inset 0 1px 2px rgba(0, 0, 0, 0.1),
+                  inset 0 0 0 2px var(--primary-color);
+                  
+      @media (prefers-color-scheme: dark) {
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 
+                    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+                    inset 0 0 0 2px var(--primary-color);
+      }
+    }
+  }
 }
 
 @media (max-width: 768px) {

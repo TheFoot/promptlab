@@ -106,7 +106,7 @@ const onKeydown = (event) => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid var(--border-color);
   border-radius: 4px;
   background-color: var(--card-bg-color);
@@ -120,6 +120,7 @@ const onKeydown = (event) => {
   color: var(--primary-color);
   padding: 0.25rem 0.5rem;
   border-radius: 2rem;
+  font-size: 0.75rem;
   margin-right: 0.25rem;
   margin-bottom: 0.25rem;
 }
@@ -133,7 +134,7 @@ const onKeydown = (event) => {
   border: none;
   color: var(--primary-color);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -141,29 +142,41 @@ const onKeydown = (event) => {
   padding: 0.1rem;
   margin-left: 0.25rem;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  font-weight: bold;
+  opacity: 0.7;
 
   &:hover {
+    opacity: 1;
     background-color: rgba(74, 108, 247, 0.2);
   }
 }
 
 .tag-input {
   flex: 1;
-  min-width: 100px;
+  min-width: 150px;
   background: transparent;
   border: none;
   outline: none;
-  padding: 0.25rem 0;
+  padding: 0.5rem 0.75rem;
   color: var(--text-color);
+  border-radius: 2rem;
+  margin: 0.15rem 0;
+  height: 38px;
+  box-sizing: border-box;
 
   &.has-tags {
-    margin-left: 0.25rem;
+    margin-left: 0.5rem;
   }
 
   &:focus {
     box-shadow: none;
+    background-color: rgba(0, 0, 0, 0.04);
+
+    @media (prefers-color-scheme: dark) {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
   }
 }
 

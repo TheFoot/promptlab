@@ -1,7 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import morgan from "morgan";
 import path from "path";
 import http from "http";
 import { WebSocketServer } from "ws";
@@ -17,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Set up exception handlers
-export function setupExceptionHandlers() {
+export const setupExceptionHandlers = () => {
   // Set up global uncaught exception handler
   process.on("uncaughtException", (error) => {
     console.error("UNCAUGHT EXCEPTION:", error.message);
@@ -49,16 +48,16 @@ export function setupExceptionHandlers() {
     }
     // DON'T exit the process - keep the server running despite errors
   });
-}
+};
 
 // Initialize the application
-export async function initializeApp() {
+export const initializeApp = async () => {
   try {
     // Initialize Express app
     const app = express();
     const server = http.createServer(app);
 
-    // Connect to MongoDB
+    // Connect to MongoDB - fail fast, no fallbacks
     global.logger.info("Connecting to MongoDB", { uri: config.mongodbUri });
     try {
       await mongoose.connect(config.mongodbUri);
@@ -68,22 +67,32 @@ export async function initializeApp() {
         error: dbError.message,
         stack: dbError.stack,
       });
-
-      // Fallback to localhost if Docker connection fails
-      if (config.mongodbUri.includes("mongodb:")) {
-        const fallbackUri = "mongodb://localhost:27017/promptLab";
-        global.logger.info("Trying fallback connection", { uri: fallbackUri });
-        await mongoose.connect(fallbackUri);
-        global.logger.info("MongoDB connected via fallback");
-      } else {
-        throw dbError;
-      }
+      // Fail immediately - no fallbacks that mask configuration issues
+      throw dbError;
     }
 
     // Middleware
     app.use(cors());
     app.use(express.json({ limit: "5mb" }));
-    app.use(morgan("dev"));
+    
+    // Pino HTTP request logging middleware
+    app.use((req, res, next) => {
+      const start = Date.now();
+      
+      res.on('finish', () => {
+        const duration = Date.now() - start;
+        global.logger.info('HTTP Request', {
+          method: req.method,
+          url: req.url,
+          status: res.statusCode,
+          duration: `${duration}ms`,
+          userAgent: req.get('User-Agent'),
+          ip: req.ip || req.connection.remoteAddress
+        });
+      });
+      
+      next();
+    });
 
     // API routes
     app.use("/api", apiRoutes);
@@ -112,10 +121,10 @@ export async function initializeApp() {
     });
     throw error;
   }
-}
+};
 
 // Set up WebSocket server
-export function setupWebSocketServer(server) {
+export const setupWebSocketServer = (server) => {
   const wss = new WebSocketServer({
     server,
     path: "/api/chat/ws",
@@ -140,10 +149,10 @@ export function setupWebSocketServer(server) {
   });
 
   return wss;
-}
+};
 
 // Set up static file serving for production
-export async function setupStaticFileServing(app) {
+export const setupStaticFileServing = async (app) => {
   if (config.isProd) {
     const frontendBuildPath = path.resolve(__dirname, "../../frontend/dist");
 
@@ -186,10 +195,10 @@ export async function setupStaticFileServing(app) {
       res.sendFile(path.join(frontendBuildPath, "index.html"));
     });
   }
-}
+};
 
 // Start the server
-export function startServer(server) {
+export const startServer = (server) => {
   return new Promise((resolve) => {
     server.listen(config.port, () => {
       global.logger.info("Server started", {
@@ -202,4 +211,4 @@ export function startServer(server) {
       resolve(server);
     });
   });
-}
+};
